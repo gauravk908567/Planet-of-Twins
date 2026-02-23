@@ -52,7 +52,7 @@ public class TwinManager : MonoBehaviour
 
         // LEFT TWIN
         leftAbility.SetPrimaryAbility(
-            new PossessionAbility(possessAbilityData, enemyLayer)
+            new PossessionAbility(possessAbilityData, enemyLayer, leftAbility)
         );
 
         leftAbility.SetTeleportAbility(

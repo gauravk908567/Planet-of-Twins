@@ -2,13 +2,13 @@ using UnityEngine;
 
 public class StunEffect : StatusEffectBase
 {
-    private EnemyMovement movement;
     private Enemy enemy;
+    private FactionComponent fc;
 
-    public StunEffect(GameObject target, float duration): base(target, duration)
+    public StunEffect(GameObject target, float duration) : base(target, duration)
     {
-        movement = target.GetComponent<EnemyMovement>();
         enemy = target.GetComponent<Enemy>();
+        fc = target.GetComponent<FactionComponent>();
     }
 
     public override void OnApply()
@@ -20,6 +20,7 @@ public class StunEffect : StatusEffectBase
 
         if (enemy.StateMachine != null)
             enemy.StateMachine.enabled = false;
+        fc.SetDebugText("Stun");
     }
 
     public override void OnRemove()
@@ -30,5 +31,6 @@ public class StunEffect : StatusEffectBase
         if (enemy.StateMachine != null)
             enemy.StateMachine.enabled = true;
         enemy.StateMachine.ChangeState(enemy.IdleState);
+        fc.SetDebugText("Enemy");
     }
 }

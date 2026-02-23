@@ -31,7 +31,7 @@ public class PossessedState : IEnemyState
         }
         else
         {
-            enemy.AttackController.TryAttack();
+            enemy.AttackController.TryAttack(true);
         }
     }
 

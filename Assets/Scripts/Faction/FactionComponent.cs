@@ -17,4 +17,9 @@ public class FactionComponent : MonoBehaviour
                 currentFaction.text = faction.ToString();
         }
     }
+
+    public void SetDebugText(string value)
+    {
+        currentFaction.text = value;
+    }
 }

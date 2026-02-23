@@ -4,13 +4,14 @@ public class EnemyDetection : MonoBehaviour
 {
     [SerializeField] private float detectionRange = 8f;
     [SerializeField] private LayerMask playerLayer;
+    [SerializeField] private LayerMask enemyLayer;
 
     public Transform DetectTarget(Faction myFaction)
     {
         Collider[] hits = Physics.OverlapSphere(
             transform.position,
             detectionRange,
-            playerLayer
+            myFaction == Faction.Enemy ? playerLayer : enemyLayer
         );
 
         foreach (var hit in hits)
@@ -20,11 +21,7 @@ public class EnemyDetection : MonoBehaviour
                 continue;
             if (myFaction == Faction.PossessedEnemy)
             {
-                if (faction.CurrentFaction != Faction.Player)
-                {
-                    return hit.transform;
-                }
-                else if (faction.CurrentFaction == Faction.Enemy)
+                if (faction.CurrentFaction == Faction.Enemy || faction.CurrentFaction == Faction.PossessedEnemy)
                 {
                     return hit.transform;
                 }
@@ -49,7 +46,7 @@ public class EnemyDetection : MonoBehaviour
         return Vector3.Distance(transform.position, player.position) <= range;
     }
 
-    private void OnDrawGizmosSelected()
+    private void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);

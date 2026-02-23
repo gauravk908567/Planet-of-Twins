@@ -23,7 +23,7 @@ public class PossessEffect : StatusEffectBase
         // Prevent double possession
         if (enemy.Faction.CurrentFaction == Faction.PossessedEnemy)
         {
-            timer = duration; // instantly finish
+           // timer = duration; // instantly finish
             return;
         }
 
