@@ -13,7 +13,7 @@ public class TeleportMarkerPreview : MonoBehaviour
     public void Show(Transform otherTwinPos)
     {
         markerObject.SetActive(true);
-        markerObject.transform.position = transform.position;
+        markerObject.transform.position = otherTwinPos.position;
     }
 
     public void Hide()

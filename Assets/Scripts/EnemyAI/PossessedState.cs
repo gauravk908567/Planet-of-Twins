@@ -14,7 +14,7 @@ public class PossessedState : IEnemyState
     public void Update()
     {
         Transform target = enemy.Detection.DetectTarget(
-            enemy.Faction.CurrentFaction
+            enemy.Faction.CurrentFaction, true
         );
 
         if (target == null)

@@ -1,9 +1,13 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class StunAbility : AbilityBase
 {
     private LayerMask enemyLayer;
     private AbilityController abilityController;
+
+    private HashSet<StatusEffectController> affectedEnemies = new HashSet<StatusEffectController>();
+    private int currectAffected = 0;
     public StunAbility(AbilityData data, LayerMask enemyLayer, AbilityController abilityController) : base(data)
     {
         this.enemyLayer = enemyLayer;
@@ -13,33 +17,41 @@ public class StunAbility : AbilityBase
     protected override bool Activate()
     {
         abilityController.ShowPrimaryPreview(data.range);
-        Collider[] hits = Physics.OverlapSphere(
-            owner.transform.position,
-            data.range,
-            enemyLayer
-        );
-        foreach (var hit in hits)
+        affectedEnemies.Clear();
+        currectAffected = 0;
+        return true; // Always activate field
+    }
+
+    public override void Tick()
+    {
+        if (!isActive)
+            return;
+
+        base.Tick();
+        if (currectAffected < data.affectionLevel)
         {
-            var status = hit.GetComponent<StatusEffectController>();
-            if (status != null)
+            Collider[] hits = Physics.OverlapSphere(owner.transform.position, data.range, enemyLayer);
+
+            foreach (var hit in hits)
             {
-                status.ApplyEffect(
-                    new StunEffect(hit.gameObject, data.duration)
-                );
+                var status = hit.GetComponent<StatusEffectController>();
+
+                if (status != null && affectedEnemies.Add(status) && currectAffected < data.affectionLevel)
+                {
+                    status.ApplyEffect(
+                        new StunEffect(hit.gameObject, data.duration)
+                    );
+                    currectAffected++;
+                }
             }
         }
-
-        if (hits.Length > 0)
-            return true;
-
-        return false;
-
-
     }
 
     protected override void End()
     {
         base.End();
+        affectedEnemies.Clear();
+        currectAffected = 0;
         abilityController.HidePrimaryPreview();
     }
 }

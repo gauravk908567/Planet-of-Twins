@@ -9,7 +9,10 @@ public class EnemyAttackState : IEnemyState
         this.enemy = enemy;
     }
 
-    public void Enter() { }
+    public void Enter()
+    {
+        enemy.Movement.Agent.isStopped = true;
+    }
 
     public void Update()
     {
@@ -19,13 +22,22 @@ public class EnemyAttackState : IEnemyState
             return;
         }
 
-        if (!enemy.Movement.Agent.pathPending && enemy.Movement.Agent.remainingDistance > enemy.AttackRange)
+        float distance = Vector3.Distance(
+            enemy.transform.position,
+            enemy.Target.position
+        );
+
+        if (distance > enemy.AttackRange)
         {
             enemy.StateMachine.ChangeState(enemy.ChaseState);
             return;
         }
+
         enemy.AttackController.TryAttack();
     }
 
-    public void Exit() { }
+    public void Exit()
+    {
+        enemy.Movement.Agent.isStopped = false;
+    }
 }

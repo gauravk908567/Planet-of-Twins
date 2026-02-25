@@ -7,6 +7,7 @@ public class AttackController : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer;
 
     private IAttackStrategy attackStrategy;
+    private bool soulMode = false;
 
     private void Awake()
     {
@@ -20,8 +21,11 @@ public class AttackController : MonoBehaviour
 
     public void PerformAttack()
     {
-        attackStrategy.ExecuteAttack();
+        if (soulMode)
+            return;
 
+        attackStrategy.ExecuteAttack();
+        Debug.Log("Attacking:");
         // TEMP TEST: Apply stun to nearby enemies
         Collider[] hits = Physics.OverlapSphere(
             transform.position,
@@ -39,5 +43,10 @@ public class AttackController : MonoBehaviour
                 );
             }
         }
+    }
+
+    public void SetSoulMode(bool value)
+    {
+        soulMode = value;
     }
 }

@@ -5,6 +5,7 @@ public class TwinManager : MonoBehaviour
     [Header("Twins")]
     [SerializeField] private Player leftTwinCharacter;
     [SerializeField] private Player rightTwinCharacter;
+    [SerializeField] private Player soulTwinCharacter;
 
     [SerializeField] private AbilityData stunAbilityData;
     [SerializeField] private AbilityData possessAbilityData;
@@ -20,8 +21,10 @@ public class TwinManager : MonoBehaviour
     private AbilityController abilityController;
     private AttackController leftAttackController;
     private AttackController rightAttackController;
+    private AttackController soulAttackController;
 
-    private bool teleportUnlocked;
+    [SerializeField] private bool isTeleportUnlocked;
+    [SerializeField] private bool isTeleportActivated;
 
     public static System.Action<Transform> OnTwinSelected;
 
@@ -42,7 +45,15 @@ public class TwinManager : MonoBehaviour
     private void Start()
     {
         SelectLeft(); // default
+        SetupAttackContoller();
         SetupAbilities();
+    }
+
+    private void SetupAttackContoller()
+    {
+        leftAttackController = leftTwinCharacter.GetComponent<AttackController>();
+        rightAttackController = rightTwinCharacter.GetComponent<AttackController>();
+        soulAttackController = soulTwinCharacter.GetComponent<AttackController>();
     }
 
     private void SetupAbilities()
@@ -58,8 +69,9 @@ public class TwinManager : MonoBehaviour
         leftAbility.SetTeleportAbility(
             new TeleportAbility(
                 teleportAbilityData,
-                leftTwinCharacter.Movement,
-                rightTwinCharacter.Movement
+                leftTwinCharacter,
+                rightTwinCharacter,
+                soulTwinCharacter
             )
         );
 
@@ -71,9 +83,11 @@ public class TwinManager : MonoBehaviour
         rightAbility.SetTeleportAbility(
             new TeleportAbility(
                 teleportAbilityData,
-                rightTwinCharacter.Movement, leftTwinCharacter.Movement
+                rightTwinCharacter, leftTwinCharacter, soulTwinCharacter
             )
         );
+
+        (soulTwinCharacter as SoulPlayer).ShouldSoulSleep(true);
     }
 
     private void Update()
@@ -106,6 +120,7 @@ public class TwinManager : MonoBehaviour
         {
             leftAttackController?.PerformAttack();
             rightAttackController?.PerformAttack();
+            soulAttackController?.PerformAttack();
         }
     }
 
@@ -136,25 +151,25 @@ public class TwinManager : MonoBehaviour
 
     private void OnTwinDamaged(PlayerHealthComponent damagedTwin, float damage)
     {
-        if (teleportUnlocked)
+        if (isTeleportUnlocked)
             return;
 
         if (damagedTwin.FinalHealth <= teleportHealthThreshold)
         {
-            teleportUnlocked = true;
+            isTeleportUnlocked = true;
 
             Debug.Log("Emergency Teleport Available!");
             // Later: trigger UI warning
         }
         else
         {
-            teleportUnlocked = false;
+            isTeleportUnlocked = false;
         }
     }
 
     private void HandleEmergencyTeleport()
     {
-        if (!teleportUnlocked)
+        if (!isTeleportUnlocked)
             return;
 
         OnCriticalCondition();

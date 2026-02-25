@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class AbilityBase : IAbility
@@ -8,7 +9,7 @@ public abstract class AbilityBase : IAbility
     private float lastUseTime;
     protected float activeTimer;
     protected bool isActive;
-
+ 
     public AbilityBase(AbilityData data)
     {
         this.data = data;
@@ -33,7 +34,7 @@ public abstract class AbilityBase : IAbility
             return;
 
         isActive = true;
-        activeTimer = 0f; 
+        activeTimer = 0f;
     }
 
     // Now returns bool

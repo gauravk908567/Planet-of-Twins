@@ -6,11 +6,11 @@ public class EnemyDetection : MonoBehaviour
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private LayerMask enemyLayer;
 
-    public Transform DetectTarget(Faction myFaction)
+    public Transform DetectTarget(Faction myFaction, bool isPossessed = false)
     {
         Collider[] hits = Physics.OverlapSphere(
             transform.position,
-            detectionRange,
+            isPossessed ? detectionRange * 4 : detectionRange,
             myFaction == Faction.Enemy ? playerLayer : enemyLayer
         );
 

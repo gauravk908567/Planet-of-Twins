@@ -1,29 +1,31 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class TeleportAbility : AbilityBase
 {
-    private PlayerMovementController movement1;
-    private PlayerMovementController movement2;
-    private GameObject soulVisual;
-
-    public TeleportAbility(
-        AbilityData data,
-        PlayerMovementController amovement, PlayerMovementController smovement)
-        : base(data)
+    private Player movement1;
+    private Player movement2;
+    private Player soulPlayer;
+    private bool shouldTick = false;
+    public TeleportAbility(AbilityData data, Player amovement, Player smovement, Player soulPlayer) : base(data)
     {
         this.movement1 = amovement;
         this.movement2 = smovement;
+        this.soulPlayer = soulPlayer;
     }
 
     protected override bool Activate()
     {
         GlobalTimeController.Instance.FreezeWorld();
-
-        movement1.enabled = false;
-        movement2.enabled = false;
-        soulVisual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        soulVisual.transform.position = GetTeleportPos().position;
-        soulVisual.transform.localScale = Vector3.one * 0.5f;
+        soulPlayer.gameObject.SetActive(true);
+        (soulPlayer as SoulPlayer).ShouldSoulSleep(false);
+        // soulVisual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        // soulPlayer.transform.position = GetTeleportPos().position;
+        shouldTick = false;
+        soulPlayer.transform.position = movement1.transform.position;
+        GlobalTimeController.Instance.StartCoroutine(TeleportMove(soulPlayer.transform, GetTeleportPos(), 40f, RunTickStatus, false));
+        // soulVisual.transform.localScale = Vector3.one * 0.5f;
         return true;
     }
 
@@ -32,8 +34,15 @@ public class TeleportAbility : AbilityBase
         return movement2.transform;
     }
 
+    private void RunTickStatus(bool shouldTick)
+    {
+        this.shouldTick = shouldTick;
+    }
+
     public override void Tick()
     {
+        if (!shouldTick)
+            return;
         base.Tick();
 
         if (!isActive) return;
@@ -45,20 +54,35 @@ public class TeleportAbility : AbilityBase
 
         Vector3 dir = new Vector3(h, 0, v).normalized;
 
-        soulVisual.transform.position +=
+        soulPlayer.transform.position +=
             dir * speed * Time.unscaledDeltaTime;
+    }
+
+    IEnumerator TeleportMove(Transform soulPlayer, Transform target, float speed, Action<bool> callback, bool soulback)
+    {
+        while (Vector3.Distance(soulPlayer.position, target.position) > 0.01f)
+        {
+            soulPlayer.position = Vector3.MoveTowards(
+                soulPlayer.position,
+                target.position,
+                speed * Time.deltaTime
+            );
+
+            yield return null;
+        }
+        callback?.Invoke(!soulback);
+        if (soulback)
+        {
+            soulPlayer.gameObject.SetActive(false);
+        }
     }
 
     protected override void End()
     {
-        soulVisual.transform.position = movement1.transform.position;
-
-        Object.Destroy(soulVisual);
-
-        movement1.enabled = true;
-        movement2.enabled = true;
+        // soulPlayer.transform.position = movement1.transform.position;
+        GlobalTimeController.Instance.StartCoroutine(TeleportMove(soulPlayer.transform, movement1.transform, 40f, RunTickStatus, true));
+        (soulPlayer as SoulPlayer).ShouldSoulSleep(true);
         GlobalTimeController.Instance.UnfreezeWorld();
-
         base.End();
     }
 }
