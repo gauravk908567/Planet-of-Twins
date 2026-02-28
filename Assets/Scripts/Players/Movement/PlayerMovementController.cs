@@ -7,6 +7,8 @@ public class PlayerMovementController : MonoBehaviour
 
     private CharacterController controller;
     private IMovementModifier movementModifier;
+    private bool soulMode;
+
 
     private void Awake()
     {
@@ -22,13 +24,30 @@ public class PlayerMovementController : MonoBehaviour
     {
         Vector2 input = command.GetMovementInput();
 
-        if (movementModifier != null)
-            input = movementModifier.Modify(input);
 
-        Vector3 move =
-            transform.forward * input.y +
-            transform.right * input.x;
+        if (!soulMode)
+        {
+            if (movementModifier != null)
+                input = movementModifier.Modify(input);
 
-        controller.Move(move * moveSpeed * Time.deltaTime);
+            Vector3 move =
+                transform.forward * input.y +
+                transform.right * input.x;
+
+            controller.Move(move * moveSpeed * Time.deltaTime);
+
+        }
+        else
+        {
+            // soul movement (maybe faster, ignore collisions later)
+        }
     }
+
+    public void SetSoulMode(bool value)
+    {
+        soulMode = value;
+    }
+
+
+
 }
