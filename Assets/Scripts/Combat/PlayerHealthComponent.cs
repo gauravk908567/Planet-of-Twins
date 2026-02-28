@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-public class PlayerHealthComponent : MonoBehaviour, IDamageable
+public class PlayerHealthComponent : MonoBehaviour, IDamageable, IHealthUpdate
 {
     [SerializeField] private float maxCombatHealth = 100f;
     [SerializeField] private float regenDelay = 3f;
@@ -15,10 +15,11 @@ public class PlayerHealthComponent : MonoBehaviour, IDamageable
 
     public event Action<PlayerHealthComponent, float> OnDamageTaken;
     public event Action<PlayerHealthComponent> OnDeath;
-
+    public event Action<float> OnHealthUpdated;
     public float CombatHealth => currentCombatHealth;
-    public float FinalHealth;
-
+    public float FinalHealth { get; private set; }
+    public float MaxHealth => maxCombatHealth;
+    private float previousFinalHealth;
     private void Awake()
     {
         currentCombatHealth = maxCombatHealth;
@@ -39,6 +40,7 @@ public class PlayerHealthComponent : MonoBehaviour, IDamageable
         OnDamageTaken?.Invoke(this, damageData.Amount);
 
         CheckDeath();
+        CalculateAndBroadcastHealth();
     }
 
     private void HandleRegen()
@@ -54,6 +56,9 @@ public class PlayerHealthComponent : MonoBehaviour, IDamageable
 
         currentCombatHealth += regenRate * Time.deltaTime;
         currentCombatHealth = Mathf.Clamp(currentCombatHealth, 0f, maxCombatHealth);
+
+        Debug.Log("health" + currentCombatHealth);
+        CalculateAndBroadcastHealth();
     }
 
     public void SetDistanceModifier(float modifier)
@@ -61,6 +66,8 @@ public class PlayerHealthComponent : MonoBehaviour, IDamageable
         distanceModifier = modifier;
         FinalHealth = currentCombatHealth * distanceModifier;
         CheckDeath();
+        CalculateAndBroadcastHealth();
+        Debug.Log("health" + currentCombatHealth);
     }
 
     private void CheckDeath()
@@ -69,6 +76,16 @@ public class PlayerHealthComponent : MonoBehaviour, IDamageable
         {
             OnDeath?.Invoke(this);
             Debug.Log($"{gameObject.name} Died");
+        }
+    }
+    private void CalculateAndBroadcastHealth()
+    {
+        FinalHealth = currentCombatHealth * distanceModifier;
+
+        if (Mathf.Abs(FinalHealth - previousFinalHealth) > 0.01f)
+        {
+            OnHealthUpdated?.Invoke(FinalHealth);
+            previousFinalHealth = FinalHealth;
         }
     }
 }

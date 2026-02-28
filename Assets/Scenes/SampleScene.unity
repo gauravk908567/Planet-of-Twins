@@ -1911,7 +1911,6 @@ MonoBehaviour:
   maxCombatHealth: 100
   regenDelay: 3
   regenRate: 2
-  FinalHealth: 0
 --- !u!1 &850485292
 GameObject:
   m_ObjectHideFlags: 0
@@ -3608,7 +3607,6 @@ MonoBehaviour:
   maxCombatHealth: 100
   regenDelay: 3
   regenRate: 5
-  FinalHealth: 0
 --- !u!1 &2001470310
 GameObject:
   m_ObjectHideFlags: 0

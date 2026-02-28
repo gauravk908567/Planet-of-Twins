@@ -7,12 +7,12 @@ public class CameraFollowController : MonoBehaviour
 
     private void OnEnable()
     {
-        TwinManager.OnTwinSelected += SetTarget;
+       // TwinManager.OnTwinSelected += SetTarget;
     }
 
     private void OnDisable()
     {
-        TwinManager.OnTwinSelected -= SetTarget;
+       // TwinManager.OnTwinSelected -= SetTarget;
     }
 
     private void SetTarget(Transform target)

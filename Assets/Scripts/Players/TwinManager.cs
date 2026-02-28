@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-
-public class TwinManager : MonoBehaviour
+using System;
+public class TwinManager : MonoBehaviour, ISelectionBroadcaster
 {
     [Header("Twins")]
     [SerializeField] private Player leftTwinCharacter;
@@ -26,7 +26,7 @@ public class TwinManager : MonoBehaviour
     [SerializeField] private bool isTeleportUnlocked;
     [SerializeField] private bool isTeleportActivated;
 
-    public static System.Action<Transform> OnTwinSelected;
+    public event Action<Transform> OnTwinSelected;
 
     private void OnEnable()
     {
