@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: SolConvData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  abilityName: Soul Convergence
+  abilityDescription: "\"Each enemy defeated feeds a hidden reservoir. When it fills
+    \u2014 twenty\nkills \u2014 the twins feel it. Hold F to release the convergence.
+    For seven\nseconds the twins deal 35% more damage and absorb 35% less. The counter\nresets
+    when the power fires, not before.\""
+  baseTargetCount: 1
+  baseDuration: 3
+  baseCooldown: 7
+  baseRange: 5
+  baseRegenRate: 16.6
+  nodes:
+  - label: Unlock Soul Convergence
+    pointCost: 8
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 20
+    soulDurationBonus: 7
+    description: 'Kill threshold: 20  |  Activation: hold F for 0.75s
+
+      Duration:
+      7s  |  DMG out: +35%  |  DMG in: -35%
+
+      Blocked during active rescue events.'
+  - label: Deeper Convergence
+    pointCost: 15
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 3
+    soulDurationBonus: 2
+    description: '"The reservoir runs deeper and the power lasts longer. Fewer kills
+      are
+
+      needed to charge it, and the window it opens stretches further."'
+  currentNodeIndex: 0

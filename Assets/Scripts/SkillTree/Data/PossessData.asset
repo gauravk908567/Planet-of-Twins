@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: PossessData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  abilityName: Possess
+  abilityDescription: 'Base ability
+
+    Lyra seizes control of a nearby enemy, turning
+    it against its allies.
+
+    The possessed enemy''s real soul awakens and fights
+    for the twins until the effect expires.
+
+    Damage dealt by the possessed enemy
+    scales with Lyra''s multiplier.'
+  baseTargetCount: 1
+  baseDuration: 3
+  baseCooldown: 7.5
+  baseRange: 5
+  baseRegenRate: 16.6
+  nodes:
+  - label: Possession I
+    pointCost: 3
+    durationBonus: 1.1
+    cooldownReduction: 0.85
+    targetCountBonus: 0
+    rangeBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: "\"Lyra's grip tightens. Enemies serve longer before breaking free.\"\n\nDuration
+      3.0\u21924.1s  |  Cooldown 7.5\u21926.6s "
+  - label: Possession II
+    pointCost: 6
+    durationBonus: 0.55
+    cooldownReduction: 0.43
+    targetCountBonus: 2
+    rangeBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: "\"The connection deepens. The enemy fights harder and longer.\"\n\nDuration
+      4.1s\u21924.6s  |  Cooldown 6.1\u21925.6s | Target 1-> 2"
+  - label: Possession III
+    pointCost: 10
+    durationBonus: 0.27
+    cooldownReduction: 0.21
+    targetCountBonus: 0
+    rangeBonus: 0.65
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: "\"Total subjugation. The enemy is Lyra's instrument until the last
+      moment.\"\n\nDuration 4.6s\u21924.4s  |  Cooldown 5.6s\u21925.4s | Range 5->5.6"
+  currentNodeIndex: 0

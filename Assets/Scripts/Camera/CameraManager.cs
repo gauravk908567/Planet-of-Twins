@@ -5,10 +5,12 @@ public class CameraManager : MonoBehaviour, ICameraController
 {
     public CinemachineCamera CinemachineTopDownCam { get => cinemachineTopDownCam; set => cinemachineTopDownCam = value; }
     public CinemachineCamera CinemachineCloseCam { get => cinemachineCloseCam; set => cinemachineCloseCam = value; }
+    public CinemachineCamera CinemachineOverviewCam { get => cinemachineOverviewCam; set => cinemachineOverviewCam = value; }
 
     [SerializeField] private CinemachineCamera[] cinemachineCameras;
     [SerializeField] private CinemachineCamera cinemachineCloseCam;
     [SerializeField] private CinemachineCamera cinemachineTopDownCam;
+    [SerializeField] private CinemachineCamera cinemachineOverviewCam;
 
     [SerializeField] private CinemachineCamera startCam;
     private CinemachineCamera currentCam;

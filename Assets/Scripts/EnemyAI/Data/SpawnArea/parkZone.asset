@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af9960f5ce9b0a34fa22e17a937517da, type: 3}
+  m_Name: parkZone
+  m_EditorClassIdentifier: Assembly-CSharp::AreaZoneConfig
+  areaName: parkZone
+  leftSide:
+    maxTotalActive: 6
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 1179442286833198642, guid: 80ef42a3ea65d8c42b06978ce0e473ce, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 4
+      weight: 2
+    - prefab: {fileID: 2093918652470895820, guid: 68f6ccfbaae91f843a1ec5badc0722de, type: 3}
+      data: {fileID: 11400000, guid: 8461516e7570fe44ab1685ca2606b678, type: 2}
+      maxActiveOfType: 4
+      weight: 2
+    - prefab: {fileID: 3084405420923463767, guid: 4fbef20caa17c4743b8dd57716ce98aa, type: 3}
+      data: {fileID: 11400000, guid: 5cf78fa54d774dd47be52a861a6a2e02, type: 2}
+      maxActiveOfType: 0
+      weight: 1
+    - prefab: {fileID: 2122260712422639698, guid: 625c18887a0e804468c040bbcb352cd2, type: 3}
+      data: {fileID: 11400000, guid: 79a9fdc5fd55b8e4fa952ceb433c8ea3, type: 2}
+      maxActiveOfType: 4
+      weight: 2
+    - prefab: {fileID: 4097913606730258305, guid: 726c8ac11095db94ba52cc11cfd26752, type: 3}
+      data: {fileID: 11400000, guid: ca6cd2b518ff6fa42bb2c872ccf88d6e, type: 2}
+      maxActiveOfType: 0
+      weight: 1
+    - prefab: {fileID: 2930918404256160328, guid: 00a928b8b1a72de45b7c9a1236126e7b, type: 3}
+      data: {fileID: 11400000, guid: 038a14b418826c54d90b59dc5fd97c34, type: 2}
+      maxActiveOfType: 0
+      weight: 1
+  rightSide:
+    maxTotalActive: 6
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 1179442286833198642, guid: 80ef42a3ea65d8c42b06978ce0e473ce, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 4
+      weight: 2
+    - prefab: {fileID: 2093918652470895820, guid: 68f6ccfbaae91f843a1ec5badc0722de, type: 3}
+      data: {fileID: 11400000, guid: 8461516e7570fe44ab1685ca2606b678, type: 2}
+      maxActiveOfType: 4
+      weight: 2
+    - prefab: {fileID: 4097913606730258305, guid: 726c8ac11095db94ba52cc11cfd26752, type: 3}
+      data: {fileID: 11400000, guid: ca6cd2b518ff6fa42bb2c872ccf88d6e, type: 2}
+      maxActiveOfType: 0
+      weight: 1
+    - prefab: {fileID: 2122260712422639698, guid: 625c18887a0e804468c040bbcb352cd2, type: 3}
+      data: {fileID: 11400000, guid: 79a9fdc5fd55b8e4fa952ceb433c8ea3, type: 2}
+      maxActiveOfType: 4
+      weight: 2
+    - prefab: {fileID: 3084405420923463767, guid: 4fbef20caa17c4743b8dd57716ce98aa, type: 3}
+      data: {fileID: 11400000, guid: 5cf78fa54d774dd47be52a861a6a2e02, type: 2}
+      maxActiveOfType: 0
+      weight: 1
+    - prefab: {fileID: 2930918404256160328, guid: 00a928b8b1a72de45b7c9a1236126e7b, type: 3}
+      data: {fileID: 11400000, guid: 038a14b418826c54d90b59dc5fd97c34, type: 2}
+      maxActiveOfType: 0
+      weight: 1

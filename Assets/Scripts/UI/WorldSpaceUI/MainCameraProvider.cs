@@ -2,17 +2,13 @@ using UnityEngine;
 
 public class MainCameraProvider : MonoBehaviour
 {
-    private Transform mainCameraTransform;
-
-    private void Awake()
+    private Camera mainCameraTransform;
+    private void Start()  // was Awake
     {
         if (Camera.main != null)
-        {
-            mainCameraTransform = Camera.main.transform;
-        }
+            mainCameraTransform = Camera.main;
     }
-
-    public Transform GetTargetTransform()
+    public Camera GetTargetTransform()
     {
         return mainCameraTransform;
     }
