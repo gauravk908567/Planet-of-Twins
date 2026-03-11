@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd476638b474d0840a89d3e28f385abc, type: 3}
+  m_Name: B_Summoner
+  m_EditorClassIdentifier: Assembly-CSharp::SummonerEnemyData
+  enemyName: B_Summoner
+  maxHealth: 120
+  moveSpeed: 3.8
+  wanderRadius: 12
+  wanderTimerMin: 6
+  wanderTimerMax: 8
+  detectionRange: 14
+  possessedDetectionMultiplier: 14
+  attackRange: 5
+  attackDamage: 12
+  attackCooldown: 1.5
+  attackWindup: 0.7
+  returnAnimDuration: 1.5
+  canBePossessed: 0
+  possessionDuration: 0
+  timeToKill: 8
+  mashFrequency: 3
+  mashWindowDuration: 4
+  mashCooldown: 0.85
+  partialHealAmount: 35
+  spawnCount: 3
+  spawnRadius: 5
+  globalSpawnRadius: 15
+  summonCooldown: 10
+  summonRange: 6

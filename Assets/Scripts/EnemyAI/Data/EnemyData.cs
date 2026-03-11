@@ -1,0 +1,41 @@
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "EnemyData", menuName = "PlanetOfTwins/Enemy Data/Base")]
+public class EnemyData : ScriptableObject
+{
+    [Header("Identity")]
+    public string enemyName = "Enemy";
+
+    [Header("Health")]
+    public float maxHealth = 40f;
+
+    [Header("Movement")]
+    public float moveSpeed = 3.5f;
+    public float wanderRadius = 3f;
+    public float wanderTimerMin = 5f;
+    public float wanderTimerMax = 12f;
+
+    [Header("Detection")]
+    public float detectionRange = 8f;
+    public float possessedDetectionMultiplier = 4f;
+
+    [Header("Attack")]
+    public float attackRange = 2f;
+    public float attackDamage = 10f;
+    public float attackCooldown = 1.5f;
+    public float attackWindup = 0.3f;
+
+    [Header("Possession Recovery")]
+    public float returnAnimDuration = 1.5f;
+
+    [Header("Possession")]
+    public bool canBePossessed = true;
+    public float possessionDuration = 5f;
+
+    [Header("Killing Blow TTK — any enemy that can down a player")]
+    public float timeToKill = 8f;
+    public float mashFrequency = 4f;
+    public float mashWindowDuration = 3f;
+    public float mashCooldown = 0.75f;
+    public float partialHealAmount = 20f;
+}

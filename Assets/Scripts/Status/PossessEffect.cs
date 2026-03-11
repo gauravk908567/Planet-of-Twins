@@ -6,12 +6,15 @@ public class PossessEffect : StatusEffectBase
     private Faction originalFaction;
     private IEnemyState previousState;
 
+    private readonly LayerMask _possessedTargetLayer;
+
     public bool IsPossessing { get; private set; }
 
-    public PossessEffect(GameObject target, float duration)
+    public PossessEffect(GameObject target, float duration, LayerMask possessedTargetLayer)
         : base(target, duration)
     {
         enemy = target.GetComponent<Enemy>();
+        _possessedTargetLayer = possessedTargetLayer;
     }
 
     public override void OnApply()
@@ -21,7 +24,7 @@ public class PossessEffect : StatusEffectBase
         if (enemy == null) return;
 
         // Prevent double possession
-        if (enemy.Faction.CurrentFaction == Faction.PossessedEnemy)
+        if (enemy.FactionComp.CurrentFaction == Faction.PossessedEnemy)
         {
            // timer = duration; // instantly finish
             return;
@@ -29,19 +32,19 @@ public class PossessEffect : StatusEffectBase
 
         IsPossessing = true;
 
-        originalFaction = enemy.Faction.CurrentFaction;
+        originalFaction = enemy.FactionComp.CurrentFaction;
         previousState = enemy.StateMachine.CurrentState;
 
-        enemy.Faction.CurrentFaction = Faction.PossessedEnemy;
+        enemy.FactionComp.CurrentFaction = Faction.PossessedEnemy;
 
-        enemy.StateMachine.ChangeState(new PossessedState(enemy));
+        enemy.StateMachine.ChangeState(new PossessedState(enemy, _possessedTargetLayer));
     }
 
     public override void OnRemove()
     {
         if (enemy == null) return;
 
-        enemy.Faction.CurrentFaction = originalFaction;
+        enemy.FactionComp.CurrentFaction = originalFaction;
 
         enemy.StateMachine.ChangeState(enemy.IdleState);
 

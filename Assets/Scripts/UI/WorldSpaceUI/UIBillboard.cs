@@ -2,28 +2,27 @@ using UnityEngine;
 
 public class UIBillboard : MonoBehaviour
 {
-    private ILookTargetProvider targetProvider;
-    private Transform targetTransform;
+    private Transform cameraTransform;
 
-    private void Awake()
+    private void Start()
     {
-        targetProvider = GetComponent<ILookTargetProvider>();
-    }
-
-    private void OnEnable()
-    {
-        if (targetProvider != null)
+        // Get a reference to the main camera's transform
+        if (Camera.main != null)
         {
-            targetTransform = targetProvider.GetTargetTransform();
+            cameraTransform = Camera.main.transform;
+        }
+        else
+        {
+            Debug.LogError("Main Camera not found! Please tag a camera as 'MainCamera'.");
         }
     }
 
     private void LateUpdate()
     {
-        if (targetTransform != null)
+        if (cameraTransform != null)
         {
-            transform.LookAt(transform.position + targetTransform.rotation * Vector3.forward,
-                             targetTransform.rotation * Vector3.up);
+            // Only rotate around the Y-axis to keep the object upright
+            transform.rotation = Quaternion.Euler(0, cameraTransform.rotation.eulerAngles.y, 0);
         }
     }
 }

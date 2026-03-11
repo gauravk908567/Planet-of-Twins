@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: HealthRegenData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  abilityName: Health Regen
+  abilityDescription: 'Base ability (passive, always active)
+
+    The twins'' shared
+    health pool slowly recovers after taking damage.
+
+    Regen pauses when combat
+    damage is received and resumes shortly after'
+  baseTargetCount: 1
+  baseDuration: 3
+  baseCooldown: 7
+  baseRange: 5
+  baseRegenRate: 16.6
+  nodes:
+  - label: Regen I
+    pointCost: 3
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    regenRateMultiplier: 1.333
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: '"The bond between the twins quickens their recovery."'
+  - label: Regen II
+    pointCost: 6
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    regenRateMultiplier: 1.333
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: '"Their shared vitality flows faster. Wounds close before the next
+      fight."'
+  - label: Regen III
+    pointCost: 10
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    regenRateMultiplier: 1.333
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: '"The twins heal almost as fast as they are hurt. Attrition favours
+      them."'
+  currentNodeIndex: 0

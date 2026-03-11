@@ -14,10 +14,10 @@ TagManager:
   - Enemy
   - Player
   - Obstacle
+  - SoulLayer
   - 
   - 
-  - 
-  - 
+  - TrapEnemy
   - 
   - 
   - 
@@ -32,10 +32,10 @@ TagManager:
   - 
   - 
   - 
+  - BuildingTop
   - 
-  - 
-  - 
-  - 
+  - ground
+  - Zone
   - 
   m_SortingLayers:
   - name: Default

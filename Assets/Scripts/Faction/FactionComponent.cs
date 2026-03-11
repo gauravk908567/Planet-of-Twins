@@ -20,6 +20,7 @@ public class FactionComponent : MonoBehaviour
 
     public void SetDebugText(string value)
     {
-        currentFaction.text = value;
+        if (currentFaction != null)
+            currentFaction.text = value;
     }
 }

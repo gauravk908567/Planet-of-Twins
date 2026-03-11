@@ -1938,7 +1938,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &850485293
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2301,6 +2301,7 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 64
+  timeManagerObject: {fileID: 2063230853}
   teleportHealthThreshold: 100
   isTeleportUnlocked: 0
   isTeleportActivated: 0
@@ -2886,7 +2887,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!195 &1187375634
 NavMeshAgent:
   m_ObjectHideFlags: 0

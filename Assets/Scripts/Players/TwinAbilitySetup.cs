@@ -1,0 +1,100 @@
+using UnityEngine;
+
+public class TwinAbilitySetup : MonoBehaviour
+{
+    [SerializeField] private Player leftTwin;
+    [SerializeField] private Player rightTwin;
+    [SerializeField] private Player soulTwin;
+
+    [SerializeField] private AbilityData stunAbilityData;
+    [SerializeField] private AbilityData possessAbilityData;
+    [SerializeField] private AbilityData teleportAbilityData;
+
+    [SerializeField] private AbilityUpgradeData stunUpgradeData;
+    [SerializeField] private AbilityUpgradeData possessUpgradeData;
+    [SerializeField] private LayerMask stunTargetLayer;   // enemy + trap layers
+    [SerializeField] private LayerMask possessTargetLayer; // enemy + trap layers
+
+    [SerializeField] private LayerMask enemyLayer;
+
+    [SerializeField] private Transform barrierTransform;
+    [SerializeField] private float minCastDistanceFromBarrier = 8f;
+
+    [SerializeField] private MonoBehaviour timeFactorControllerObject;
+    [SerializeField] private MonoBehaviour coroutineRunnerObject;
+    [SerializeField] private MonoBehaviour twinSelectorObject;   // ADD: drag TwinSelector here
+
+    [SerializeField] private RescueEventController rescueEventController;
+
+    public IStunEvents StunEvents { get; private set; }
+    public IPossessEvents PossessEvents { get; private set; }
+
+    private ITimeFactorController _timeFactorController;
+    private ICoroutineRunner _coroutineRunner;
+    private ISelectionLock _selectionLock;
+
+    private void Awake()
+    {
+        _timeFactorController = timeFactorControllerObject as ITimeFactorController;
+        _coroutineRunner = coroutineRunnerObject as ICoroutineRunner;
+        _selectionLock = twinSelectorObject as ISelectionLock;
+
+        if (_selectionLock == null)
+            Debug.LogError("[TwinAbilitySetup] twinSelectorObject does not implement ISelectionLock.", this);
+    }
+
+    private void Start()
+    {
+        SetupLeftTwin();
+        SetupRightTwin();
+
+        var soul = soulTwin as SoulPlayer;
+        soul?.ShouldSoulSleep(true);
+
+        // Wire soul death to rescue controller
+        if (soul != null && rescueEventController != null)
+            rescueEventController.RegisterSoulPlayer(soul);
+
+        // Wire teleport abilities to rescue controller
+        // (get them back from AbilityController after setting them)
+        var leftAbility = leftTwin.GetComponent<AbilityController>();
+        var rightAbility = rightTwin.GetComponent<AbilityController>();
+        // AbilityController needs GetTeleportAbility() — add if not present:
+        // public TeleportAbility GetTeleportAbility() =>
+        //     teleportAbility as TeleportAbility;
+        rescueEventController?.RegisterTeleportAbility(
+            leftAbility.GetTeleportAbility());
+        rescueEventController?.RegisterTeleportAbility(
+            rightAbility.GetTeleportAbility());
+    }
+
+    private void SetupLeftTwin()
+    {
+        var ability = leftTwin.GetComponent<AbilityController>();
+        var possess = new PossessAbility(possessAbilityData, possessTargetLayer, ability, possessUpgradeData);
+        PossessEvents = possess;
+        ability.SetPrimaryAbility(possess);
+        ability.SetTeleportAbility(BuildTeleportAbility(leftTwin, rightTwin));
+        ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
+
+    }
+
+    private void SetupRightTwin()
+    {
+        var ability = rightTwin.GetComponent<AbilityController>();
+        var stun = new StunAbility(stunAbilityData, stunTargetLayer, ability, stunUpgradeData);
+        StunEvents = stun;
+        ability.SetPrimaryAbility(stun);
+        ability.SetTeleportAbility(BuildTeleportAbility(rightTwin, leftTwin));
+        ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
+    }
+    private TeleportAbility BuildTeleportAbility(Player caster, Player target)
+    {
+        return new TeleportAbility(
+            teleportAbilityData,
+            caster, target, soulTwin,
+            _timeFactorController,
+            _coroutineRunner,
+            _selectionLock);       // FIX: selection lock now injected
+    }
+}
