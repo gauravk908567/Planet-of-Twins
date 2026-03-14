@@ -47,6 +47,7 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier
 
     [Header("HUD UI")]
     [SerializeField] private TMP_Text _counterText;
+    [SerializeField] private TMP_Text _chargedText;
     [SerializeField] private Slider _chargeBar;
     [SerializeField] private GameObject _powerStatePanel;
     [SerializeField] private TMP_Text _powerTimerText;
@@ -127,6 +128,7 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier
     {
         if (!_abilityActive) return;
         _powerTimer -= Time.deltaTime;
+        Debug.Log($"[SoulConv] TickAbility — timer={_powerTimer:F1}, panel={_powerStatePanel?.activeSelf}, timerText={_powerTimerText?.text}");
         if (_powerTimerText) _powerTimerText.text = $"{_powerTimer:F1}s";
         if (_powerTimer <= 0f) Deactivate();
     }
@@ -173,9 +175,9 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier
     {
         if (_counterText == null) return;
         if (!IsActive()) { _counterText.text = ""; return; }
-        if (_abilityActive) { _counterText.text = "<color=#e3b341><b>SOUL CONVERGENCE</b></color>"; return; }
-        if (_charged) { _counterText.text = $"<color=#80cbc4>Souls: <b>{_soulCap}/{_soulCap}</b> — Hold F</color>"; return; }
-        _counterText.text = $"Souls: <b>{_soulCount}</b> / {_soulCap}";
+        if (_abilityActive) { _counterText.text = ""; return; }
+        if (_charged) { _counterText.text = $"F"; return; }
+        _counterText.text = $"{_soulCount}</b> / {_soulCap}";
     }
 
     float CurrentPowerDuration

@@ -4,30 +4,24 @@ public class EnemyChaseState : IEnemyState
 {
     private readonly Enemy _enemy;
 
-    // Ranged enemies stop chasing at their launcher's attack range,
-    // not the base melee AttackRange. Set via constructor override.
-    private readonly float _transitionRange;
-
     public EnemyChaseState(Enemy enemy)
     {
         _enemy = enemy;
-        // Default: use melee attack range from Enemy base
-        _transitionRange = enemy.AttackRange;
     }
 
-    /// <summary>
-    /// Used by RangedEnemy — transitions to attack at launcher range instead of melee range.
-    /// </summary>
-    public EnemyChaseState(Enemy enemy, float transitionRange)
+    // Kept for API compatibility — parameter is intentionally ignored.
+    // ROOT CAUSE FIX: the old version cached transitionRange at construction time,
+    // which runs in Enemy.Awake() before ApplyData() sets attackRange from the SO.
+    // Ranged enemies always got 2f (inspector default) instead of e.g. 12f,
+    // causing them to chase until melee distance then immediately retreat.
+    // Solution: read _enemy.AttackRange every frame — it's set by ApplyData and stable.
+    public EnemyChaseState(Enemy enemy, float _ignored)
     {
         _enemy = enemy;
-        _transitionRange = transitionRange;
     }
 
-    public void Enter()
-    {
+    public void Enter() =>
         _enemy.GetComponent<EnemyVisionCone>()?.SetAlert(true);
-    }
 
     public void Update()
     {
@@ -40,14 +34,12 @@ public class EnemyChaseState : IEnemyState
         float distance = Vector3.Distance(
             _enemy.transform.position, _enemy.Target.position);
 
-        // In attack range — transition to attack
-        if (distance <= _transitionRange)
+        if (distance <= _enemy.AttackRange)
         {
             _enemy.StateMachine.ChangeState(_enemy.AttackState);
             return;
         }
 
-        // Beyond detection range — lose target
         if (distance > _enemy.Detection.DetectionRange)
         {
             _enemy.GetComponent<ZoneEnemyTracker>()?.OnPlayerSightLost();
@@ -56,12 +48,9 @@ public class EnemyChaseState : IEnemyState
             return;
         }
 
-        // Still chasing
         _enemy.Movement.MoveTowards(_enemy.Target.position);
     }
 
-    public void Exit()
-    {
+    public void Exit() =>
         _enemy.GetComponent<EnemyVisionCone>()?.SetAlert(false);
-    }
 }

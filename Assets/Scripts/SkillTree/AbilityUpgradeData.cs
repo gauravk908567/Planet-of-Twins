@@ -14,12 +14,19 @@ public class AbilityUpgradeData : ScriptableObject
     [Header("Upgrade nodes — filled manually by designer")]
     public List<AbilityUpgradeNode> nodes = new List<AbilityUpgradeNode>();
 
-    // Written by SkillTreeManager when a node is purchased. Do not write elsewhere.
     public int currentNodeIndex = 0;
     public bool IsMaxed => currentNodeIndex >= nodes.Count;
 
-    // ── Computed values used by abilities ────────────────────────────────────
+    // ── Checkpoint support ────────────────────────────────────
+    /// <summary>
+    /// How many nodes are currently unlocked. Read by CheckpointManager
+    /// to snapshot state, then used to re-unlock the correct number on respawn.
+    /// Same as currentNodeIndex — exposed as a nullable int so CheckpointManager
+    /// can handle a null AbilityUpgradeData slot safely.
+    /// </summary>
+    public int? CurrentUnlockedLevel => currentNodeIndex;
 
+    // ── Computed values ───────────────────────────────────────
     public int CurrentMaxTargets
     {
         get
@@ -53,7 +60,6 @@ public class AbilityUpgradeData : ScriptableObject
         }
     }
 
-    // Cooldown decreases with upgrades — cooldownBonus is subtracted.
     public float CurrentCooldown
     {
         get
@@ -61,29 +67,20 @@ public class AbilityUpgradeData : ScriptableObject
             float total = baseCooldown;
             for (int i = 0; i < currentNodeIndex && i < nodes.Count; i++)
                 total -= nodes[i].cooldownBonus;
-            return Mathf.Max(0.5f, total); // floor at 0.5s — never zero
+            return Mathf.Max(0.5f, total);
         }
     }
 
-    // ── Economy ──────────────────────────────────────────────────────────────
-
+    // ── Economy ───────────────────────────────────────────────
     public bool HasNextNode => currentNodeIndex < nodes.Count;
     public int TotalNodes => nodes.Count;
-
-    /// <summary>Cost of the next node to purchase. 0 if no nodes remain.</summary>
     public int NextNodeCost => HasNextNode ? nodes[currentNodeIndex].pointCost : 0;
 
-    /// <summary>Called by SkillTreeManager to advance to the next node.</summary>
     public void UnlockNextNode()
     {
         if (HasNextNode) currentNodeIndex++;
     }
 
-    /// <summary>
-    /// Called by SkillTreeManager.Awake() — resets runtime state written during
-    /// a previous play session. ScriptableObjects are assets and persist across
-    /// editor play sessions without this reset.
-    /// </summary>
     public void ResetToBase()
     {
         currentNodeIndex = 0;

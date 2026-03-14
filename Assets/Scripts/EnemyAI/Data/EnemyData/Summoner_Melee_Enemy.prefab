@@ -449,16 +449,7 @@ MonoBehaviour:
   possessedTargetLayer:
     serializedVersion: 2
     m_Bits: 64
-  summonerType: 0
-  spawnPrefab: {fileID: 3084405420923463767, guid: 4fbef20caa17c4743b8dd57716ce98aa, type: 3}
-  spawnData: {fileID: 11400000, guid: 5cf78fa54d774dd47be52a861a6a2e02, type: 2}
-  spawnCount: 2
-  spawnRadius: 5
-  globalSpawnRadius: 15
-  summonCooldown: 10
-  summonRange: 6
-  leftTwinTransform: {fileID: 0}
-  rightTwinTransform: {fileID: 0}
+  firePoint: {fileID: 4736732871092167896}
 --- !u!1 &3067594637734376483
 GameObject:
   m_ObjectHideFlags: 0
@@ -761,6 +752,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &6270553663880835834
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4736732871092167896}
+  m_Layer: 6
+  m_Name: MuzzlePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4736732871092167896
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6270553663880835834}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.5}
+  m_LocalScale: {x: 4, y: 4, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7708244323711917664}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7414507673097617030
 GameObject:
   m_ObjectHideFlags: 0
@@ -1013,7 +1035,8 @@ Transform:
   m_LocalPosition: {x: 0.5, y: 0, z: 0.5}
   m_LocalScale: {x: 0.25, y: 0.25, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 4736732871092167896}
   m_Father: {fileID: 882021609596510163}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2053089093767401941

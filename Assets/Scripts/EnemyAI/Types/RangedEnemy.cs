@@ -22,23 +22,24 @@ public class RangedEnemy : Enemy
 
     public override void ApplyData(EnemyData data)
     {
-        base.ApplyData(data);
+        base.ApplyData(data);  // sets attackRange, damage, cooldown, windup, speed, health
 
         if (data is RangedEnemyData rangedData)
         {
             MinEngageRange = rangedData.minEngageRange;
             DesiredRange = rangedData.desiredRange;
 
-            // firePoint lives on the prefab — SO only carries non-scene data
+            // Wire the attack controller's ranged mode — this is the only thing
+            // that needs to happen here. The states themselves read from enemy
+            // properties at runtime (DesiredRange, AttackRange, MinEngageRange)
+            // so there is no need to recreate them. Recreating them was causing
+            // stale state references if ApplyData was called while the state
+            // machine was already running.
             AttackController.SetRangedMode(
                 rangedData.useProjectile,
                 rangedData.projectilePrefab,
-                firePoint,                 // from prefab Inspector slot
+                firePoint,
                 rangedData.projectileSpeed);
-
-            ChaseState = new EnemyChaseState(this, data.attackRange);
-            AttackState = new RangedAttackState(this);
-            RetreatState = new RetreatState(this);
         }
         else
         {

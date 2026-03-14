@@ -3,7 +3,7 @@
 public class EnemyDetection : MonoBehaviour
 {
     [SerializeField] private float detectionRange = 8f;
-    [SerializeField] private float possessedDetectionMultiplier = 4f; // was hardcoded *4
+    [SerializeField] private float possessedDetectionMultiplier = 4f;
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private LayerMask enemyLayer;
 
@@ -11,7 +11,6 @@ public class EnemyDetection : MonoBehaviour
 
     private Enemy _enemy;
 
-    // Pre-allocated buffer — no Collider[] per frame
     private readonly Collider[] _hitBuffer = new Collider[10];
 
     private void Awake()
@@ -24,6 +23,7 @@ public class EnemyDetection : MonoBehaviour
         detectionRange = detection;
         possessedDetectionMultiplier = possessedMultiplier;
     }
+
     public Transform DetectTarget(Faction myFaction, bool isPossessed = false)
     {
         float range = isPossessed
@@ -46,7 +46,8 @@ public class EnemyDetection : MonoBehaviour
             float d = Vector3.Distance(transform.position, _hitBuffer[i].transform.position);
             if (d < nearestDist)
             {
-                nearestDist = nearest == null ? d : nearestDist;
+                // FIX: removed dead line `nearestDist = nearest == null ? d : nearestDist`
+                // that was immediately overwritten by the assignment below — no behavior change
                 nearest = _hitBuffer[i].transform;
                 nearestDist = d;
             }

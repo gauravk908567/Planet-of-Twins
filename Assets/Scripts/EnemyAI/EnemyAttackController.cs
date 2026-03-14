@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class EnemyAttackController : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class EnemyAttackController : MonoBehaviour
     private AttackRangeIndicator _rangeIndicator;
 
     private float _attackCooldown = 1.5f;
+    private float _attackWindup = 0.3f;
     private float _lastAttackTime;
     private bool _isAttacking;
     private float _damageMultiplier = 1f;
@@ -48,6 +50,17 @@ public class EnemyAttackController : MonoBehaviour
         _projectileSpeed = projectileSpeed;
     }
 
+    /// <summary>
+    /// FIX: resets _isAttacking and stops any in-flight windup coroutine.
+    /// Called from Enemy.ResetForPool() so pooled enemies aren't permanently
+    /// locked out of attacking after being stunned or killed mid-windup.
+    /// </summary>
+    public void ResetAttack()
+    {
+        _isAttacking = false;
+        StopAllCoroutines();
+    }
+
     // ── Melee path — called by EnemyAttackState ───────────────
     public void TryAttack(bool isPossessed = false)
     {
@@ -68,6 +81,11 @@ public class EnemyAttackController : MonoBehaviour
 
         _isAttacking = true;
         _lastAttackTime = Time.time;
+
+        // FIX: was missing — ranged enemies played no attack animation at all.
+        // Cosmetic only for projectile path (arrow already in flight when anim plays).
+        // For raycast path with windup, the animation covers the delay visually.
+        _animController?.PlayAttack();
 
         if (_useProjectile)
             FireProjectile(target);
@@ -123,7 +141,7 @@ public class EnemyAttackController : MonoBehaviour
         _isAttacking = false;
     }
 
-    // ── Called by Arrow when it collides with something ───────
+    // ── Called by Arrow when it collides ─────────────────────
     public void OnProjectileHit(Collider hit)
     {
         ApplyDamageToTarget(hit);
@@ -175,30 +193,53 @@ public class EnemyAttackController : MonoBehaviour
             return;
         }
 
-        // Arrow reports hit back to this controller — controller handles all damage
         arrow.Initialise(dir, _projectileSpeed, this);
 
-        // Clear immediately after launch — cooldown (_lastAttackTime) gates next shot.
-        // If we wait for OnProjectileHit, a miss or out-of-layer hit locks firing forever.
+        // Clear immediately after launch — a miss or out-of-layer hit
+        // would lock firing forever if we waited for OnProjectileHit.
         _isAttacking = false;
     }
 
+    /// <summary>
+    /// Instant-hit raycast with optional windup delay driven by _attackWindup.
+    /// _isAttacking remains true during the wait so no overlap is possible.
+    /// ResetAttack() stops the coroutine if the enemy is stunned/pooled mid-windup.
+    /// </summary>
     private void ExecuteRaycast(Transform target)
+    {
+        if (_attackWindup > 0f)
+            StartCoroutine(DelayedRaycast(target));
+        else
+        {
+            FireRaycastImmediate(target);
+            _isAttacking = false;
+        }
+    }
+
+    private IEnumerator DelayedRaycast(Transform target)
+    {
+        yield return new WaitForSeconds(_attackWindup);
+        if (target != null)
+            FireRaycastImmediate(target);
+        _isAttacking = false;
+    }
+
+    private void FireRaycastImmediate(Transform target)
     {
         Transform origin = _firePoint != null ? _firePoint : transform;
         Vector3 dir = (target.position - origin.position).normalized;
 
         if (Physics.Raycast(origin.position, dir, out RaycastHit hit, attackRange, playerLayer))
             ApplyDamageToTarget(hit.collider);
-
-        _isAttacking = false;
     }
 
+    // ── Called by Enemy.ApplyData ─────────────────────────────
     public void SetStats(float range, float damage, float cooldown, float windup)
     {
         attackRange = range;
         attackDamage = damage;
         _attackCooldown = cooldown;
+        _attackWindup = windup;
     }
 
     private void OnDrawGizmos()

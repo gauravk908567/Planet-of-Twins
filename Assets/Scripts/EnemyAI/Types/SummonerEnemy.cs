@@ -1,132 +1,94 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.AI;
 
-public enum SummonerType { Local, Global }
-
-public class SummonerEnemy : Enemy
+/// <summary>
+/// Summoner enemy. Extends RangedEnemy so it inherits:
+///   - RangedAttackState, RetreatState, ChaseState
+///   - SetRangedMode wiring (projectile or raycast)
+///   - DesiredRange, MinEngageRange, AttackRange
+///
+/// Overrides AttackState with SummonerAttackState which handles
+/// both ranged shooting AND summoning in priority order.
+///
+/// Big summon cooldown = summoner relies on minions; shoots between summons.
+/// </summary>
+public class SummonerEnemy : RangedEnemy
 {
-    [Header("Summoner Config")]
-    [SerializeField] private SummonerType summonerType = SummonerType.Local;
-    [SerializeField] private GameObject spawnPrefab;
-    [SerializeField] private EnemyData spawnData;
-    [SerializeField] private int spawnCount = 2;
-    [SerializeField] private float spawnRadius = 5f;
-    [SerializeField] private float globalSpawnRadius = 15f;
-    [SerializeField] private float summonCooldown = 8f;
-    [SerializeField] private float summonRange = 6f;
+    // ── Runtime state ─────────────────────────────────────────
+    public bool IsSummoning { get; private set; } = false;
+    public bool CanSummon => !IsSummoning
+                               && UnityEngine.Time.time >= _nextSummonTime
+                               && _activeMinionCount < _maxMinions;
 
-    // Global summoner needs to know where players are
-    // These are set by EnemyDetection � no longer needed for side assignment,
-    // only used to find a spawn position near the player
-    [Header("Global Summoner Only")]
-    [SerializeField] private Transform leftTwinTransform;
-    [SerializeField] private Transform rightTwinTransform;
+    private float _nextSummonTime = 0f;
+    private float _summonCooldown = 10f;
+    private float _summonSpawnDelay = 0.6f;
+    private int _maxMinions = 3;
+    private int _activeMinionCount = 0;
+    private SideTypeEntry _summonEntry;
+    private EnemySpawner _spawner;
 
-    private float _lastSummonTime = -999f;
-    private bool _isSummoning;
+    // ── Unity ─────────────────────────────────────────────────
+    protected override void Awake()
+    {
+        base.Awake();
 
+        // Cache spawner once. Previous version called FindAnyObjectByType inside
+        // the summon coroutine on every cast — O(n) scene scan per summon.
+        _spawner = FindAnyObjectByType<EnemySpawner>();
+        if (_spawner == null)
+            UnityEngine.Debug.LogWarning("[SummonerEnemy] No EnemySpawner found in scene.", this);
+    }
+
+    // ── States ────────────────────────────────────────────────
     protected override void InitStates()
     {
-        IdleState = new EnemyIdleState(this);
-        ChaseState = new EnemyChaseState(this);
-        AttackState = new SummonState(this); // summoner "attacks" by summoning
-        PossessedState = new PossessedState(this, possessedTargetLayer);
+        base.InitStates(); // sets IdleState, ChaseState, AttackState(Ranged), RetreatState, PossessedState
+
+        // Replace RangedAttackState with the combined summon+ranged state
+        AttackState = new SummonerAttackState(this);
     }
 
+    // ── Data ──────────────────────────────────────────────────
     public override void ApplyData(EnemyData data)
     {
-        base.ApplyData(data);
-        if (data is SummonerEnemyData summonerData)
+        base.ApplyData(data); // handles base + RangedEnemyData fields
+
+        if (data is SummonerEnemyData sd)
         {
-            spawnCount = summonerData.spawnCount;
-            spawnRadius = summonerData.spawnRadius;
-            globalSpawnRadius = summonerData.globalSpawnRadius;
-            summonCooldown = summonerData.summonCooldown;
-            summonRange = summonerData.summonRange;
+            _summonCooldown = sd.summonCooldown;
+            _maxMinions = sd.maxMinions;
+            _summonEntry = sd.summonEntry;
+            _summonSpawnDelay = sd.summonSpawnDelay;
+        }
+        else
+        {
+            UnityEngine.Debug.LogWarning($"[SummonerEnemy] {name} — expected SummonerEnemyData, " +
+                $"got {data?.GetType().Name}. Summon behaviour disabled.", this);
         }
     }
-    public bool CanSummon =>
-        Time.time >= _lastSummonTime + summonCooldown && !_isSummoning;
 
+    // ── Summon API — called by SummonerAttackState ────────────
     public void TriggerSummon()
     {
         if (!CanSummon) return;
-        _lastSummonTime = Time.time;
+        IsSummoning = true;
         StartCoroutine(SummonRoutine());
     }
 
-    private IEnumerator SummonRoutine()
+    private System.Collections.IEnumerator SummonRoutine()
     {
-        _isSummoning = true;
+        yield return new UnityEngine.WaitForSeconds(_summonSpawnDelay);
 
-        var spawner = FindAnyObjectByType<EnemySpawner>();
-
-        for (int i = 0; i < spawnCount; i++)
+        if (_spawner != null && _summonEntry != null)
         {
-            Vector3 spawnPos = summonerType == SummonerType.Local
-                ? GetLocalSpawnPosition()
-                : GetGlobalSpawnPosition();
-
-            if (spawnPos != Vector3.zero && spawner != null)
-            {
-                var entry = new SideTypeEntry
-                {
-                    prefab = spawnPrefab,
-                    data = spawnData,
-                    maxActiveOfType = 0,
-                    weight = 1
-                };
-
-                // FIX: zone spawner no longer needs SpawnSide
-                // SummonerSpawn uses active zone config � pass Left as dummy,
-                // spawner ignores side for summoner-spawned enemies
-                spawner.SummonerSpawn(entry, spawnPos);
-            }
-
-            yield return new WaitForSeconds(0.3f);
+            UnityEngine.Vector3 spawnPos =
+                transform.position + transform.forward * 1.5f;
+            _spawner.SummonerSpawn(_summonEntry, spawnPos);
+            _activeMinionCount++;
         }
 
-        _isSummoning = false;
-    }
-
-    private Vector3 GetLocalSpawnPosition()
-    {
-        for (int attempt = 0; attempt < 10; attempt++)
-        {
-            Vector2 rand2D = Random.insideUnitCircle * spawnRadius;
-            Vector3 candidate = transform.position + new Vector3(rand2D.x, 0f, rand2D.y);
-
-            if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-                return hit.position + Vector3.up * 1.08f; ;
-        }
-        return Vector3.zero;
-    }
-
-    private Vector3 GetGlobalSpawnPosition()
-    {
-        // Try both twins, return first valid position found
-        Transform[] twins = { leftTwinTransform, rightTwinTransform };
-
-        foreach (var twin in twins)
-        {
-            if (twin == null) continue;
-
-            for (int attempt = 0; attempt < 10; attempt++)
-            {
-                Vector2 rand2D = Random.insideUnitCircle * globalSpawnRadius;
-                Vector3 candidate = twin.position + new Vector3(rand2D.x, 0f, rand2D.y);
-
-                if (!NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-                    continue;
-
-                NavMeshPath path = new NavMeshPath();
-                if (NavMesh.CalculatePath(hit.position, twin.position,
-                        NavMesh.AllAreas, path)
-                    && path.status == NavMeshPathStatus.PathComplete)
-                    return hit.position + Vector3.up * 1.08f;
-            }
-        }
-        return Vector3.zero;
+        IsSummoning = false;
+        _nextSummonTime = UnityEngine.Time.time + _summonCooldown;
     }
 }
