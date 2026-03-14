@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SummonerEnemyData
   enemyName: B_Summoner
   maxHealth: 120
-  moveSpeed: 3.8
+  moveSpeed: 3
   wanderRadius: 12
   wanderTimerMin: 6
   wanderTimerMax: 8
@@ -22,8 +22,8 @@ MonoBehaviour:
   possessedDetectionMultiplier: 14
   attackRange: 5
   attackDamage: 12
-  attackCooldown: 1.5
-  attackWindup: 0.7
+  attackCooldown: 2.8
+  attackWindup: 1.8
   returnAnimDuration: 1.5
   canBePossessed: 0
   possessionDuration: 0
@@ -32,8 +32,16 @@ MonoBehaviour:
   mashWindowDuration: 4
   mashCooldown: 0.85
   partialHealAmount: 35
-  spawnCount: 3
-  spawnRadius: 5
-  globalSpawnRadius: 15
+  minEngageRange: 4
+  desiredRange: 8
+  useProjectile: 1
+  projectilePrefab: {fileID: 5217584787843976422, guid: a5f19ad17a52a884b99557454aa3f318, type: 3}
+  projectileSpeed: 14
+  summonEntry:
+    prefab: {fileID: 3084405420923463767, guid: 4fbef20caa17c4743b8dd57716ce98aa, type: 3}
+    data: {fileID: 11400000, guid: 5cf78fa54d774dd47be52a861a6a2e02, type: 2}
+    maxActiveOfType: 3
+    weight: 1
   summonCooldown: 10
-  summonRange: 6
+  maxMinions: 3
+  summonSpawnDelay: 0.6

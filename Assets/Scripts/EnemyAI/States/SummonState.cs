@@ -14,7 +14,11 @@ public class SummonState : IEnemyState
 
     public void Update()
     {
-        // Return to chase after summon cooldown (handled in SummonerEnemy)
+        // FIX: was exiting to ChaseState on frame 1 because _isSummoning was never
+        // checked here. The summoner would run away while the spawn coroutine was
+        // still mid-execution, cutting off spawns and breaking any summon animation.
+        if (_enemy.IsSummoning) return;
+
         if (_enemy.Target != null)
             _enemy.StateMachine.ChangeState(_enemy.ChaseState);
         else

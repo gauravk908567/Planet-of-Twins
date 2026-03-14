@@ -24,7 +24,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     [Tooltip("Soul must be within this radius of grabbed player to register F press")]
     [SerializeField] private float mashProximityRadius = 2.5f;
 
-    // ── Public events for UI ───────────────────────────────────
+    // ââ Public events for UI âââââââââââââââââââââââââââââââââââ
     public event Action<RescueState> OnRescueStateChanged;
     public event Action<float> OnMashProgressUpdated;
     public event Action<float> OnMashTimeUpdated;
@@ -37,10 +37,11 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     public float ActiveMashWindowDuration => _mashWindowDuration;
     public IRescueTarget ActiveTarget => _activeTarget;
 
-    // IRescueActive — read by SoulConvergenceSystem to block F-hold during rescue
+    // IRescueActive â read by SoulConvergenceSystem to block F-hold during rescue
     public bool IsRescueActive => _state != RescueState.Idle;
+    public bool HasActiveRescueTarget => _activeTarget != null;
 
-    // ── Internal ───────────────────────────────────────────────
+    // ââ Internal âââââââââââââââââââââââââââââââââââââââââââââââ
     private RescueState _state = RescueState.Idle;
     private IRescueTarget _activeTarget;
     private TeleportAbility _activeSoulAbility;
@@ -68,7 +69,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     private readonly Dictionary<IRescueTarget, TrapDelegates> _trapDelegates
         = new Dictionary<IRescueTarget, TrapDelegates>();
 
-    // ── Unity lifecycle ────────────────────────────────────────
+    // ââ Unity lifecycle ââââââââââââââââââââââââââââââââââââââââ
     private void Awake()
     {
         _selector = twinSelectorObject as ITwinSelector;
@@ -100,7 +101,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         if (rightProxy != null) RegisterDyingProxy(rightProxy, rightTwin);
     }
 
-    // ── Proxy registration ─────────────────────────────────────
+    // ââ Proxy registration âââââââââââââââââââââââââââââââââââââ
     public void RegisterDyingProxy(PlayerDeathRescueProxy proxy, Player owner)
     {
         if (_dyingDelegates.ContainsKey(proxy)) return;
@@ -119,10 +120,10 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         proxy.OnPlayerKilled += delegates.OnKilled;
     }
 
-    // DELETED: HandleDyingStarted — was dead code, never subscribed.
+    // DELETED: HandleDyingStarted â was dead code, never subscribed.
     // All its logic already lives in HandlePlayerGrabbed below.
 
-    // ── Dying proxy handlers ───────────────────────────────────
+    // ââ Dying proxy handlers âââââââââââââââââââââââââââââââââââ
     private void HandleDyingReleased(IRescueTarget sender)
     {
         if (sender != _activeTarget) return;
@@ -130,7 +131,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
 
         if (_state == RescueState.Idle || _state == RescueState.SoulDied)
         {
-            // Killer died before soul mash flow started — player already freed
+            // Killer died before soul mash flow started â player already freed
             // by ReleasePlayer(). Clean up _activeTarget so CheckProximityForTrigger
             // doesn't immediately start a new rescue cycle this frame.
             if (_activeTarget?.GrabbedPlayer != null)
@@ -138,12 +139,12 @@ public class RescueEventController : MonoBehaviour, IRescueActive
                 bool isLeft = (_activeTarget.GrabbedPlayer == leftTwin);
                 emergencyTeleportMonitor?.SetEmergencyOverride(isLeft, false);
             }
-            _selectionLock?.UnlockSelection(); // unlock once — matched by single LockSelection in HandlePlayerGrabbed
+            _selectionLock?.UnlockSelection(); // unlock once â matched by single LockSelection in HandlePlayerGrabbed
             CleanupRescueEvent();
             return;
         }
 
-        // Normal soul mash path — Success EnterState handles unlock
+        // Normal soul mash path â Success EnterState handles unlock
         TransitionTo(RescueState.Success);
     }
 
@@ -151,7 +152,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     {
         if (sender != _activeTarget) return;
         if (_state == RescueState.Success) return;
-        // Do NOT skip Idle/SoulDied — TTK can expire after soul has left
+        // Do NOT skip Idle/SoulDied â TTK can expire after soul has left
 
         if (_activeTarget?.GrabbedPlayer != null)
         {
@@ -177,7 +178,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _trapDelegates.Clear();
     }
 
-    // ── Trap registration ──────────────────────────────────────
+    // ââ Trap registration ââââââââââââââââââââââââââââââââââââââ
     public void RegisterTrap(IRescueTarget target)
     {
         if (_trapDelegates.ContainsKey(target)) return;
@@ -207,7 +208,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _trapDelegates.Remove(target);
     }
 
-    // ── TeleportAbility registration ───────────────────────────
+    // ââ TeleportAbility registration âââââââââââââââââââââââââââ
     public void RegisterTeleportAbility(TeleportAbility ability)
     {
         ability.OnSoulArrived += HandleSoulArrived;
@@ -218,10 +219,27 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _activeSoulAbility = ability;
     }
 
-    // ── Grab handlers ──────────────────────────────────────────
+    // ââ Grab handlers ââââââââââââââââââââââââââââââââââââââââââ
     private void HandlePlayerGrabbed(Player grabbedPlayer, IRescueTarget target)
     {
-        if (_activeTarget != null) return;
+        if (_activeTarget != null)
+        {
+            // Check if the first player is STILL actively dying.
+            // If proxy.IsActive is false, the rescue just completed and _activeTarget
+            // is stale — clear it and allow the new rescue to proceed normally.
+            // If proxy.IsActive is true, both players are genuinely trapped simultaneously
+            // which is instant fail per design (Option A).
+            var firstProxy = _activeTarget as PlayerDeathRescueProxy;
+            if (firstProxy != null && firstProxy.IsActive)
+            {
+                Debug.Log("[RescueEventController] Both players actively trapped — instant fail.");
+                TransitionTo(RescueState.Failed);
+                return;
+            }
+            // Stale reference — first rescue completed, clear and continue
+            Debug.Log("[RescueEventController] Stale _activeTarget cleared, starting new rescue.");
+            _activeTarget = null;
+        }
         _activeTarget = target;
         OnActiveTargetChanged?.Invoke(_activeTarget);
 
@@ -286,7 +304,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         if (survivor.Health.IsDead) return;
 
         (_selector as TwinSelector)?.ForceSelect(survivor);
-        // NOTE: do NOT LockSelection here — HandlePlayerGrabbed fires immediately
+        // NOTE: do NOT LockSelection here â HandlePlayerGrabbed fires immediately
         // after via OnPlayerGrabbed and locks it. Double-locking prevents unlock
         // after rescue since only one UnlockSelection is called in HandleDyingReleased.
     }
@@ -304,7 +322,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
             TransitionTo(RescueState.Triggered);
     }
 
-    // ── Update ─────────────────────────────────────────────────
+    // ââ Update âââââââââââââââââââââââââââââââââââââââââââââââââ
     private void Update()
     {
         switch (_state)
@@ -325,7 +343,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
                     float dist = Vector3.Distance(
                         soulTransform.position,
                         _activeTarget.GrabbedPlayerTransform.position);
-                    // SoulDied preserves _activeTarget — Idle causes immediate re-trigger loop
+                    // SoulDied preserves _activeTarget â Idle causes immediate re-trigger loop
                     if (dist > rescueProximityRadius * 2f)
                         TransitionTo(RescueState.SoulDied);
                 }
@@ -397,7 +415,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         }
     }
 
-    // ── State machine ──────────────────────────────────────────
+    // ââ State machine ââââââââââââââââââââââââââââââââââââââââââ
     private void TransitionTo(RescueState next)
     {
         Debug.Log($"[RescueEventController] TransitionTo {next}");
@@ -436,7 +454,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         switch (entering)
         {
             case RescueState.Triggered:
-                // Do NOT reset _mashProgress — persists across soul leaving/returning.
+                // Do NOT reset _mashProgress â persists across soul leaving/returning.
                 // Only Cooldown expiry and CleanupRescueEvent reset it.
                 _mashWindowDuration = _activeTarget?.MashWindowDuration ?? 3f;
                 _mashTimeRemaining = _mashWindowDuration;
@@ -475,9 +493,9 @@ public class RescueEventController : MonoBehaviour, IRescueActive
                 break;
 
             case RescueState.SoulDied:
-                // Do NOT fire OnRescueStateChanged here —
+                // Do NOT fire OnRescueStateChanged here â
                 // TransitionTo already fires it after EnterState returns.
-                // Player still trapped — _activeTarget preserved for retry.
+                // Player still trapped â _activeTarget preserved for retry.
                 break;
         }
     }

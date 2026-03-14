@@ -1,70 +1,71 @@
 ﻿using System;
 using UnityEngine;
 
-public class EnemyHealthComponent : MonoBehaviour, IDamageable, IHealthTracker
+/// <summary>
+/// Authoritative health for enemies.
+/// Implements IDamageable so MeleeAttackStrategy and EnemyAttackController
+/// can both call TakeDamage via the interface without knowing the concrete type.
+///
+/// FIX: added OnHealthChanged event so EnemyHealthBarPresenter can drive the
+/// world-space health bar slider without polling every frame.
+/// FIX: added IDamageable — was missing, causing player/soul attacks to silently
+/// skip damage (GetComponent<IDamageable>() returned null on the old component).
+/// </summary>
+public class EnemyHealthComponent : MonoBehaviour, IDamageable
 {
-    [SerializeField] private float maxHealth = 40f;
+    [SerializeField] private float maxHealth = 100f;
 
     private float _currentHealth;
-    private bool _isDead;
 
-    // ── IHealthTracker ─────────────────────────────────────────
-    public float CombatHealth => _currentHealth;
     public float MaxHealth => maxHealth;
-    public float DisplayHealth => _currentHealth;
-    public float CurrentModifier => 1f;
-    public bool IsDead => _isDead;
+    public float CurrentHealth => _currentHealth;
+    public bool IsDead => _currentHealth <= 0f;
 
-    public event Action<float> OnDisplayHealthChanged;
+    /// <summary>DamageType of the killing hit — read by EnemyDeathNotifier.</summary>
+    public DamageType LastDamageType { get; private set; } = DamageType.Environmental;
+
+    /// <summary>World position at death — read by KillParticleSpawner.</summary>
+    public Vector3 LastDeathPosition { get; private set; }
+
+    /// <summary>Fires whenever health changes (damage or heal). Arg = normalised 0-1.</summary>
+    public event Action<float> OnHealthChanged;
     public event Action OnDeath;
 
+    private void Awake() => _currentHealth = maxHealth;
 
-
-    // ── Legacy event — kept so existing subscribers don't break ─
-    // WorldSpaceHealthUI uses OnDisplayHealthChanged (IHealthTracker).
-    // Remove OnHealthChanged once all consumers are migrated.
-    public event Action<float> OnHealthChanged;
-
-    private void Awake()
+    public void SetMaxHealth(float value)
     {
+        maxHealth = value;
         _currentHealth = maxHealth;
+        OnHealthChanged?.Invoke(1f);
     }
 
-    // ── IDamageable ────────────────────────────────────────────
-    public void TakeDamage(DamageData damageData)
+    public void TakeDamage(DamageData data)
     {
-        if (_isDead) return;
+        if (IsDead) return;
 
-        _currentHealth = Mathf.Max(0f, _currentHealth - damageData.Amount);
+        LastDamageType = data.Type;
+        _currentHealth -= data.Amount;
 
-        BroadcastHealth();
-
-        if (_currentHealth <= 0f && !_isDead)
+        if (_currentHealth <= 0f)
         {
-            _isDead = true;
+            _currentHealth = 0f;
+            LastDeathPosition = transform.position;
+            OnHealthChanged?.Invoke(0f);
             OnDeath?.Invoke();
+        }
+        else
+        {
+            OnHealthChanged?.Invoke(_currentHealth / maxHealth);
         }
     }
 
     public void Heal(float amount)
     {
-        if (_isDead) return;
-        _currentHealth = Mathf.Min(maxHealth, _currentHealth + amount);
-        BroadcastHealth();
+        if (IsDead) return;
+        _currentHealth = Mathf.Min(_currentHealth + amount, maxHealth);
+        OnHealthChanged?.Invoke(_currentHealth / maxHealth);
     }
 
-    public void SetMaxHealth(float max)
-    {
-        maxHealth = max;
-        _currentHealth = max;
-        _isDead = false;
-        BroadcastHealth();
-    }
-
-    private void BroadcastHealth()
-    {
-        float normalised = maxHealth > 0f ? _currentHealth / maxHealth : 0f;
-        OnDisplayHealthChanged?.Invoke(_currentHealth);  // IHealthTracker — raw value
-        OnHealthChanged?.Invoke(normalised);             // legacy — normalised
-    }
+    public void ClearDeathSubscribers() => OnDeath = null;
 }

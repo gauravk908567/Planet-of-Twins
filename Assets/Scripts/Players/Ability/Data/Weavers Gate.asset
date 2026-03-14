@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 890f0cba752b0454d8a2ec3b82c0c295, type: 3}
-  m_Name: TeleportAbl
+  m_Name: Weavers Gate
   m_EditorClassIdentifier: Assembly-CSharp::AbilityData
   cooldown: 4
   duration: 10

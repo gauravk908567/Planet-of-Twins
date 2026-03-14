@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -27,18 +28,24 @@ public class EnemySpawner : MonoBehaviour
     private Transform[] _activeLeftPoints;
     private Transform[] _activeRightPoints;
 
-    // Fisher-Yates shuffled queues
     private Transform[] _shuffledLeft;
     private Transform[] _shuffledRight;
     private int _leftIdx;
     private int _rightIdx;
 
-    // Active counts
     private int _activeLeft;
     private int _activeRight;
     private readonly Dictionary<SideTypeEntry, int> _activeCountsLeft = new();
     private readonly Dictionary<SideTypeEntry, int> _activeCountsRight = new();
     private readonly HashSet<GameObject> _allActive = new();
+
+    // FIX: store named delegates keyed by instance so we can -= before += on pool reuse.
+    // The old approach used anonymous lambdas which can never be removed with -=,
+    // causing OnDeath to accumulate one extra handler per reuse.
+    // On reuse: old handler removed → new handler added → exactly 1 handler at all times.
+    // IMPORTANT: we do NOT use ClearDeathSubscribers() because that fires mid-invocation
+    // and would wipe the proxy's HandleKillerDied before it has a chance to run.
+    private readonly Dictionary<GameObject, Action> _spawnDeathHandlers = new();
 
     // ── Unity lifecycle ────────────────────────────────────────
     private void Awake()
@@ -64,8 +71,6 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
-    // NOTE: No Start() spawn — spawning only begins when zone is entered.
-
     // ── Zone events ────────────────────────────────────────────
     private Coroutine _zoneExitCoroutine;
 
@@ -79,7 +84,6 @@ public class EnemySpawner : MonoBehaviour
             _zoneExitCoroutine = null;
         }
 
-        //Debug.Log($"[EnemySpawner] Zone entered: {zone.areaConfig?.areaName}");
         ActivateZone(zone);
     }
 
@@ -93,12 +97,10 @@ public class EnemySpawner : MonoBehaviour
         _zoneExitCoroutine = StartCoroutine(WaitForNewZone(zone));
     }
 
-    // Waits until end of physics step (WaitForFixedUpdate) so any adjacent
-    // OnTriggerEnter has had a chance to fire before we stop spawning.
     private IEnumerator WaitForNewZone(SpawnZone exitedZone)
     {
         yield return new WaitForFixedUpdate();
-        yield return new WaitForFixedUpdate(); // two steps to be safe
+        yield return new WaitForFixedUpdate();
 
         if (_activeZone != exitedZone)
         {
@@ -128,25 +130,21 @@ public class EnemySpawner : MonoBehaviour
         _activeLeftPoints = zone.leftSpawnPoints;
         _activeRightPoints = zone.rightSpawnPoints;
 
-        // Validate points exist
         if (_activeLeftPoints == null || _activeLeftPoints.Length == 0)
             Debug.LogWarning($"[EnemySpawner] Zone {zone.name} has no LEFT spawn points.");
         if (_activeRightPoints == null || _activeRightPoints.Length == 0)
             Debug.LogWarning($"[EnemySpawner] Zone {zone.name} has no RIGHT spawn points.");
 
-        // Fisher-Yates shuffle for this zone
         _shuffledLeft = FisherYatesShuffle(_activeLeftPoints);
         _shuffledRight = FisherYatesShuffle(_activeRightPoints);
         _leftIdx = 0;
         _rightIdx = 0;
 
-        // Reset per-type counts AND side totals for new zone config
         _activeCountsLeft.Clear();
         _activeCountsRight.Clear();
         _activeLeft = 0;
         _activeRight = 0;
 
-        // Restart spawn loops
         StopAllCoroutines();
         StartCoroutine(SpawnLoop(SpawnSide.Left));
         StartCoroutine(SpawnLoop(SpawnSide.Right));
@@ -164,7 +162,7 @@ public class EnemySpawner : MonoBehaviour
         var arr = (Transform[])source.Clone();
         for (int i = arr.Length - 1; i > 0; i--)
         {
-            int j = Random.Range(0, i + 1);
+            int j = UnityEngine.Random.Range(0, i + 1);
             (arr[i], arr[j]) = (arr[j], arr[i]);
         }
         return arr;
@@ -184,7 +182,6 @@ public class EnemySpawner : MonoBehaviour
 
         int idx = isLeft ? _leftIdx : _rightIdx;
 
-        // Re-shuffle index order only when full cycle complete
         if (idx >= source.Length)
         {
             shuffled = FisherYatesShuffle(source);
@@ -192,14 +189,12 @@ public class EnemySpawner : MonoBehaviour
             else { _shuffledRight = shuffled; _rightIdx = 0; idx = 0; }
         }
 
-        // Pick the transform at shuffled index — transform itself is never moved
         Transform point = shuffled[idx];
         if (isLeft) _leftIdx++;
         else _rightIdx++;
 
         if (point == null) return Vector3.zero;
 
-        // Snap directly to NavMesh at exact transform position — no jitter
         if (NavMesh.SamplePosition(point.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
             return hit.position;
 
@@ -227,8 +222,12 @@ public class EnemySpawner : MonoBehaviour
         int active = side == SpawnSide.Left ? _activeLeft : _activeRight;
         var counts = side == SpawnSide.Left ? _activeCountsLeft : _activeCountsRight;
 
-        if (active >= sideConfig.RespawnThreshold) return;
+        // FIX: check hard cap first, then threshold.
+        // RespawnThreshold is the low-water mark that triggers new spawns.
+        // Old order blocked spawning whenever active >= threshold even
+        // when enemies had died and count was still below the hard cap.
         if (active >= sideConfig.maxTotalActive) return;
+        if (active > sideConfig.RespawnThreshold) return;
 
         SideTypeEntry entry = sideConfig.GetRandomEntry(counts);
         if (entry == null)
@@ -241,14 +240,13 @@ public class EnemySpawner : MonoBehaviour
         Vector3 spawnPos = GetNextSpawnPoint(side);
         if (spawnPos == Vector3.zero) return;
 
-        // Debug.Log($"[EnemySpawner] Spawning {entry.prefab?.name} on {side} at {spawnPos}");
         SpawnEnemy(entry, side, spawnPos, fromSummoner: false);
     }
 
-    // ── Despawn all enemies from a specific zone ───────────────
+    // ── Despawn zone enemies ───────────────────────────────────
     private void DespawnZoneEnemies(SpawnZone zone)
     {
-        var toRemove = new System.Collections.Generic.List<GameObject>();
+        var toRemove = new List<GameObject>();
         foreach (var go in _allActive)
         {
             if (go == null) continue;
@@ -275,7 +273,6 @@ public class EnemySpawner : MonoBehaviour
         GameObject instance = _pool.Get(entry.prefab);
         if (instance == null) return;
 
-        // Set position then re-enable agent — order matters
         instance.transform.position = position;
         instance.transform.rotation = Quaternion.identity;
 
@@ -289,7 +286,6 @@ public class EnemySpawner : MonoBehaviour
         var enemy = instance.GetComponent<Enemy>();
         if (enemy == null) { _pool.Return(entry.prefab, instance); return; }
 
-        // Wire pool return — without this, death calls Destroy() and counts never decrement
         enemy.SetPoolProvider(_pool, entry.prefab);
 
         if (enemy is ITimeAffected ta)
@@ -297,7 +293,6 @@ public class EnemySpawner : MonoBehaviour
 
         if (entry.data != null) enemy.ApplyData(entry.data);
 
-        // Zone tracker for home-zone return on sight loss
         var tracker = instance.GetComponent<ZoneEnemyTracker>();
         if (tracker != null)
         {
@@ -309,8 +304,6 @@ public class EnemySpawner : MonoBehaviour
             _rescueRegistry?.RegisterTrap(grabEnemy);
 
         _allActive.Add(instance);
-
-        // Register with EnemyDeathNotifier — no static event needed
         deathNotifier?.Register(enemy.Health);
 
         if (!fromSummoner)
@@ -323,13 +316,27 @@ public class EnemySpawner : MonoBehaviour
             else _activeRight++;
         }
 
-        enemy.Health.OnDeath += () => HandleEnemyDeath(entry, side, instance, fromSummoner);
+        // FIX: Remove old handler if this instance was previously pooled.
+        // The old lambda can never be removed with -= so we store it by instance key.
+        // This prevents the accumulation bug (N reuses → N HandleEnemyDeath calls on death)
+        // WITHOUT using ClearDeathSubscribers, which would fire mid-invocation and wipe
+        // the proxy's HandleKillerDied before it resolves the rescue.
+        if (_spawnDeathHandlers.TryGetValue(instance, out var oldHandler))
+        {
+            enemy.Health.OnDeath -= oldHandler;
+            _spawnDeathHandlers.Remove(instance);
+        }
+
+        Action deathHandler = () => HandleEnemyDeath(entry, side, instance, fromSummoner);
+        _spawnDeathHandlers[instance] = deathHandler;
+        enemy.Health.OnDeath += deathHandler;
     }
 
     private void HandleEnemyDeath(SideTypeEntry entry, SpawnSide side,
                                    GameObject instance, bool fromSummoner)
     {
         _allActive.Remove(instance);
+        _spawnDeathHandlers.Remove(instance);
 
         var enemy = instance.GetComponent<Enemy>();
         if (enemy != null)
@@ -360,7 +367,6 @@ public class EnemySpawner : MonoBehaviour
         instance.transform.position = position;
         instance.transform.rotation = Quaternion.identity;
 
-        // FIX: warp agent — without this summoned enemies can't move
         var agent = instance.GetComponent<UnityEngine.AI.NavMeshAgent>();
         if (agent != null)
         {
@@ -390,16 +396,27 @@ public class EnemySpawner : MonoBehaviour
 
         _allActive.Add(instance);
         deathNotifier?.Register(enemy.Health);
-        enemy.Health.OnDeath += () =>
+
+        // Same named-delegate fix as SpawnEnemy
+        if (_spawnDeathHandlers.TryGetValue(instance, out var oldHandler))
+        {
+            enemy.Health.OnDeath -= oldHandler;
+            _spawnDeathHandlers.Remove(instance);
+        }
+
+        Action summonerDeathHandler = () =>
         {
             _allActive.Remove(instance);
+            _spawnDeathHandlers.Remove(instance);
             deathNotifier?.Unregister(enemy.Health);
             var e = instance.GetComponent<Enemy>();
             if (e is ITimeAffected t) timeFactorBootstrapper?.UnregisterEntity(t);
         };
+
+        _spawnDeathHandlers[instance] = summonerDeathHandler;
+        enemy.Health.OnDeath += summonerDeathHandler;
     }
 
-    // ── NavMesh ────────────────────────────────────────────────
     // ── Pause/Resume ───────────────────────────────────────────
     public void PauseSpawning() => StopAllCoroutines();
     public void ResumeSpawning()

@@ -10,4 +10,6 @@ public interface IHealthTracker
 
     event Action<float> OnDisplayHealthChanged;  // fires when displayed value changes
     event Action OnDeath;
+    public void RestoreToFull();
+
 }

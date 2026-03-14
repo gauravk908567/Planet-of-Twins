@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class TwinAbilitySetup : MonoBehaviour
 {
@@ -12,9 +12,8 @@ public class TwinAbilitySetup : MonoBehaviour
 
     [SerializeField] private AbilityUpgradeData stunUpgradeData;
     [SerializeField] private AbilityUpgradeData possessUpgradeData;
-    [SerializeField] private LayerMask stunTargetLayer;   // enemy + trap layers
-    [SerializeField] private LayerMask possessTargetLayer; // enemy + trap layers
-
+    [SerializeField] private LayerMask stunTargetLayer;
+    [SerializeField] private LayerMask possessTargetLayer;
     [SerializeField] private LayerMask enemyLayer;
 
     [SerializeField] private Transform barrierTransform;
@@ -22,8 +21,7 @@ public class TwinAbilitySetup : MonoBehaviour
 
     [SerializeField] private MonoBehaviour timeFactorControllerObject;
     [SerializeField] private MonoBehaviour coroutineRunnerObject;
-    [SerializeField] private MonoBehaviour twinSelectorObject;   // ADD: drag TwinSelector here
-
+    [SerializeField] private MonoBehaviour twinSelectorObject;
     [SerializeField] private RescueEventController rescueEventController;
 
     public IStunEvents StunEvents { get; private set; }
@@ -40,7 +38,7 @@ public class TwinAbilitySetup : MonoBehaviour
         _selectionLock = twinSelectorObject as ISelectionLock;
 
         if (_selectionLock == null)
-            Debug.LogError("[TwinAbilitySetup] twinSelectorObject does not implement ISelectionLock.", this);
+            Debug.LogError("[TwinAbilitySetup] twinSelectorObject missing ISelectionLock.", this);
     }
 
     private void Start()
@@ -51,21 +49,26 @@ public class TwinAbilitySetup : MonoBehaviour
         var soul = soulTwin as SoulPlayer;
         soul?.ShouldSoulSleep(true);
 
-        // Wire soul death to rescue controller
         if (soul != null && rescueEventController != null)
             rescueEventController.RegisterSoulPlayer(soul);
 
-        // Wire teleport abilities to rescue controller
-        // (get them back from AbilityController after setting them)
-        var leftAbility = leftTwin.GetComponent<AbilityController>();
-        var rightAbility = rightTwin.GetComponent<AbilityController>();
-        // AbilityController needs GetTeleportAbility() � add if not present:
-        // public TeleportAbility GetTeleportAbility() =>
-        //     teleportAbility as TeleportAbility;
-        rescueEventController?.RegisterTeleportAbility(
-            leftAbility.GetTeleportAbility());
-        rescueEventController?.RegisterTeleportAbility(
-            rightAbility.GetTeleportAbility());
+        // Wire OnSoulArrived → HandleSoulArrived on RescueEventController.
+        // This is required so the state machine can transition SoulDied → Triggered
+        // when the player recasts the gate on a retry. Without this, subscribers=0
+        // and HandleSoulArrived never fires — the belt-and-suspenders fix in Update
+        // (SoulDied case calling CheckProximityForTrigger) handles it as a fallback,
+        // but direct subscription is the primary path.
+        if (rescueEventController != null)
+        {
+            var leftTA = leftTwin.GetComponent<AbilityController>()?.GetTeleportAbility();
+            var rightTA = rightTwin.GetComponent<AbilityController>()?.GetTeleportAbility();
+
+            if (leftTA != null) rescueEventController.RegisterTeleportAbility(leftTA);
+            else Debug.LogError("[TwinAbilitySetup] Left TeleportAbility null — can't register.", this);
+
+            if (rightTA != null) rescueEventController.RegisterTeleportAbility(rightTA);
+            else Debug.LogError("[TwinAbilitySetup] Right TeleportAbility null — can't register.", this);
+        }
     }
 
     private void SetupLeftTwin()
@@ -76,7 +79,6 @@ public class TwinAbilitySetup : MonoBehaviour
         ability.SetPrimaryAbility(possess);
         ability.SetTeleportAbility(BuildTeleportAbility(leftTwin, rightTwin));
         ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
-
     }
 
     private void SetupRightTwin()
@@ -88,6 +90,7 @@ public class TwinAbilitySetup : MonoBehaviour
         ability.SetTeleportAbility(BuildTeleportAbility(rightTwin, leftTwin));
         ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
     }
+
     private TeleportAbility BuildTeleportAbility(Player caster, Player target)
     {
         return new TeleportAbility(
@@ -95,6 +98,7 @@ public class TwinAbilitySetup : MonoBehaviour
             caster, target, soulTwin,
             _timeFactorController,
             _coroutineRunner,
-            _selectionLock);       // FIX: selection lock now injected
+            _selectionLock,
+            rescueEventController);
     }
 }

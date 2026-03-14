@@ -7,23 +7,13 @@ public class AbilityController : MonoBehaviour, IAbilityLock
     private AbilityRadiusPreview radiusPreview;
     private TeleportMarkerPreview teleportMarkPreview;
 
-    // Injected by TwinAbilitySetup
     private Transform _barrierTransform;
-    private float _minCastDistanceFromBarrier = 40f; // upgradeable
+    private float _minCastDistanceFromBarrier = 40f;
 
     private int _abilityLockCounter = 0;
-
     public bool AbilitiesLocked => _abilityLockCounter > 0;
     public void LockAbilities() => _abilityLockCounter++;
-    public void UnlockAbilities()
-        => _abilityLockCounter = Mathf.Max(0, _abilityLockCounter - 1);
-
-    // Called by TwinAbilitySetup after building abilities
-    public void SetBarrierReference(Transform barrier, float minCastDistance)
-    {
-        _barrierTransform = barrier;
-        _minCastDistanceFromBarrier = minCastDistance;
-    }
+    public void UnlockAbilities() => _abilityLockCounter = Mathf.Max(0, _abilityLockCounter - 1);
 
     private void Awake()
     {
@@ -31,6 +21,7 @@ public class AbilityController : MonoBehaviour, IAbilityLock
         teleportMarkPreview = GetComponent<TeleportMarkerPreview>();
     }
 
+    // ── Setup ─────────────────────────────────────────────────
     public void SetPrimaryAbility(IAbility ability)
     {
         primaryAbility = ability;
@@ -49,68 +40,61 @@ public class AbilityController : MonoBehaviour, IAbilityLock
         }
     }
 
-    public TeleportAbility GetTeleportAbility() => teleportAbility as TeleportAbility;
+    public void SetBarrierReference(Transform barrier, float minCastDistance)
+    {
+        _barrierTransform = barrier;
+        _minCastDistanceFromBarrier = minCastDistance;
+    }
 
-    // FIX: added diagnostic log — remove once confirmed working
+    public void SetMinCastDistance(float distance) =>
+        _minCastDistanceFromBarrier = distance;
+
+    // ── Primary ───────────────────────────────────────────────
     public void ActivatePrimary()
     {
         if (AbilitiesLocked)
         {
-            Debug.LogWarning($"[AbilityController] {gameObject.name}: " +
-                             $"ActivatePrimary blocked — AbilitiesLocked=true " +
-                             $"(counter={_abilityLockCounter})", this);
+            Debug.LogWarning($"[AbilityController] {gameObject.name}: primary blocked " +
+                $"(lockCounter={_abilityLockCounter})", this);
             return;
         }
-        if (primaryAbility == null)
-        {
-            Debug.LogWarning($"[AbilityController] {gameObject.name}: primaryAbility is null.", this);
-            return;
-        }
-        primaryAbility.TryActivate();
+        primaryAbility?.TryActivate();
     }
 
+    // ── Teleport — normal path (barrier check applies) ────────
+    // Reserved for future non-emergency gate usage.
     public void ActivateTeleport()
     {
-        // Check minimum distance from barrier before allowing cast
         if (_barrierTransform != null)
         {
-            float dist = Vector3.Distance(
-                transform.position, _barrierTransform.position);
-
-            if (dist < _minCastDistanceFromBarrier)
+            float dist = Vector3.Distance(transform.position, _barrierTransform.position);
+            if (dist > _minCastDistanceFromBarrier)
             {
-                Debug.Log($"[AbilityController] {gameObject.name}: " +
-                          $"Too far from barrier to teleport. " +
-                          $"Distance={dist:F1}, required<={_minCastDistanceFromBarrier}");
-                // TODO: show "Move closer to barrier" UI feedback here
+                Debug.Log($"[AbilityController] {gameObject.name}: too far from barrier " +
+                    $"({dist:F1} > {_minCastDistanceFromBarrier})");
                 return;
             }
         }
         teleportAbility?.TryActivate();
     }
 
+    // ── Teleport — emergency path (barrier check bypassed) ────
+    // Called by TwinAbilityDispatcher when EmergencyTeleportMonitor.IsEmergencyAvailable.
+    // During rescue the caster can be anywhere — barrier distance is irrelevant.
+    public void ActivateTeleportEmergency()
+    {
+        teleportAbility?.TryActivate();
+    }
+
+    // ── Preview ───────────────────────────────────────────────
+    // No barrier check — marker should always show during emergency.
     public void ShowTeleportPreview()
     {
         if (AbilitiesLocked) return;
-
-        // Same distance check for preview
-        if (_barrierTransform != null)
-        {
-            float dist = Vector3.Distance(
-                transform.position, _barrierTransform.position);
-            if (dist < _minCastDistanceFromBarrier) return;
-        }
-
         teleportMarkPreview?.Show(GetTeleportPos());
     }
 
     public void HideTeleportPreview() => teleportMarkPreview?.Hide();
-
-    private void Update()
-    {
-        primaryAbility?.Tick();
-        teleportAbility?.Tick();
-    }
 
     public void ShowPrimaryPreview(float radius)
     {
@@ -120,16 +104,17 @@ public class AbilityController : MonoBehaviour, IAbilityLock
 
     public void HidePrimaryPreview() => radiusPreview?.Hide();
 
-    public float GetPrimaryRange()
+    // ── Tick ──────────────────────────────────────────────────
+    private void Update()
     {
-        if (primaryAbility is AbilityBase b) return b.GetRange();
-        return 0f;
+        primaryAbility?.Tick();
+        teleportAbility?.Tick();
     }
 
-    public Transform GetTeleportPos()
-        => (teleportAbility as TeleportAbility)?.GetTeleportPos();
-
-    // Upgradeable via skill tree
-    public void SetMinCastDistance(float distance)
-        => _minCastDistanceFromBarrier = distance;
+    // ── Accessors ─────────────────────────────────────────────
+    public TeleportAbility GetTeleportAbility() => teleportAbility as TeleportAbility;
+    public Transform GetTeleportPos() => (teleportAbility as TeleportAbility)?.GetTeleportPos();
+    public float GetPrimaryRange() => primaryAbility is AbilityBase b ? b.GetRange() : 0f;
+    public IAbilityHUDSource GetPrimaryHUDSource() => primaryAbility as IAbilityHUDSource;
+    public IAbilityHUDSource GetTeleportHUDSource() => teleportAbility as IAbilityHUDSource;
 }

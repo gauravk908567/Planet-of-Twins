@@ -89,6 +89,12 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
 
         _player.Movement.SetFrozen(true);
         ApplySlowdownToTargetingEnemies();
+        // FIX: clear target on all enemies that were targeting this player.
+        // Without this, ranged enemies keep chasing and shooting at a dying
+        // player regardless of TTK state. Melee enemies are already effectively
+        // stopped by the attack slowdown, but ranged enemies continue firing
+        // from distance. Clearing their target sends them to IdleState.
+        ClearTargetOnEnemies();
         _ttkCoroutine = StartCoroutine(TTKCountdown());
         OnPlayerGrabbed?.Invoke(_player);
     }
@@ -156,11 +162,15 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
             yield return null;
         }
 
-        // ADD THIS LINE — rescue may have completed while countdown was running
+        // Rescue may have completed while countdown was running
         if (!_isActive) yield break;
 
         _isActive = false;
+        // FIX: unfreeze movement — was only unfrozen in ReleasePlayer (success path).
+        // Without this, player stays permanently frozen after TTK expires.
+        _player.Movement.SetFrozen(false);
         ClearSlowdownFromTargetingEnemies();
+        UnsubscribeFromKiller();
         OnPlayerKilled?.Invoke();
     }
 
@@ -192,6 +202,21 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
         {
             if (enemy.Target == transform)
                 enemy.AttackController.SetAttackSlowdown(attackSlowdownMultiplier);
+        }
+    }
+
+    /// <summary>
+    /// Clears target on enemies that were chasing/attacking this dying player.
+    /// Sends them back to IdleState so ranged enemies stop shooting during TTK.
+    /// Called on TTK start. Enemies will re-detect naturally when player is rescued.
+    /// </summary>
+    private void ClearTargetOnEnemies()
+    {
+        var allEnemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+        foreach (var enemy in allEnemies)
+        {
+            if (enemy.Target == transform)
+                enemy.ClearTarget();
         }
     }
 

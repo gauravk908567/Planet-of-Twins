@@ -23,7 +23,7 @@ MonoBehaviour:
   attackRange: 6
   attackDamage: 13
   attackCooldown: 2.2
-  attackWindup: 0.3
+  attackWindup: 1.2
   returnAnimDuration: 1.5
   canBePossessed: 1
   possessionDuration: 7

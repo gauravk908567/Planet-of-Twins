@@ -134,6 +134,30 @@ public class SkillTreeManager : MonoBehaviour,
         yield return _soulConvData;
     }
 
+    /// <summary>
+    /// Called by CheckpointLoader after restoring node levels via UnlockNextNode().
+    /// RaiseUnlockFlags() only fires on individual purchase — this scans all SOs
+    /// and raises any flags that should be set based on current node indices.
+    /// Also fires the events so subscribed systems (DualCastSystem, CoalesceSystem,
+    /// SoulConvergenceSystem) activate correctly without needing a scene reload.
+    /// </summary>
+    public void RebuildUnlockFlags()
+    {
+        if (_dualCastData != null && _dualCastData.currentNodeIndex > 0 && !IsDualCastUnlocked)
+        { IsDualCastUnlocked = true; OnDualCastUnlocked?.Invoke(); }
+
+        if (_coalesceData != null && _coalesceData.currentNodeIndex > 0 && !IsCoalesceUnlocked)
+        { IsCoalesceUnlocked = true; OnCoalesceUnlocked?.Invoke(); }
+
+        if (_soulConvData != null && _soulConvData.currentNodeIndex > 0 && !IsSoulConvergenceUnlocked)
+        { IsSoulConvergenceUnlocked = true; OnSoulConvergenceUnlocked?.Invoke(); }
+
+        Debug.Log($"[SkillTreeManager] RebuildUnlockFlags — " +
+                  $"DualCast={IsDualCastUnlocked} " +
+                  $"Coalesce={IsCoalesceUnlocked} " +
+                  $"SoulConv={IsSoulConvergenceUnlocked}");
+    }
+
     void RaiseUnlockFlags(AbilityUpgradeData data)
     {
         if (data == _dualCastData && !IsDualCastUnlocked)
