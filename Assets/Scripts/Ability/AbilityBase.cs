@@ -9,7 +9,8 @@ public abstract class AbilityBase : IAbility
     private float lastUseTime;
     protected float activeTimer;
     protected bool isActive;
- 
+
+
     public AbilityBase(AbilityData data)
     {
         this.data = data;
@@ -63,4 +64,5 @@ public abstract class AbilityBase : IAbility
     {
         return data.range;
     }
+
 }

@@ -7,31 +7,41 @@ public class SkillTree
 
     public void RegisterNode(SkillNode node)
     {
-        nodes.Add(node.Data.skillID, node);
+        if (!nodes.ContainsKey(node.Id))
+            nodes.Add(node.Id, node);
     }
 
-    public bool Unlock(string skillID, ref int skillPoints)
+    public SkillNode GetNode(string id)
     {
-        if (!nodes.ContainsKey(skillID))
+        nodes.TryGetValue(id, out SkillNode node);
+        return node;
+    }
+
+    public bool TryLevelUp(string id, ref int skillPoints)
+    {
+        if (!nodes.ContainsKey(id))
             return false;
 
-        SkillNode node = nodes[skillID];
+        SkillNode node = nodes[id];
 
-        if (node.IsUnlocked)
-            return false;
+        SkillNode prerequisiteNode = null;
 
-        if (skillPoints < node.Data.cost)
-            return false;
-
-        foreach (var prereq in node.Data.prerequisites)
+        if (!string.IsNullOrEmpty(node.PrerequisiteId))
         {
-            if (!nodes.ContainsKey(prereq.skillID) ||
-                !nodes[prereq.skillID].IsUnlocked)
-                return false;
+            nodes.TryGetValue(node.PrerequisiteId, out prerequisiteNode);
         }
 
-        skillPoints -= node.Data.cost;
-        node.Unlock();
+        if (!node.CanLevelUp(skillPoints, prerequisiteNode))
+            return false;
+
+        skillPoints -= node.Cost;
+        node.LevelUp();
+
         return true;
+    }
+
+    public Dictionary<string, SkillNode> GetAllNodes()
+    {
+        return nodes;
     }
 }

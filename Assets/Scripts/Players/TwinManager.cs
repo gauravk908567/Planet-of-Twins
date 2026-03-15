@@ -24,7 +24,6 @@ public class TwinManager : MonoBehaviour
     private AttackController soulAttackController;
 
     [SerializeField] private bool isTeleportUnlocked;
-    [SerializeField] private bool isTeleportActivated;
 
     public static System.Action<Transform> OnTwinSelected;
 
