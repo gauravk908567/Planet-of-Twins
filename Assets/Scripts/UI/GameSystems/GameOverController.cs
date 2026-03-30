@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
@@ -6,6 +6,7 @@ public class GameOverController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private RescueEventController rescueEventController;
+    [SerializeField] private SharedHealthPool sharedHealthPool;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private Button restartButton;
     [SerializeField] private Button loadCheckpointButton;
@@ -16,7 +17,7 @@ public class GameOverController : MonoBehaviour
     // FIX: moved listener registration to Awake so it's ready before
     // any Start() on other MonoBehaviours fires RescueState.Failed.
     // Previously in Start(), TriggerGameOver fired before listeners
-    // were registered — buttons had no onClick handlers attached yet.
+    // were registered ï¿½ buttons had no onClick handlers attached yet.
     private void Awake()
     {
         gameOverPanel?.SetActive(false);
@@ -25,6 +26,11 @@ public class GameOverController : MonoBehaviour
             rescueEventController.OnRescueStateChanged += HandleRescueState;
         else
             Debug.LogWarning("[GameOverController] rescueEventController not assigned.", this);
+
+        if (sharedHealthPool != null)
+            sharedHealthPool.OnSharedPoolEmpty += TriggerGameOver;
+        else
+            Debug.LogWarning("[GameOverController] sharedHealthPool not assigned â€” tether death won't trigger game over.", this);
 
         if (restartButton != null)
             restartButton.onClick.AddListener(RestartScene);
@@ -45,6 +51,8 @@ public class GameOverController : MonoBehaviour
     {
         if (rescueEventController != null)
             rescueEventController.OnRescueStateChanged -= HandleRescueState;
+        if (sharedHealthPool != null)
+            sharedHealthPool.OnSharedPoolEmpty -= TriggerGameOver;
     }
 
     private void HandleRescueState(RescueState state)
@@ -55,7 +63,7 @@ public class GameOverController : MonoBehaviour
 
     private void TriggerGameOver()
     {
-        Debug.Log($"[GameOverController] TriggerGameOver — timeScale={Time.timeScale}");
+        Debug.Log($"[GameOverController] TriggerGameOver ï¿½ timeScale={Time.timeScale}");
 
         RefreshCheckpointButton();
         gameOverPanel?.SetActive(true);

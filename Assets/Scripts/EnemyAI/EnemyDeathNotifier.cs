@@ -26,13 +26,12 @@ public class EnemyDeathNotifier : MonoBehaviour, IEnemyDeathNotifier
         var captured = enemy;
         Action handler = () =>
         {
-            Debug.Log($"[EnemyDeathNotifier] Death fired — type={captured.LastDamageType}, " +
-                      $"OnEnemyDied_subs={OnEnemyDied?.GetInvocationList()?.Length ?? 0}");
-            if (captured.LastDamageType != DamageType.Combat)
-            {
-                Debug.Log("[EnemyDeathNotifier] Skipped — not Combat kill");
-                return;
-            }
+            // Accept Combat (direct attack) AND Ability (Coalesce, future ability damage)
+            // as player-sourced kills that count toward Soul Convergence.
+            // Environmental (distance drain, zone despawn) is excluded.
+            bool isPlayerKill = captured.LastDamageType == DamageType.Combat
+                             || captured.LastDamageType == DamageType.Ability;
+            if (!isPlayerKill) return;
             Vector3 pos = captured.LastDeathPosition;
             OnEnemyDied?.Invoke();
             OnEnemyCombatKill?.Invoke(pos);

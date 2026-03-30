@@ -2,36 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SkillTreeManager
-//
-// Implements IPointBank, ISkillUnlockState, IAbilityDataStore, ISkillTreePurchaser.
-// This is a coordinator — it connects the economy to the data to the unlock flags.
-// Nothing calls SkillTreeManager.Instance. Everything receives the interface it
-// needs via [SerializeField] in the Inspector.
-//
-// UNITY SETUP:
-//   1. Create empty GameObject → "SkillTreeManager"
-//   2. Attach this script
-//   3. Drag the 7 AbilityUpgradeData SOs into the Inspector slots
-//   4. On each system (DualCastSystem, CoalesceSystem, etc.), drag THIS
-//      GameObject into its interface slot — Unity will resolve the interface
-//      automatically because the component implements it.
-//
-// DEPENDENCY MAP — each system only gets the slice it needs:
-//   SkillPointSource    → IPointBank
-//   SkillTreeUI         → IAbilityDataStore + ISkillTreePurchaser + IPointBank
-//   DualCastSystem      → ISkillUnlockState
-//   CoalesceSystem      → ISkillUnlockState + IAbilityDataStore
-//   SoulConvergenceSystem → ISkillUnlockState + IAbilityDataStore + IPointBank
-// ─────────────────────────────────────────────────────────────────────────────
 public class SkillTreeManager : MonoBehaviour,
     IPointBank,
     ISkillUnlockState,
     IAbilityDataStore,
     ISkillTreePurchaser
 {
-    // ── Inspector slots ───────────────────────────────────────────────────────
     [Header("Kai")]
     [SerializeField] private AbilityUpgradeData _stunData;
 
@@ -43,17 +19,18 @@ public class SkillTreeManager : MonoBehaviour,
     [SerializeField] private AbilityUpgradeData _healthRegenData;
 
     [Header("Special Systems")]
-    [SerializeField] private AbilityUpgradeData _dualCastData;
+    [SerializeField] private AbilityUpgradeData _accordSpirits;
     [SerializeField] private AbilityUpgradeData _coalesceData;
     [SerializeField] private AbilityUpgradeData _soulConvData;
+    [SerializeField] private AbilityUpgradeData _empowerData;
+    [SerializeField] private AbilityUpgradeData _accordData;
 
     [Header("Economy")]
     [SerializeField] private int _startingPoints = 0;
 
-    // ── IPointBank ────────────────────────────────────────────────────────────
+    // ── IPointBank ────────────────────────────────────────────
     public int CurrentPoints => _points;
     public event Action<int> OnPointsChanged;
-
     private int _points;
 
     public void AddPoints(int amount)
@@ -71,25 +48,31 @@ public class SkillTreeManager : MonoBehaviour,
         return true;
     }
 
-    // ── ISkillUnlockState ─────────────────────────────────────────────────────
-    public bool IsDualCastUnlocked { get; private set; }
+    // ── ISkillUnlockState ─────────────────────────────────────
+    public bool IsAccordSpiritsUnlocked { get; private set; }
     public bool IsCoalesceUnlocked { get; private set; }
     public bool IsSoulConvergenceUnlocked { get; private set; }
+    public bool IsEmpowerUnlocked { get; private set; }
+    public bool IsAccordStateUnlocked { get; private set; }
 
-    public event Action OnDualCastUnlocked;
+    public event Action OnAccordSpiritsUnlocked;
     public event Action OnCoalesceUnlocked;
     public event Action OnSoulConvergenceUnlocked;
+    public event Action OnEmpowerUnlocked;
+    public event Action OnAccordStateUnlocked;
 
-    // ── IAbilityDataStore ─────────────────────────────────────────────────────
+    // ── IAbilityDataStore ─────────────────────────────────────
     public AbilityUpgradeData StunData => _stunData;
     public AbilityUpgradeData PossessData => _possessData;
     public AbilityUpgradeData GateData => _gateData;
     public AbilityUpgradeData HealthRegenData => _healthRegenData;
-    public AbilityUpgradeData DualCastData => _dualCastData;
+    public AbilityUpgradeData AccordSpiritsData => _accordSpirits;
     public AbilityUpgradeData CoalesceData => _coalesceData;
     public AbilityUpgradeData SoulConvData => _soulConvData;
+    public AbilityUpgradeData EmpowerData => _empowerData;
+    public AbilityUpgradeData AccordData => _accordData;
 
-    // ── ISkillTreePurchaser ───────────────────────────────────────────────────
+    // ── ISkillTreePurchaser ───────────────────────────────────
     public event Action<AbilityUpgradeData> OnNodePurchased;
 
     public bool CanAfford(AbilityUpgradeData data)
@@ -106,11 +89,11 @@ public class SkillTreeManager : MonoBehaviour,
         return true;
     }
 
-    // ── Internal ──────────────────────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────
     void Awake()
     {
         _points = _startingPoints;
-        ResetAllSOs();  // SOs persist in editor between play sessions — always reset on start
+        ResetAllSOs();
     }
 
     void ResetAllSOs()
@@ -118,9 +101,11 @@ public class SkillTreeManager : MonoBehaviour,
         foreach (var d in AllData())
             d?.ResetToBase();
 
-        IsDualCastUnlocked = false;
+        IsAccordSpiritsUnlocked = false;
         IsCoalesceUnlocked = false;
         IsSoulConvergenceUnlocked = false;
+        IsEmpowerUnlocked = false;
+        IsAccordStateUnlocked = false;
     }
 
     IEnumerable<AbilityUpgradeData> AllData()
@@ -129,22 +114,17 @@ public class SkillTreeManager : MonoBehaviour,
         yield return _possessData;
         yield return _gateData;
         yield return _healthRegenData;
-        yield return _dualCastData;
+        yield return _accordSpirits;
         yield return _coalesceData;
         yield return _soulConvData;
+        yield return _empowerData;
+        yield return _accordData;
     }
 
-    /// <summary>
-    /// Called by CheckpointLoader after restoring node levels via UnlockNextNode().
-    /// RaiseUnlockFlags() only fires on individual purchase — this scans all SOs
-    /// and raises any flags that should be set based on current node indices.
-    /// Also fires the events so subscribed systems (DualCastSystem, CoalesceSystem,
-    /// SoulConvergenceSystem) activate correctly without needing a scene reload.
-    /// </summary>
     public void RebuildUnlockFlags()
     {
-        if (_dualCastData != null && _dualCastData.currentNodeIndex > 0 && !IsDualCastUnlocked)
-        { IsDualCastUnlocked = true; OnDualCastUnlocked?.Invoke(); }
+        if (_accordSpirits != null && _accordSpirits.currentNodeIndex > 0 && !IsAccordSpiritsUnlocked)
+        { IsAccordSpiritsUnlocked = true; OnAccordSpiritsUnlocked?.Invoke(); }
 
         if (_coalesceData != null && _coalesceData.currentNodeIndex > 0 && !IsCoalesceUnlocked)
         { IsCoalesceUnlocked = true; OnCoalesceUnlocked?.Invoke(); }
@@ -152,34 +132,46 @@ public class SkillTreeManager : MonoBehaviour,
         if (_soulConvData != null && _soulConvData.currentNodeIndex > 0 && !IsSoulConvergenceUnlocked)
         { IsSoulConvergenceUnlocked = true; OnSoulConvergenceUnlocked?.Invoke(); }
 
+        if (_empowerData != null && _empowerData.currentNodeIndex > 0 && !IsEmpowerUnlocked)
+        { IsEmpowerUnlocked = true; OnEmpowerUnlocked?.Invoke(); }
+
+        if (_accordData != null && _accordData.currentNodeIndex > 0 && !IsAccordStateUnlocked)
+        { IsAccordStateUnlocked = true; OnAccordStateUnlocked?.Invoke(); }
+
         Debug.Log($"[SkillTreeManager] RebuildUnlockFlags — " +
-                  $"DualCast={IsDualCastUnlocked} " +
-                  $"Coalesce={IsCoalesceUnlocked} " +
-                  $"SoulConv={IsSoulConvergenceUnlocked}");
+                  $"AccordSpirits={IsAccordSpiritsUnlocked} Coalesce={IsCoalesceUnlocked} " +
+                  $"SoulConv={IsSoulConvergenceUnlocked} Empower={IsEmpowerUnlocked} " +
+                  $"Accord={IsAccordStateUnlocked}");
     }
 
     void RaiseUnlockFlags(AbilityUpgradeData data)
     {
-        if (data == _dualCastData && !IsDualCastUnlocked)
-        { IsDualCastUnlocked = true; OnDualCastUnlocked?.Invoke(); }
+        if (data == _accordSpirits && !IsAccordSpiritsUnlocked)
+        { IsAccordSpiritsUnlocked = true; OnAccordSpiritsUnlocked?.Invoke(); }
 
         if (data == _coalesceData && !IsCoalesceUnlocked)
         { IsCoalesceUnlocked = true; OnCoalesceUnlocked?.Invoke(); }
 
         if (data == _soulConvData && !IsSoulConvergenceUnlocked)
         { IsSoulConvergenceUnlocked = true; OnSoulConvergenceUnlocked?.Invoke(); }
+
+        if (data == _empowerData && !IsEmpowerUnlocked)
+        { IsEmpowerUnlocked = true; OnEmpowerUnlocked?.Invoke(); }
+
+        if (data == _accordData && !IsAccordStateUnlocked)
+        { IsAccordStateUnlocked = true; OnAccordStateUnlocked?.Invoke(); }
     }
 
-    // ── Debug helpers
+    // ── Debug ─────────────────────────────────────────────────
     [ContextMenu("DEBUG — Reset All Upgrades")]
     public void Debug_ResetAll()
     {
         ResetAllSOs();
         _points = _startingPoints;
-        Debug.Log("[SkillTreeManager] All upgrades reset, points reset to " + _startingPoints);
+        OnPointsChanged?.Invoke(_points);
+        Debug.Log("[SkillTreeManager] All upgrades reset.");
     }
 
-    // ── ─────────────────────────────────────────────────────────
     [ContextMenu("DEBUG — Add 20 Points")]
     void Debug_Add20() => AddPoints(20);
 
@@ -189,11 +181,12 @@ public class SkillTreeManager : MonoBehaviour,
     [ContextMenu("DEBUG — Reset All")]
     void Debug_Reset()
     {
-        foreach (var d in new[]{ _stunData, _possessData, _gateData, _healthRegenData,
-                                  _dualCastData, _coalesceData, _soulConvData })
-            d?.ResetToBase();
+        foreach (var d in AllData()) d?.ResetToBase();
 
-        IsDualCastUnlocked = IsCoalesceUnlocked = IsSoulConvergenceUnlocked = false;
+        IsAccordSpiritsUnlocked = IsCoalesceUnlocked =
+        IsSoulConvergenceUnlocked = IsEmpowerUnlocked =
+        IsAccordStateUnlocked = false;
+
         _points = _startingPoints;
         OnPointsChanged?.Invoke(_points);
     }

@@ -12,16 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
   m_Name: SolConvData
   m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
-  abilityName: Soul Convergence
-  abilityDescription: "\"Each enemy defeated feeds a hidden reservoir. When it fills
-    \u2014 twenty\nkills \u2014 the twins feel it. Hold F to release the convergence.
-    For seven\nseconds the twins deal 35% more damage and absorb 35% less. The counter\nresets
-    when the power fires, not before.\""
   baseTargetCount: 1
   baseDuration: 3
-  baseCooldown: 7
   baseRange: 5
-  baseRegenRate: 16.6
+  baseCooldown: 7
+  baseEmpowerDuration: 6
+  baseEmpowerCooldown: 12
+  baseEmpowerKnockbackInterval: 1.5
+  baseEmpowerKnockbackForce: 8
+  baseEmpowerKnockbackRadius: 5
+  baseAccordDuration: 12
+  baseAccordBarCap: 35
+  baseAccordShockwaveForce: 15
+  baseAccordMeleeSlowDuration: 1.25
+  baseAccordMeleeAggroLossDuration: 0.75
   nodes:
   - label: Unlock Soul Convergence
     pointCost: 8
@@ -29,32 +33,52 @@ MonoBehaviour:
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
-    soulThresholdReduction: 20
+    soulThresholdReduction: 2
     soulDurationBonus: 7
-    description: 'Kill threshold: 20  |  Activation: hold F for 0.75s
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    description: 'Kill threshold: 10  |  Activation: hold F for 0.75s
 
       Duration:
-      7s  |  DMG out: +35%  |  DMG in: -35%
-
-      Blocked during active rescue events.'
+      7s  |  DMG out: +35%  |  DMG in: -35%'
   - label: Deeper Convergence
     pointCost: 15
     durationBonus: 0
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 3
     soulDurationBonus: 2
-    description: '"The reservoir runs deeper and the power lasts longer. Fewer kills
-      are
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    description: 'Kill threshold reduced. Power duration extended.
 
-      needed to charge it, and the window it opens stretches further."'
+      Kill threshold:
+      17  | Duration: 9s'
   currentNodeIndex: 0

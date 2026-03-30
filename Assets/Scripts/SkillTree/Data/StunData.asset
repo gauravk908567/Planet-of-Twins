@@ -12,21 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
   m_Name: StunData
   m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
-  abilityName: 'Stun '
-  abilityDescription: 'Base ability
-
-    Kai opens a brief window and emits a pulse
-    that freezes nearby
-
-    enemies in place. Stunned enemies cannot move or attack.
-    Multiple
-
-    enemies can be caught if they are close enough when the pulse fires.'
   baseTargetCount: 1
   baseDuration: 3
-  baseCooldown: 7
   baseRange: 5
-  baseRegenRate: 16.6
+  baseCooldown: 7
   nodes:
   - label: 'Stun Depth I '
     pointCost: 3
@@ -34,41 +23,43 @@ MonoBehaviour:
     cooldownReduction: 0.9
     targetCountBonus: 1
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: "\"The pulse lingers longer, giving more time to act.\"\n\nDuration
-      3.0\u21923.9s  |  Cooldown 7.0\u21926.1s | Target 1-> 2 "
+    description: "Duration extended. Gains a second target.\r\nDuration 3.0\u21923.9s 
+      |  Cooldown 7.0\u21926.1s  |  Targets 1\u21922"
   - label: 'Stun Depth II '
     pointCost: 6
     durationBonus: 0.45
     cooldownReduction: 0.45
     targetCountBonus: 1
     rangeBonus: 0.4
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: "\"Deeper neural disruption. Enemies remain frozen noticeably longer.\"\n\nDuration
-      3.0\u21923.9s  |  Cooldown 7.0\u21926.1s | Target 2-> 3 | Range ->5.0->5.4  "
+    description: "Duration extended further. Gains a third target. Range increased.\r\nDuration
+      3.9\u21924.35s  |  Cooldown 6.1\u21925.65s  |  Targets 2\u21923  |  Range 5.0\u21925.4m"
   - label: 'Stun Depth III '
     pointCost: 10
     durationBonus: 0.23
     cooldownReduction: 0.23
     targetCountBonus: 0
     rangeBonus: 0.35
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: "\"The stun borders on a coma. Enemies barely register the world
-      around them.\"\n\nDuration 4.35\u21924.58s  |  Cooldown 5.65\u21925.42s | Range
-      -> 5.4->5.75 "
-  currentNodeIndex: 0
+    description: "Maximum duration and range. Cooldown reduced further.\r\nDuration
+      4.35\u21924.58s  |  Cooldown 5.65\u21925.42s  |  Range 5.4\u21925.75m"
+  currentNodeIndex: 1

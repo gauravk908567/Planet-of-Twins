@@ -4,7 +4,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(EnemyStateMachine))]
 [RequireComponent(typeof(EnemyHealthComponent))]
-public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGrabbable, IAlertReceiver
+public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGrabbable, IAlertReceiver, IKnockbackReceiver
 {
     private bool _isStunned = false;
     private bool _isPossessed = false;
@@ -46,12 +46,17 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private IEnemyPoolProvider _pool;
 
     public float AttackRange => attackRange;
-
     public Transform Target { get; private set; }
     public void SetTarget(Transform t) => Target = t;
     public void ClearTarget() => Target = null;
 
     private ITimeFactorRegistry _timeFactorRegistry;
+
+    // ── Knockback duration — designer-tunable ─────────────────
+    // How long (seconds) the NavMesh agent stays disabled during knockback.
+    // Higher = pushed further. Exposed here so SOs don't need it if the
+    // knockback force multiplier on EnemyData is sufficient granularity.
+    [SerializeField] private float _knockbackDuration = 0.25f;
 
     protected virtual void Awake()
     {
@@ -122,17 +127,8 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     }
 
     // ── ITimeAffected ──────────────────────────────────────────
-    public void OnEffectStarted()
-    {
-        StateMachine.Pause();
-        Movement.OnFreeze();
-    }
-
-    public void OnEffectEnded()
-    {
-        StateMachine.Resume();
-        Movement.OnUnfreeze();
-    }
+    public void OnEffectStarted() { StateMachine.Pause(); Movement.OnFreeze(); }
+    public void OnEffectEnded() { StateMachine.Resume(); Movement.OnUnfreeze(); }
 
     // ── Death ──────────────────────────────────────────────────
     protected virtual void HandleDeath()
@@ -163,23 +159,45 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         StopAllCoroutines();
         FactionComp.CurrentFaction = Faction.Enemy;
         AttackController.ClearDamageMultiplier();
-
-        // FIX: reset _isAttacking + stop any in-flight windup coroutine.
-        // Without this, a pooled enemy whose windup was interrupted (stun, death)
-        // returns with _isAttacking=true and can never attack again.
         AttackController.ResetAttack();
-
         ClearTarget();
-
-        // NOTE: we do NOT call Health.ClearDeathSubscribers() here.
-        // Doing so would fire mid-OnDeath invocation (HandleDeath is subscriber #1),
-        // wiping out the proxy's HandleKillerDied (subscriber #3) before it runs —
-        // meaning "soul kills the ranged enemy → rescue never resolves".
-        // The spawner uses named delegates stored per-instance and removes them
-        // via -= before re-adding on each reuse, preventing accumulation correctly.
     }
 
-    // IPossessable
+    // ── IKnockbackReceiver ─────────────────────────────────────
+    /// <summary>
+    /// Base implementation: apply force scaled by EnemyData.knockbackForceMultiplier.
+    /// Override in subclasses to add conditional blocking (e.g. SummonerEnemy,
+    /// GroupGrabEnemy during active grab).
+    /// </summary>
+    public virtual void ReceiveKnockback(KnockbackData data)
+    {
+        // Read per-enemy resistance from SO. Default 1f if no data assigned.
+        float multiplier = Data?.knockbackForceMultiplier ?? 1f;
+        if (multiplier <= 0f) return; // fully immune — skip coroutine entirely
+
+        StartCoroutine(KnockbackRoutine(data.Force * multiplier));
+    }
+
+    private IEnumerator KnockbackRoutine(Vector3 force)
+    {
+        // Disable NavMeshAgent so it doesn't fight against positional change
+        var agent = GetComponent<UnityEngine.AI.NavMeshAgent>(); // routed through EnemyMovement — see note below
+        if (agent != null) agent.enabled = false;
+
+        float elapsed = 0f;
+
+        while (elapsed < _knockbackDuration)
+        {
+            float t = 1f - (elapsed / _knockbackDuration); // dampen over time
+            transform.position += force * t * Time.deltaTime;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (agent != null) agent.enabled = true;
+    }
+
+    // ── IPossessable ───────────────────────────────────────────
     public void ApplyPossession(float duration, float damageMultiplier)
     {
         if (Data != null && !Data.canBePossessed) return;
@@ -218,15 +236,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         StateMachine.ChangeState(IdleState);
     }
 
-    private void OnDestroy()
-    {
-        if (_timeFactorRegistry != null)
-        {
-            _timeFactorRegistry.Unregister(this);
-            _timeFactorRegistry.Unregister(Movement);
-        }
-    }
-
+    // ── IStunnable ─────────────────────────────────────────────
     public void ApplyStun(float duration)
     {
         if (_isPossessed) return;
@@ -243,8 +253,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         StateMachine.Pause();
         Movement.OnFreeze();
 
-        if (_renderer != null)
-            _renderer.material.color = StunColor;
+        if (_renderer != null) _renderer.material.color = StunColor;
 
         yield return new WaitForSeconds(duration);
 
@@ -260,6 +269,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         _stunCoroutine = null;
     }
 
+    // ── IGrabbable ─────────────────────────────────────────────
     public void GrabByTrap(float killDelay)
     {
         _isGrabbed = true;
@@ -282,6 +292,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
             Health.TakeDamage(new DamageData(9999f, DamageType.Environmental));
     }
 
+    // ── Possession return animation ────────────────────────────
     public void StartReturnAnimation(float duration)
     {
         StartCoroutine(ReturnAnimationRoutine(duration));
@@ -314,6 +325,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         return result;
     }
 
+    // ── IAlertReceiver ─────────────────────────────────────────
     public void OnGrabAlert(Transform grabbedPlayerTransform)
     {
         if (StateMachine.CurrentState != ChaseState) return;
@@ -327,6 +339,15 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         {
             SetTarget(chasedPlayerTransform);
             StateMachine.ChangeState(ChaseState);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_timeFactorRegistry != null)
+        {
+            _timeFactorRegistry.Unregister(this);
+            _timeFactorRegistry.Unregister(Movement);
         }
     }
 }

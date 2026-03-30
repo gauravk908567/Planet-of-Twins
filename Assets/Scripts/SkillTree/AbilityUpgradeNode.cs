@@ -1,11 +1,6 @@
 ﻿using System;
 using UnityEngine;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AbilityUpgradeNode
-// One step on a linear upgrade chain. Serialised inside AbilityUpgradeData SO.
-// Fill these in the Inspector on each SO — no code changes needed for tuning.
-// ─────────────────────────────────────────────────────────────────────────────
 [Serializable]
 public class AbilityUpgradeNode
 {
@@ -15,11 +10,11 @@ public class AbilityUpgradeNode
     [Tooltip("Skill-point cost to unlock this node")]
     public int pointCost = 3;
 
-    // ── Core ability stats ────────────────────────────────────────────────────
+    // ── Core ability stats ────────────────────────────────────
     [Tooltip("Duration added in seconds (0 = no change)")]
     public float durationBonus;
 
-    [Tooltip("Cooldown REDUCED by this many seconds — positive = shorter CD (0 = no change)")]
+    [Tooltip("Cooldown REDUCED by this many seconds (0 = no change)")]
     public float cooldownReduction;
 
     [Tooltip("Additional targets unlocked (0 = no change)")]
@@ -31,11 +26,11 @@ public class AbilityUpgradeNode
     [Tooltip("Cooldown reduction in seconds — subtracted from base cooldown (0 = no change)")]
     public float cooldownBonus;
 
-    // ── Health regen ──────────────────────────────────────────────────────────
-    [Tooltip("Multiplied onto current regen rate. 1 = no change. Use 1.333 for ×4/3.")]
+    // ── Health regen ──────────────────────────────────────────
+    [Tooltip("Multiplied onto current regen rate. 1 = no change.")]
     public float regenRateMultiplier = 1f;
 
-    // ── Coalesce-specific ─────────────────────────────────────────────────────
+    // ── Coalesce-specific ─────────────────────────────────────
     [Tooltip("Coalesce aura radius added in units (0 = no change)")]
     public float coalesceRadiusBonus;
 
@@ -45,14 +40,56 @@ public class AbilityUpgradeNode
     [Tooltip("Coalesce damage per second added (0 = no change)")]
     public float coalesceDpsBonus;
 
-    // ── Soul Convergence-specific ─────────────────────────────────────────────
+    // ── Soul Convergence-specific ─────────────────────────────
     [Tooltip("Kill threshold REDUCED by this many kills (0 = no change)")]
     public int soulThresholdReduction;
 
     [Tooltip("Power-state duration added in seconds (0 = no change)")]
     public float soulDurationBonus;
 
-    // ── UI ────────────────────────────────────────────────────────────────────
+    // ── Empower-specific ──────────────────────────────────────
+    [Header("Empower")]
+    [Tooltip("Active duration added in seconds (0 = no change)")]
+    public float empowerDurationBonus;
+
+    [Tooltip("Cooldown REDUCED by this many seconds (0 = no change)")]
+    public float empowerCooldownReduction;
+
+    [Tooltip("Knockback interval REDUCED by this many seconds (0 = no change)")]
+    public float empowerKnockbackIntervalReduction;
+
+    [Tooltip("Knockback force added (0 = no change)")]
+    public float empowerKnockbackForceBonus;
+
+    [Tooltip("Knockback radius added in units (0 = no change)")]
+    public float empowerKnockbackRadiusBonus;
+
+    // ── Accord State-specific ─────────────────────────────────
+    [Header("Accord State")]
+    [Tooltip("Active duration added in seconds (0 = no change)")]
+    public float accordDurationBonus;
+
+    [Tooltip("Bar cap REDUCED by this many points — fills faster (0 = no change)")]
+    public float accordBarCapReduction;
+
+    [Tooltip("Shockwave force added on activation (0 = no change)")]
+    public float accordShockwaveForceBonus;
+
+    [Tooltip("Accord E slow duration added in seconds (0 = no change)")]
+    public float accordMeleeSlowBonus;
+
+    [Tooltip("Accord E aggro loss duration added in seconds (0 = no change)")]
+    public float accordMeleeAggroLossBonus;
+
+    // ── Gate Pulse (Weaver's Gate + Ashen Tide) ─────────────
+    [Header("Gate Pulse")]
+    [Tooltip("Pulse interval REDUCED by this many seconds — pulses fire faster (0 = no change)")]
+    public float pulseIntervalReduction;
+
+    [Tooltip("Pulse radius added in units (0 = no change)")]
+    public float pulseRadiusBonus;
+
+    // ── UI ────────────────────────────────────────────────────
     [Tooltip("Tooltip shown beneath the button in the skill tree panel")]
     [TextArea] public string description;
 }

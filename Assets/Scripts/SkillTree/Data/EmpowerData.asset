@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: EmpowerData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  baseTargetCount: 1
+  baseDuration: 3
+  baseRange: 5
+  baseCooldown: 8
+  baseEmpowerDuration: 4
+  baseEmpowerCooldown: 12
+  baseEmpowerKnockbackInterval: 1.5
+  baseEmpowerKnockbackForce: 8
+  baseEmpowerKnockbackRadius: 5
+  baseAccordDuration: 12
+  baseAccordBarCap: 35
+  baseAccordShockwaveForce: 15
+  baseAccordMeleeSlowDuration: 1.25
+  baseAccordMeleeAggroLossDuration: 0.75
+  nodes:
+  - label: Unlock Empower System
+    pointCost: 15
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    description: Empowered twin moves faster and hits harder.
+  - label: Empowering You
+    pointCost: 18
+    durationBonus: 1.2
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 2.2
+    empowerCooldownReduction: 2.5
+    empowerKnockbackIntervalReduction: 0.7
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 1.2
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    description: Empower active window extended. Shockwave radius increased.
+  - label: Power Unleashed
+    pointCost: 22
+    durationBonus: 0.8
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0.8
+    empowerKnockbackIntervalReduction: 0.2
+    empowerKnockbackForceBonus: 1.2
+    empowerKnockbackRadiusBonus: 0.4
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    description: Empower cooldown reduced. Shockwave force increased.
+  currentNodeIndex: 0

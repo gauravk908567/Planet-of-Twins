@@ -8,6 +8,13 @@ public enum DamageType
     Combat,
 
     /// <summary>
+    /// Caused by a player ability (Coalesce aura, future ability damage etc.).
+    /// Counts as a player kill for Soul Convergence but is distinct from direct
+    /// melee/ranged Combat so systems can differentiate if needed.
+    /// </summary>
+    Ability,
+
+    /// <summary>
     /// Caused by the >18u distance drain. Does NOT reset the regen timer —
     /// a player shouldn't lose their regen window just from drifting.
     /// </summary>

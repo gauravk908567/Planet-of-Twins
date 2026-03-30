@@ -24,4 +24,6 @@ public interface IInputProvider
 
     /// <summary>Hold X — cancel teleport window or detach from QTE trigger.</summary>
     bool GetCancelHeld();
+
+    bool GetEmpowerHeld();
 }

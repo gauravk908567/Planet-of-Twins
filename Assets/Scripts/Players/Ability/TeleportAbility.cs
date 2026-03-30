@@ -15,6 +15,8 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
     private IRescueActive _rescueActive;  // gate — teleport only usable during rescue
 
     private CharacterController _soulCC;
+    private SoulPulseSystem _soulPulse;     // cached on construction
+    private AbilityUpgradeData _gateData;   // injected for pulse upgrade values
     private bool _soulHasArrived = false;
     private bool _soulTimerPaused = false;
     private float _activationTime = 0f;
@@ -83,11 +85,16 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
             _soul.SetLinkedPlayers(caster, target);
             _soulCC = _soul.GetComponent<CharacterController>();
             _soul.OnSoulDied += HandleSoulDied;
+            _soulPulse = _soul.GetComponent<SoulPulseSystem>();
         }
 
         _casterAbilityLock = caster.GetComponent<AbilityController>();
         _targetAbilityLock = target.GetComponent<AbilityController>();
     }
+
+    // ── Gate data injection ──────────────────────────────────
+    /// <summary>Inject Gate upgrade data so pulse values scale with upgrades.</summary>
+    public void SetGateData(AbilityUpgradeData gateData) => _gateData = gateData;
 
     // ── Public API ────────────────────────────────────────────
     public void SetMarkerPosition(Vector3 worldPosition)
@@ -148,6 +155,13 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
             return false;
         }
 
+        // Double teleport guard — soul is already active, don't fire again
+        if (_soul != null && _soul.gameObject.activeSelf && isActive)
+        {
+            UnityEngine.Debug.Log("[TeleportAbility] Blocked — soul already active.");
+            return false;
+        }
+
         if (_activeTeleportCoroutine != null)
         {
             _coroutineRunner.StopCoroutine(_activeTeleportCoroutine);
@@ -191,6 +205,21 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
                     _soul.Movement?.SetMovementLocked(false);
                     OnSoulArrived?.Invoke();
 
+                    // Start soul pulse — applies fear/slow (and burn in Accord)
+                    if (_soulPulse != null)
+                    {
+                        if (_gateData != null)
+                            _soulPulse.ApplyUpgradeValues(
+                                _gateData.CurrentPulseInterval,
+                                _gateData.CurrentPulseRadius,
+                                _gateData.basePulseFearDuration,
+                                _gateData.basePulseSlowMultiplier,
+                                _gateData.basePulseSlowDuration,
+                                _gateData.baseBurnDps,
+                                _gateData.baseBurnDuration);
+                        _soulPulse.StartPulsing();
+                    }
+
                     // Open cancel window after arrival
                     _cancelWindowOpen = true;
                     _cancelHoldProgress = 0f;
@@ -226,6 +255,9 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
             OnCancelWindowClosed?.Invoke();
             OnCancelProgressUpdated?.Invoke(0f);
         }
+
+        // Stop soul pulse
+        _soulPulse?.StopPulsing();
 
         _soul?.Movement?.SetMovementLocked(true);
 
