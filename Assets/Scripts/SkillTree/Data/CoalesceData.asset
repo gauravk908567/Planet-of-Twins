@@ -12,19 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
   m_Name: CoalesceData
   m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
-  abilityName: Coalesce
-  abilityDescription: '"Stunned and possessed enemies become focal points of harm.
-    A damaging
-
-    aura bleeds outward from them, hurting any enemy that strays
-    too close.
-
-    When the effect ends the aura lingers briefly before fading."'
   baseTargetCount: 1
   baseDuration: 3
-  baseCooldown: 7
   baseRange: 5
-  baseRegenRate: 16.6
+  baseCooldown: 7
   nodes:
   - label: Unlock Coalesce
     pointCost: 5
@@ -32,6 +23,7 @@ MonoBehaviour:
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 1.5
     coalesceDurationBonus: 2.5
@@ -45,29 +37,28 @@ MonoBehaviour:
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0.5
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: '"The aura expands. Enemies no longer need to be standing directly
-      on
-
-      the afflicted target to suffer."'
+    description: "Aura radius increased. Enemies don't need to be directly on the
+      target.\r\nRadius 1.5\u2192? m"
   - label: Burning Aura
     pointCost: 12
     durationBonus: 0
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0.5
     coalesceDpsBonus: 4
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: "\"The aura intensifies and outlasts the effect that spawned it.
-      Enemies\ncaught nearby take serious damage even after the target is freed.\"\nDamage:
-      6 \u2192 10 DMG/s  |  Linger: 2.5 \u2192 3.0s"
+    description: "Damage increased. Aura lingers longer after effect ends.\rDamage
+      6\u219210 DMG/s  |  Linger 2.5\u21923.0s"
   currentNodeIndex: 0

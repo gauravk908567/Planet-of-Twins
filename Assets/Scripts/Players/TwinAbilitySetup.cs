@@ -11,6 +11,7 @@ public class TwinAbilitySetup : MonoBehaviour
     [SerializeField] private AbilityData teleportAbilityData;
 
     [SerializeField] private AbilityUpgradeData stunUpgradeData;
+    [SerializeField] private AbilityUpgradeData gateUpgradeData;
     [SerializeField] private AbilityUpgradeData possessUpgradeData;
     [SerializeField] private LayerMask stunTargetLayer;
     [SerializeField] private LayerMask possessTargetLayer;
@@ -24,12 +25,20 @@ public class TwinAbilitySetup : MonoBehaviour
     [SerializeField] private MonoBehaviour twinSelectorObject;
     [SerializeField] private RescueEventController rescueEventController;
 
+    [Header("Accord State")]
+    [Tooltip("Drag AccordStateSystem GO here — subscribes to OnAccordDeactivated to restore abilities.")]
+    [SerializeField] private AccordStateSystem accordStateSystem;
+
     public IStunEvents StunEvents { get; private set; }
     public IPossessEvents PossessEvents { get; private set; }
 
     private ITimeFactorController _timeFactorController;
     private ICoroutineRunner _coroutineRunner;
     private ISelectionLock _selectionLock;
+
+    // Stored so we can restore after Accord State ends
+    private IAbility _kaiOriginalQ;
+    private IAbility _lyraOriginalQ;
 
     private void Awake()
     {
@@ -39,6 +48,20 @@ public class TwinAbilitySetup : MonoBehaviour
 
         if (_selectionLock == null)
             Debug.LogError("[TwinAbilitySetup] twinSelectorObject missing ISelectionLock.", this);
+        if (accordStateSystem == null)
+            Debug.LogWarning("[TwinAbilitySetup] AccordStateSystem not assigned — abilities won't restore after Accord.", this);
+    }
+
+    private void OnEnable()
+    {
+        if (accordStateSystem != null)
+            accordStateSystem.OnAccordDeactivated += RestoreOriginalAbilities;
+    }
+
+    private void OnDisable()
+    {
+        if (accordStateSystem != null)
+            accordStateSystem.OnAccordDeactivated -= RestoreOriginalAbilities;
     }
 
     private void Start()
@@ -52,12 +75,6 @@ public class TwinAbilitySetup : MonoBehaviour
         if (soul != null && rescueEventController != null)
             rescueEventController.RegisterSoulPlayer(soul);
 
-        // Wire OnSoulArrived → HandleSoulArrived on RescueEventController.
-        // This is required so the state machine can transition SoulDied → Triggered
-        // when the player recasts the gate on a retry. Without this, subscribers=0
-        // and HandleSoulArrived never fires — the belt-and-suspenders fix in Update
-        // (SoulDied case calling CheckProximityForTrigger) handles it as a fallback,
-        // but direct subscription is the primary path.
         if (rescueEventController != null)
         {
             var leftTA = leftTwin.GetComponent<AbilityController>()?.GetTeleportAbility();
@@ -74,8 +91,10 @@ public class TwinAbilitySetup : MonoBehaviour
     private void SetupLeftTwin()
     {
         var ability = leftTwin.GetComponent<AbilityController>();
-        var possess = new PossessAbility(possessAbilityData, possessTargetLayer, ability, possessUpgradeData);
+        var possess = new PossessAbility(
+            possessAbilityData, possessTargetLayer, ability, possessUpgradeData);
         PossessEvents = possess;
+        _lyraOriginalQ = possess; // store for restore after Accord
         ability.SetPrimaryAbility(possess);
         ability.SetTeleportAbility(BuildTeleportAbility(leftTwin, rightTwin));
         ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
@@ -84,21 +103,43 @@ public class TwinAbilitySetup : MonoBehaviour
     private void SetupRightTwin()
     {
         var ability = rightTwin.GetComponent<AbilityController>();
-        var stun = new StunAbility(stunAbilityData, stunTargetLayer, ability, stunUpgradeData);
+        var stun = new StunAbility(
+            stunAbilityData, stunTargetLayer, ability, stunUpgradeData);
         StunEvents = stun;
+        _kaiOriginalQ = stun; // store for restore after Accord
         ability.SetPrimaryAbility(stun);
         ability.SetTeleportAbility(BuildTeleportAbility(rightTwin, leftTwin));
         ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
     }
 
+    private void RestoreOriginalAbilities()
+    {
+        // Guard against scene teardown
+        if (rightTwin == null || leftTwin == null) return;
+
+        if (_kaiOriginalQ != null)
+            rightTwin.GetComponent<AbilityController>()?.SetPrimaryAbility(_kaiOriginalQ);
+
+        if (_lyraOriginalQ != null)
+            leftTwin.GetComponent<AbilityController>()?.SetPrimaryAbility(_lyraOriginalQ);
+
+        Debug.Log("[TwinAbilitySetup] Original Q abilities restored after Accord State.");
+    }
+
     private TeleportAbility BuildTeleportAbility(Player caster, Player target)
     {
-        return new TeleportAbility(
+        var ta = new TeleportAbility(
             teleportAbilityData,
             caster, target, soulTwin,
             _timeFactorController,
             _coroutineRunner,
             _selectionLock,
             rescueEventController);
+
+        // Inject Gate upgrade data so pulse scales with tree upgrades
+        if (gateUpgradeData != null)
+            ta.SetGateData(gateUpgradeData);
+
+        return ta;
     }
 }

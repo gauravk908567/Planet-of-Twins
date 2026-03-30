@@ -252,7 +252,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         if (_selector?.SelectedTransform == grabbedPlayer.transform)
         {
             Player otherTwin = isLeft ? rightTwin : leftTwin;
-            (_selector as TwinSelector)?.ForceSelect(otherTwin);
+            _selector?.ForceSelect(otherTwin);
         }
 
         _selectionLock?.LockSelection();
@@ -303,7 +303,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         Player survivor = (deadTwin == leftTwin) ? rightTwin : leftTwin;
         if (survivor.Health.IsDead) return;
 
-        (_selector as TwinSelector)?.ForceSelect(survivor);
+        _selector?.ForceSelect(survivor);
         // NOTE: do NOT LockSelection here â HandlePlayerGrabbed fires immediately
         // after via OnPlayerGrabbed and locks it. Double-locking prevents unlock
         // after rescue since only one UnlockSelection is called in HandleDyingReleased.

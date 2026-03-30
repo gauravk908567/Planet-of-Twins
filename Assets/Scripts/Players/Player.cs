@@ -2,6 +2,17 @@
 using UnityEngine;
 public class Player : MonoBehaviour, ITimeAffected
 {
+    private void Awake()
+    {
+        // Auto-find health if not wired in Inspector — prevents silent null
+        // on HealthTracker which causes IndividualHealthPresenter to never subscribe
+        if (health == null)
+            health = GetComponent<PlayerHealthComponent>();
+
+        if (health == null)
+            Debug.LogError($"[Player] {gameObject.name}: PlayerHealthComponent not found. " +
+                "Wire it in Inspector or ensure it is on the same GameObject.", this);
+    }
     [SerializeField] private PlayerMovementController movement;
     [SerializeField] private PlayerHealthComponent health;          // concrete ref for Unity wiring
     [SerializeField] protected PlayerAttackController attackController; // private — not protected
@@ -64,4 +75,3 @@ public class TimeFactorRegistrar : MonoBehaviour
     private void OnEnable() => _registry?.Register(_timeAffected);
     private void OnDisable() => _registry?.Unregister(_timeAffected);
 }
-

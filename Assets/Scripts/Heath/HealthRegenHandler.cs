@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class HealthRegenHandler
 {
@@ -34,13 +34,25 @@ public class HealthRegenHandler
     /// <summary>
     /// Called by CheckpointManager via PlayerHealthComponent.RestoreToFull().
     /// Clears timer and damage history so a respawned player behaves like a
-    /// freshly spawned one � no regen until they take their first hit.
+    /// freshly spawned one  no regen until they take their first hit.
     /// </summary>
     public void Reset()
     {
         _timeSinceLastCombatDamage = 0f;
         _hasEverTakenDamage = false;
         _regenPaused = false;
+    }
+
+    /// <summary>
+    /// True when regen is actively ticking this frame.
+    /// Used by HealthRegenVFX to drive the particle system.
+    /// </summary>
+    public bool IsRegenerating(float currentCombatHealth, float maxHealth)
+    {
+        if (_regenPaused) return false;
+        if (!_hasEverTakenDamage) return false;
+        if (currentCombatHealth >= maxHealth) return false;
+        return _timeSinceLastCombatDamage >= RegenDelays[_upgradeNode];
     }
 
     public float GetRegenThisFrame(float currentCombatHealth, float maxHealth, float deltaTime)

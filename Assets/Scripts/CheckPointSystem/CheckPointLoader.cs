@@ -120,7 +120,7 @@ public class CheckpointLoader : MonoBehaviour
             skillTree.PossessData,
             skillTree.GateData,
             skillTree.HealthRegenData,
-            skillTree.DualCastData,
+            skillTree.AccordSpiritsData,
             skillTree.CoalesceData,
             skillTree.SoulConvData
         };

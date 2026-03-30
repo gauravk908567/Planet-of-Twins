@@ -18,6 +18,7 @@ MonoBehaviour:
   wanderRadius: 15
   wanderTimerMin: 5
   wanderTimerMax: 8
+  knockbackForceMultiplier: 2.5
   detectionRange: 12
   possessedDetectionMultiplier: 14
   attackRange: 7

@@ -2,24 +2,11 @@
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// One ability icon slot on the HUD.
-/// Layout required (children of this RectTransform):
-///   Image "IconBG"       — background tint (set color to ability colour)
-///   Image "CooldownRing" — filled radial 360 image, overlaid on icon
-///   Image "LockedOverlay"— dark semi-transparent overlay, shown when locked
-///   TMP_Text "NameText"  — ability name (prototype label)
-///   TMP_Text "ChargeText"— charge count, hidden when MaxCharges <= 1
-///
-/// Call Bind() from AbilityHUDController after the source is available.
-/// Call Unbind() when tearing down.
-/// Call SetUnlocked(false) for abilities that require unlock.
-/// </summary>
 public class AbilityIconUI : MonoBehaviour
 {
     [Header("Children")]
     [SerializeField] private Image iconBG;
-    [SerializeField] private Image cooldownRing;    // Image.Type = Filled, FillMethod = Radial360
+    [SerializeField] private Image cooldownRing;
     [SerializeField] private Image lockedOverlay;
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private TMP_Text chargeText;
@@ -32,12 +19,22 @@ public class AbilityIconUI : MonoBehaviour
     private IAbilityHUDSource _source;
     private bool _isUnlocked = true;
 
-    // ── Public API ────────────────────────────────────────────
+    [Header("Lock settings")]
+    [SerializeField] private bool _startLocked = false;
+
+    private void Awake()
+    {
+        if (_startLocked)
+            SetUnlocked(false);
+    }
+
     public void Bind(IAbilityHUDSource source)
     {
         _source = source;
-        if (nameText != null)
-            nameText.text = source?.AbilityName ?? "";
+        // Only overwrite if source provides a non-empty name.
+        // Designer's TMP text in scene is preserved when name is empty.
+        if (nameText != null && !string.IsNullOrEmpty(source?.AbilityName))
+            nameText.text = source.AbilityName;
         Refresh();
     }
 
@@ -48,24 +45,18 @@ public class AbilityIconUI : MonoBehaviour
         if (chargeText != null) chargeText.gameObject.SetActive(false);
     }
 
-    /// <summary>
-    /// Set to false for abilities that must be purchased before appearing.
-    /// Icon slot stays hidden until SetUnlocked(true) is called.
-    /// </summary>
     public void SetUnlocked(bool unlocked)
     {
         _isUnlocked = unlocked;
         gameObject.SetActive(unlocked);
     }
 
-    // ── Unity ─────────────────────────────────────────────────
     private void Update()
     {
         if (!_isUnlocked || _source == null) return;
         Refresh();
     }
 
-    // ── Internal ──────────────────────────────────────────────
     private void Refresh()
     {
         if (_source == null) return;
@@ -73,7 +64,6 @@ public class AbilityIconUI : MonoBehaviour
         float progress = _source.CooldownProgress;
         SetCooldownRing(progress);
 
-        // BG colour: active = green, on cooldown = dark, ready = normal
         if (iconBG != null)
         {
             iconBG.color = _source.IsActive
@@ -81,11 +71,9 @@ public class AbilityIconUI : MonoBehaviour
                 : progress < 1f ? cooldownColour : readyColour;
         }
 
-        // Locked overlay
         if (lockedOverlay != null)
-            lockedOverlay.gameObject.SetActive(false); // unlocked icons never show overlay
+            lockedOverlay.gameObject.SetActive(false);
 
-        // Charge text
         if (chargeText != null)
         {
             bool showCharges = _source.MaxCharges > 1;

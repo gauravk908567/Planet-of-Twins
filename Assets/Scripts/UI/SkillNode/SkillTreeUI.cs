@@ -45,7 +45,7 @@ public class SkillTreeUI : MonoBehaviour
         InitialiseTab(KaiTabContent, GetKaiData());
         InitialiseTab(LyraTabContent, GetLyraData());
         InitialiseTab(SharedTabContent, GetSharedData());
-        ShowTab(0);                  // set initial state before hiding panel
+        ShowTab(0);
         SkillTreePanel?.SetActive(false);
     }
 
@@ -67,15 +67,27 @@ public class SkillTreeUI : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(ToggleKey))
+        bool togglePressed = Input.GetKeyDown(ToggleKey)
+                          || Input.GetKeyDown(KeyCode.Escape);
+
+        if (!togglePressed) return;
+
+        bool opening = !SkillTreePanel.activeSelf;
+
+        // Escape only closes — never opens
+        if (Input.GetKeyDown(KeyCode.Escape) && !SkillTreePanel.activeSelf) return;
+
+        SkillTreePanel.SetActive(opening);
+
+        if (opening)
         {
-            bool opening = !SkillTreePanel.activeSelf;
-            SkillTreePanel.SetActive(opening);
-            if (opening)
-            {
-                RefreshPoints(_pointBank.CurrentPoints);
-                ShowTab(0);
-            }
+            Time.timeScale = 0f;
+            RefreshPoints(_pointBank.CurrentPoints);
+            ShowTab(0);
+        }
+        else
+        {
+            Time.timeScale = 1f;
         }
     }
 
@@ -111,9 +123,15 @@ public class SkillTreeUI : MonoBehaviour
 
     AbilityUpgradeData[] GetKaiData() => new[] { _dataStore?.StunData };
     AbilityUpgradeData[] GetLyraData() => new[] { _dataStore?.PossessData };
+
     AbilityUpgradeData[] GetSharedData() => new[]
     {
-        _dataStore?.GateData, _dataStore?.HealthRegenData,
-        _dataStore?.DualCastData, _dataStore?.CoalesceData, _dataStore?.SoulConvData
+        _dataStore?.GateData,
+        _dataStore?.HealthRegenData,
+        _dataStore?.AccordSpiritsData,
+        _dataStore?.CoalesceData,
+        _dataStore?.SoulConvData,
+        _dataStore?.EmpowerData,
+        _dataStore?.AccordData     // ← Accord State node in Shared tab
     };
 }

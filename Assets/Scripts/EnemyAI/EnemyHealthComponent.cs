@@ -16,6 +16,7 @@ public class EnemyHealthComponent : MonoBehaviour, IDamageable
     [SerializeField] private float maxHealth = 100f;
 
     private float _currentHealth;
+    private DamageNumberDisplay _damageDisplay;
 
     public float MaxHealth => maxHealth;
     public float CurrentHealth => _currentHealth;
@@ -31,7 +32,11 @@ public class EnemyHealthComponent : MonoBehaviour, IDamageable
     public event Action<float> OnHealthChanged;
     public event Action OnDeath;
 
-    private void Awake() => _currentHealth = maxHealth;
+    private void Awake()
+    {
+        _currentHealth = maxHealth;
+        _damageDisplay = GetComponentInChildren<DamageNumberDisplay>();
+    }
 
     public void SetMaxHealth(float value)
     {
@@ -46,6 +51,7 @@ public class EnemyHealthComponent : MonoBehaviour, IDamageable
 
         LastDamageType = data.Type;
         _currentHealth -= data.Amount;
+        _damageDisplay?.ShowDamage(data.Amount);
 
         if (_currentHealth <= 0f)
         {

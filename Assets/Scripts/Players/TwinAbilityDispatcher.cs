@@ -24,8 +24,11 @@ public class TwinAbilityDispatcher : MonoBehaviour
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
     [SerializeField] private EmergencyTeleportMonitor emergencyMonitor;
+    [Tooltip("Drag AccordStateSystem here — used to check IsAccordActive for Q routing.")]
+    [SerializeField] private MonoBehaviour accordModeProviderObject;
 
     private IInputProvider _input;
+    private IAccordModeProvider _accordMode;
     private ITwinSelector _selector;
     private AbilityController _currentAbilityController;
     private AbilityController _leftController;
@@ -35,6 +38,7 @@ public class TwinAbilityDispatcher : MonoBehaviour
     {
         _input = inputProviderObject as IInputProvider;
         _selector = twinSelectorObject as ITwinSelector;
+        _accordMode = accordModeProviderObject as IAccordModeProvider;
     }
 
     private void OnEnable()
@@ -75,8 +79,17 @@ public class TwinAbilityDispatcher : MonoBehaviour
         if (_input == null) return;
 
         // ── Primary ability (Q) ───────────────────────────────
-        if (_currentAbilityController != null && _input.GetAbilityDown())
-            _currentAbilityController.ActivatePrimary();
+        // During Accord: each twin has its own accord Q (VoidStrike/RadiantSeeker)
+        // routed to their own AbilityController. Fire on BOTH so each twin's
+        // accord ability activates from a single Q press.
+        // Outside Accord: only the selected twin's controller fires (existing behaviour).
+        if (_input.GetAbilityDown())
+        {
+            // During Accord and normal mode — only the selected twin's Q fires.
+            // Each twin has its own accord ability (VoidStrike on Kai, RadiantSeeker on Lyra).
+            // Player must switch with Shift to use the other twin's ability, same as normal mode.
+            _currentAbilityController?.ActivatePrimary();
+        }
 
         // ── Teleport (C) ──────────────────────────────────────
         // Only active when emergency condition is met.

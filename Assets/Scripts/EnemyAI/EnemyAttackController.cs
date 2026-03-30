@@ -110,10 +110,12 @@ public class EnemyAttackController : MonoBehaviour
                 possessable?.OnHitByPossessed(GetComponent<Enemy>());
             }
 
-            var playerHealth = _hitBuffer[i].GetComponent<PlayerHealthComponent>();
+            // Use GetComponentInParent — collider may be on a child GO
+            // while PlayerHealthComponent lives on the root Player GO
+            var playerHealth = _hitBuffer[i].GetComponentInParent<PlayerHealthComponent>();
             if (playerHealth != null && playerHealth.IsDead) continue;
 
-            var damageable = _hitBuffer[i].GetComponent<IDamageable>();
+            var damageable = _hitBuffer[i].GetComponentInParent<IDamageable>();
             if (damageable == null) continue;
 
             damageable.TakeDamage(new DamageData(
@@ -125,7 +127,7 @@ public class EnemyAttackController : MonoBehaviour
             if (playerHealth != null && playerHealth.IsDead)
             {
                 Debug.Log($"[EnemyAttack] Melee killing blow on {_hitBuffer[i].name}");
-                _hitBuffer[i].GetComponent<PlayerDeathRescueProxy>()
+                _hitBuffer[i].GetComponentInParent<PlayerDeathRescueProxy>()
                              ?.Activate(GetComponent<Enemy>());
             }
         }
@@ -150,10 +152,10 @@ public class EnemyAttackController : MonoBehaviour
     // ── Shared damage pipeline ────────────────────────────────
     private void ApplyDamageToTarget(Collider col)
     {
-        var playerHealth = col.GetComponent<PlayerHealthComponent>();
+        var playerHealth = col.GetComponentInParent<PlayerHealthComponent>();
         if (playerHealth != null && playerHealth.IsDead) return;
 
-        var damageable = col.GetComponent<IDamageable>();
+        var damageable = col.GetComponentInParent<IDamageable>();
         if (damageable == null) return;
 
         damageable.TakeDamage(new DamageData(
@@ -165,7 +167,7 @@ public class EnemyAttackController : MonoBehaviour
         if (playerHealth != null && playerHealth.IsDead)
         {
             Debug.Log($"[EnemyAttack] Ranged killing blow on {col.name}");
-            col.GetComponent<PlayerDeathRescueProxy>()?.Activate(GetComponent<Enemy>());
+            col.GetComponentInParent<PlayerDeathRescueProxy>()?.Activate(GetComponent<Enemy>());
         }
     }
 

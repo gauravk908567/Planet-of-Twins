@@ -9,6 +9,7 @@ public class OverviewCamController : MonoBehaviour, IOverviewBroadcaster
 
     public event Action<bool> OnOverviewToggled;
     public bool IsOverviewActive { get; private set; }
+    public float CooldownDuration => cooldownDuration;
 
     private float activeTimer = 0f;
     private float cooldownTimer = 0f;

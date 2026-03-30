@@ -12,19 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
   m_Name: HealthRegenData
   m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
-  abilityName: Health Regen
-  abilityDescription: 'Base ability (passive, always active)
-
-    The twins'' shared
-    health pool slowly recovers after taking damage.
-
-    Regen pauses when combat
-    damage is received and resumes shortly after'
   baseTargetCount: 1
   baseDuration: 3
-  baseCooldown: 7
   baseRange: 5
-  baseRegenRate: 16.6
+  baseCooldown: 7
   nodes:
   - label: Regen I
     pointCost: 3
@@ -32,39 +23,40 @@ MonoBehaviour:
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 1.333
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: '"The bond between the twins quickens their recovery."'
+    description: Regen begins sooner. Rate increased.
   - label: Regen II
     pointCost: 6
     durationBonus: 0
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 1.333
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: '"Their shared vitality flows faster. Wounds close before the next
-      fight."'
+    description: Regen rate increased further.
   - label: Regen III
     pointCost: 10
     durationBonus: 0
     cooldownReduction: 0
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 1.333
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: '"The twins heal almost as fast as they are hurt. Attrition favours
-      them."'
+    description: Maximum regen rate. Recovery is near-continuous between fights.
   currentNodeIndex: 0

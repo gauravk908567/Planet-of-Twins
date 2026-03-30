@@ -13,6 +13,12 @@ public class AbilityController : MonoBehaviour, IAbilityLock
     private int _abilityLockCounter = 0;
     public bool AbilitiesLocked => _abilityLockCounter > 0;
     public void LockAbilities() => _abilityLockCounter++;
+
+    // ── Primary-only lock (for Q-only suppression from bombs) ─
+    private int _primaryLockCounter = 0;
+    public bool PrimaryLocked => _primaryLockCounter > 0 || AbilitiesLocked;
+    public void LockPrimaryOnly() => _primaryLockCounter++;
+    public void UnlockPrimaryOnly() => _primaryLockCounter = Mathf.Max(0, _primaryLockCounter - 1);
     public void UnlockAbilities() => _abilityLockCounter = Mathf.Max(0, _abilityLockCounter - 1);
 
     private void Awake()
@@ -52,10 +58,10 @@ public class AbilityController : MonoBehaviour, IAbilityLock
     // ── Primary ───────────────────────────────────────────────
     public void ActivatePrimary()
     {
-        if (AbilitiesLocked)
+        if (PrimaryLocked)
         {
             Debug.LogWarning($"[AbilityController] {gameObject.name}: primary blocked " +
-                $"(lockCounter={_abilityLockCounter})", this);
+                $"(abilityLock={_abilityLockCounter} primaryLock={_primaryLockCounter})", this);
             return;
         }
         primaryAbility?.TryActivate();
@@ -83,6 +89,9 @@ public class AbilityController : MonoBehaviour, IAbilityLock
     // During rescue the caster can be anywhere — barrier distance is irrelevant.
     public void ActivateTeleportEmergency()
     {
+        // Double teleport guard — if this controller's teleport is already active, block
+        var ta = teleportAbility as TeleportAbility;
+        if (ta != null && ta.IsActive) return;
         teleportAbility?.TryActivate();
     }
 

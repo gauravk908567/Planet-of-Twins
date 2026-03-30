@@ -14,6 +14,22 @@ public class SharedHealthPool : MonoBehaviour, ISharedHealthPool
     public event Action<float> OnCombinedHealthChanged;
     public event Action OnSharedPoolEmpty;
 
+    /// <summary>
+    /// Setsuna uses this to snapshot health at cast time and restore on rewind.
+    /// </summary>
+    public float CurrentHealth => CombinedHealth;
+
+    /// <summary>
+    /// Force-sets both player health components to split the target value evenly.
+    /// Called by SetsunaSystem after rewind to restore health snapshot.
+    /// </summary>
+    public void ForceSetHealth(float targetCombined)
+    {
+        float half = Mathf.Clamp(targetCombined * 0.5f, 0f, BaseMaxHealth * 0.5f);
+        leftPlayer?.SetDisplayHealthDirectly(half);
+        rightPlayer?.SetDisplayHealthDirectly(half);
+    }
+
     // FIX: named delegates — same instance used for += and -=
     private Action<float> _onLeftChanged;
     private Action<float> _onRightChanged;

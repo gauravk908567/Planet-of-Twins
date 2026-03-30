@@ -243,4 +243,11 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
         yield return new WaitForSeconds(grabCooldownAfterRescue);
         _grabOnCooldown = false;
     }
+
+    //Knockback──────────────────────────────────────────
+    public override void ReceiveKnockback(KnockbackData data)
+    {
+        if (_isGrabbing) return;
+        base.ReceiveKnockback(data);
+    }
 }

@@ -41,6 +41,7 @@ public class CoalesceAura : MonoBehaviour
     private float _lingerTimer = -1f;  // -1 means still attached (ability active)
     private bool _lingering = false;
     private Vector3 _worldPos;    // cached when detached
+    private ParticleSystem _particles;  // child particle system — plays while active
 
     // ── Public init ───────────────────────────────────────────────────────────
     public void Initialise(GameObject host, float radius, float dps, float lingerDuration)
@@ -50,16 +51,28 @@ public class CoalesceAura : MonoBehaviour
         DamagePerSec = dps;
         LingerDuration = lingerDuration;
 
-        // Scale the visual sphere child to match the damage radius
-        // Sphere mesh has radius 0.5 at scale 1, so scale = radius * 2
-        var visual = transform.GetChild(0);
-        if (visual != null)
-        {
-            float s = radius * 2f;
-            visual.localScale = new Vector3(s, s, s);
-        }
+        // Grab the particle system from the child — Play On Awake handles starting it.
+        _particles = GetComponentInChildren<ParticleSystem>();
+        if (_particles == null)
+            Debug.LogWarning("[CoalesceAura] No ParticleSystem found in children — add one to the prefab.", this);
+
+        // FIX: subscribe to host death so we detach and linger immediately if the
+        // enemy dies while the aura is still active. Without this, StunAbility prunes
+        // the dead enemy from _stunnedThisWindow so OnStunEnded never fires for it,
+        // CoalesceSystem.HandleEnded is never called, and the aura stays parented to
+        // the enemy — which then returns to pool and reuses the aura on the next spawn.
+        var hostHealth = host?.GetComponent<EnemyHealthComponent>();
+        if (hostHealth != null)
+            hostHealth.OnDeath += HandleHostDied;
 
         Debug.Log($"[CoalesceAura] Initialised on {host?.name} radius={radius} dps={dps} linger={lingerDuration}");
+    }
+
+    private void HandleHostDied()
+    {
+        // Host died while aura was active — detach and linger in world space
+        if (!_lingering)
+            DetachAndLinger();
     }
 
     // ── Called by CoalesceSystem when the stun/possess ends ──────────────────
@@ -82,7 +95,23 @@ public class CoalesceAura : MonoBehaviour
         if (_lingering)
         {
             _lingerTimer -= Time.deltaTime;
-            if (_lingerTimer <= 0f) { Destroy(gameObject); return; }
+            if (_lingerTimer <= 0f)
+            {
+                // Stop particles and let them finish their natural fade before destroying.
+                // If no particles, destroy immediately.
+                if (_particles != null)
+                {
+                    _particles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                    // Wait for existing particles to die before destroying the GO.
+                    // Use the particle system's own duration + start lifetime as a safe buffer.
+                    Destroy(gameObject, _particles.main.startLifetime.constantMax + 0.5f);
+                }
+                else
+                {
+                    Destroy(gameObject);
+                }
+                return;
+            }
         }
 
         // Damage tick
@@ -107,7 +136,7 @@ public class CoalesceAura : MonoBehaviour
 
             var health = col.GetComponent<EnemyHealthComponent>();
             if (health == null) health = col.GetComponentInParent<EnemyHealthComponent>();
-            if (health != null) health.TakeDamage(new DamageData(dmgThisTick, DamageType.Environmental, gameObject, col.transform.position));
+            if (health != null) health.TakeDamage(new DamageData(dmgThisTick, DamageType.Ability, gameObject, col.transform.position));
         }
     }
 

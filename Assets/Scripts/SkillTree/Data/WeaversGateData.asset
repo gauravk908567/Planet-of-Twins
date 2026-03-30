@@ -12,19 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
   m_Name: WeaversGateData
   m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
-  abilityName: Weavers Gate
-  abilityDescription: 'Either twin can open a gate that the other can step through
-    instantly.
-
-    Used to close distance, escape grabs, or reunite soul in difficult
-    situations.
-
-    The gate remains open for a short window before collapsing.'
   baseTargetCount: 1
   baseDuration: 4
-  baseCooldown: 9
   baseRange: 5
-  baseRegenRate: 16.6
+  baseCooldown: 9
   nodes:
   - label: Weavers Gate I
     pointCost: 3
@@ -32,40 +23,43 @@ MonoBehaviour:
     cooldownReduction: 1
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: "\"The gate holds open a fraction longer. More time to make the
-      crossing.\"\n\nDuration 4.0\u21924.7s  |  Cooldown 9.0\u21928.0s"
+    description: "Gate stays open longer. Cooldown reduced.\r\nDuration 4.0\u21924.7s 
+      |  Cooldown 9.0\u21928.0s"
   - label: Weavers Gate II
     pointCost: 6
     durationBonus: 0.43
     cooldownReduction: 0.6
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: "\"The weave stabilises. The gate is easier to open and stays longer.\"\n\nDuration
-      4.7s\u21925.1s  |  Cooldown 8.0\u21927.4s"
+    description: "Duration and cooldown improved further.\rDuration 4.7\u21925.1s 
+      |  Cooldown 8.0\u21927.4s"
   - label: Weavers Gate III
     pointCost: 10
     durationBonus: 0.26
     cooldownReduction: 0.36
     targetCountBonus: 0
     rangeBonus: 0
+    cooldownBonus: 0
     regenRateMultiplier: 0
     coalesceRadiusBonus: 0
     coalesceDurationBonus: 0
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
-    description: "\"A perfected connection. The twins move between points almost
-      freely.\"\n\nDuration 5.1s\u21925.3s  |  Cooldown 7.4\u21927.1s"
+    description: "Maximum duration. Cooldown minimised.\rDuration 5.1\u21925.3s 
+      |  Cooldown 7.4\u21927.1s"
   currentNodeIndex: 0

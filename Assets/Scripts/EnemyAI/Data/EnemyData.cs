@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 [CreateAssetMenu(fileName = "EnemyData", menuName = "PlanetOfTwins/Enemy Data/Base")]
 public class EnemyData : ScriptableObject
@@ -15,6 +15,9 @@ public class EnemyData : ScriptableObject
     public float wanderTimerMin = 5f;
     public float wanderTimerMax = 12f;
 
+    [Tooltip("Knockback force multiplier. 1 = full force, 0 = immune, 0.5 = half push.")]
+    public float knockbackForceMultiplier = 1f;
+
     [Header("Detection")]
     public float detectionRange = 8f;
     public float possessedDetectionMultiplier = 4f;
@@ -28,11 +31,17 @@ public class EnemyData : ScriptableObject
     [Header("Possession Recovery")]
     public float returnAnimDuration = 1.5f;
 
+    [Header("Accord Spirits")]
+    [Tooltip("If true this enemy can damage and destroy Accord Spirit entities.")]
+    public bool canDamageSpirits = false;
+    [Tooltip("Damage per hit to spirits. Only used if canDamageSpirits = true.")]
+    public float spiritDamage = 25f;
+
     [Header("Possession")]
     public bool canBePossessed = true;
     public float possessionDuration = 5f;
 
-    [Header("Killing Blow TTK — any enemy that can down a player")]
+    [Header("Killing Blow TTK ï¿½ any enemy that can down a player")]
     public float timeToKill = 8f;
     public float mashFrequency = 4f;
     public float mashWindowDuration = 3f;

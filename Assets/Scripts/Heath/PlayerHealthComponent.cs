@@ -22,6 +22,7 @@ public class PlayerHealthComponent : MonoBehaviour,
     public bool IsDead => _isDead;
 
     private bool _invincible;
+    private bool _isRegenActive = false;  // tracks regen state to fire events only on change
     public void SetInvincible(bool value) => _invincible = value;
 
     public float DisplayHealth
@@ -36,7 +37,9 @@ public class PlayerHealthComponent : MonoBehaviour,
 
     public event Action<float> OnDisplayHealthChanged;
     public event Action OnDeath;
-    public event Action<PlayerHealthComponent, float> OnDamageTaken;
+    public event Action<PlayerHealthComponent, float, Vector3> OnDamageTaken; // component, amount, hitPoint
+    public event Action OnRegenStarted;   // fires once when regen begins
+    public event Action OnRegenStopped;   // fires once when regen stops or is interrupted
 
     private void Awake()
     {
@@ -49,6 +52,20 @@ public class PlayerHealthComponent : MonoBehaviour,
 
         float regenAmount = _regenHandler.GetRegenThisFrame(
             _currentCombatHealth, maxCombatHealth, Time.deltaTime);
+
+        bool regenActive = regenAmount > 0f;
+
+        // Fire events only when state changes — not every frame
+        if (regenActive && !_isRegenActive)
+        {
+            _isRegenActive = true;
+            OnRegenStarted?.Invoke();
+        }
+        else if (!regenActive && _isRegenActive)
+        {
+            _isRegenActive = false;
+            OnRegenStopped?.Invoke();
+        }
 
         if (regenAmount > 0f)
         {
@@ -73,7 +90,7 @@ public class PlayerHealthComponent : MonoBehaviour,
         if (damageData.Type == DamageType.Combat)
             _regenHandler.OnCombatDamageTaken();
 
-        OnDamageTaken?.Invoke(this, multipliedAmount);
+        OnDamageTaken?.Invoke(this, multipliedAmount, damageData.HitPoint);
         BroadcastDisplayHealth();
 
         if (_currentCombatHealth <= 0f && !_deathFired)
@@ -134,6 +151,7 @@ public class PlayerHealthComponent : MonoBehaviour,
     {
         _isDead = false;
         _deathFired = false;
+        _isRegenActive = false;
         _currentCombatHealth = maxCombatHealth;
         _overMaxDistanceDrain = 0f;
         _distanceModifier = 1f;

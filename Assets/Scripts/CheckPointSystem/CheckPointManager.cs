@@ -85,7 +85,7 @@ public class CheckpointManager : MonoBehaviour
             skillTreeManager.PossessData,
             skillTreeManager.GateData,
             skillTreeManager.HealthRegenData,
-            skillTreeManager.DualCastData,
+            skillTreeManager.AccordSpiritsData,
             skillTreeManager.CoalesceData,
             skillTreeManager.SoulConvData
         };
