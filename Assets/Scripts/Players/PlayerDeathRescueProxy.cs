@@ -24,6 +24,7 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
     private Enemy _killingEnemy;
     private Action _onKillerDiedDelegate;
     public bool CanGrabbedPlayerStruggle => false;
+    public float StrugglePauseDuration => 0f; // dying player cannot struggle
 
     public Transform GrabbedPlayerTransform => transform;
     public Player GrabbedPlayer => _player;

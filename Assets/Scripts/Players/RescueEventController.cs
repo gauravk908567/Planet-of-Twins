@@ -20,6 +20,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
 
     [Header("Emergency Teleport")]
     [SerializeField] private EmergencyTeleportMonitor emergencyTeleportMonitor;
+    [SerializeField] private MonoBehaviour timeFactorControllerObject; // → ITimeFactorController
 
     [Tooltip("Soul must be within this radius of grabbed player to register F press")]
     [SerializeField] private float mashProximityRadius = 2.5f;
@@ -31,6 +32,41 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     public event Action<float> OnCooldownTimeUpdated;
     public event Action<Player> OnPlayerInDanger;
     public event Action<IRescueTarget> OnActiveTargetChanged;
+    public event Action OnSoulArrived;      // fires when soul reaches destination
+    public event Action OnRescueResolved;   // fires on Success or Failed
+
+    /// <summary>
+    /// Fires when the grabbed player successfully presses E to struggle.
+    /// Only fires for tier-1 traps (CanGrabbedPlayerStruggle = true).
+    /// UI listens to this to animate the struggle ring.
+    /// </summary>
+    public event Action OnStruggleActivated;
+    /// <summary>Fires when 30% TTK hack cap is reached — UI hides E ring.</summary>
+    public event Action OnStruggleCapReached;
+
+    // ── Siphon Ghost support ───────────────────────────────────
+    private int _activeGhostCount = 0;
+    private const int MaxActiveGhosts = 1;
+
+    /// <summary>Returns true if ghost was registered. False if cap reached.</summary>
+    public bool TryRegisterGhost()
+    {
+        if (_activeGhostCount >= MaxActiveGhosts) return false;
+        _activeGhostCount++;
+        return true;
+    }
+
+    public void UnregisterGhost() =>
+        _activeGhostCount = Mathf.Max(0, _activeGhostCount - 1);
+
+    // ── TTK control — called by SiphonGhost when it chains the soul ──
+    // Delegates to the active rescue target so SiphonGhost doesn't need
+    // a direct reference to GroupGrabEnemy / PlayerDeathRescueProxy.
+    public void PauseTTK() => _activeTarget?.PauseTTK();
+    public void ResumeTTK() => _activeTarget?.ResumeTTK();
+
+    // ── LastBlowEnemy — for Ashen Tide fear exclusion ──────────
+    public GameObject LastBlowEnemy { get; private set; }
 
 
     public Player ActiveGrabbedPlayer => _activeTarget?.GrabbedPlayer;
@@ -41,14 +77,20 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     public bool IsRescueActive => _state != RescueState.Idle;
     public bool HasActiveRescueTarget => _activeTarget != null;
 
+    /// <summary>Exposed so SiphonGhost can read soul break-mash input without raw Input calls.</summary>
+    public IInputProvider InputProvider => _input;
+
     // ââ Internal âââââââââââââââââââââââââââââââââââââââââââââââ
     private RescueState _state = RescueState.Idle;
     private IRescueTarget _activeTarget;
+    private float _totalStruggleTimePaused;
+    private bool _struggleCapReached;
     private TeleportAbility _activeSoulAbility;
 
     private ITwinSelector _selector;
     private ISelectionLock _selectionLock;
     private IInputProvider _input;
+    private ITimeFactorController _timeFactorController;
 
     private float _mashProgress = 0f;
     private float _mashTimeRemaining = 0f;
@@ -79,6 +121,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         if (_selector == null) Debug.LogError("[RescueEventController] twinSelectorObject missing ITwinSelector.", this);
         if (_selectionLock == null) Debug.LogError("[RescueEventController] twinSelectorObject missing ISelectionLock.", this);
         if (_input == null) Debug.LogError("[RescueEventController] inputProviderObject missing IInputProvider.", this);
+        _timeFactorController = timeFactorControllerObject as ITimeFactorController;
     }
 
     private void Start()
@@ -86,6 +129,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         var traps = FindObjectsByType<SkeletonTrap>(FindObjectsSortMode.None);
         foreach (var trap in traps)
             RegisterTrap(trap);
+
 
         RegisterDeathProxies();
 
@@ -243,6 +287,13 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _activeTarget = target;
         OnActiveTargetChanged?.Invoke(_activeTarget);
 
+        // Store the enemy GO for Ashen Tide fear exclusion
+        LastBlowEnemy = (target as MonoBehaviour)?.gameObject;
+
+        // Notify SoulPulseSystem of last blow enemy
+        var pulse = soulPlayer?.GetComponent<SoulPulseSystem>();
+        pulse?.SetLastBlowEnemy(LastBlowEnemy);
+
         bool isLeft = (grabbedPlayer == leftTwin);
         emergencyTeleportMonitor?.SetEmergencyOverride(isLeft, true);
 
@@ -311,6 +362,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
 
     private void HandleSoulArrived()
     {
+        OnSoulArrived?.Invoke(); // fire regardless of state — Siphon listens here
         if (_state != RescueState.Idle && _state != RescueState.SoulDied) return;
         if (_activeTarget?.GrabbedPlayerTransform == null) return;
 
@@ -325,6 +377,30 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     // ââ Update âââââââââââââââââââââââââââââââââââââââââââââââââ
     private void Update()
     {
+        // ── Struggle (E mash by grabbed player, tier-1 traps only) ──
+        // Capped at 30% of full TTK duration — after that E does nothing.
+        // Also disabled once rescue teleport fires (state != Idle).
+        if (_activeTarget != null &&
+            _activeTarget.CanGrabbedPlayerStruggle &&
+            !_struggleCapReached &&
+            _state == RescueState.Idle && // disabled once rescue triggered
+            _input != null &&
+            _input.GetStruggleMash())
+        {
+            _activeTarget.OnStruggle();
+            OnStruggleActivated?.Invoke();
+
+            // Track total struggle time used
+            _totalStruggleTimePaused += _activeTarget.StrugglePauseDuration;
+
+            float maxHack = _activeTarget.MashWindowDuration * 0.3f; // 30% of TTK
+            if (_totalStruggleTimePaused >= maxHack)
+            {
+                _struggleCapReached = true;
+                OnStruggleCapReached?.Invoke(); // UI hides E ring
+            }
+        }
+
         switch (_state)
         {
             case RescueState.Idle:
@@ -472,6 +548,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
                 break;
 
             case RescueState.Success:
+                OnRescueResolved?.Invoke();
                 Player rescued = _activeTarget?.GrabbedPlayer;
                 IRescueTarget resolvedTarget = _activeTarget;
 
@@ -489,6 +566,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
                 break;
 
             case RescueState.Failed:
+                OnRescueResolved?.Invoke();
                 CleanupRescueEvent();
                 break;
 
@@ -502,7 +580,13 @@ public class RescueEventController : MonoBehaviour, IRescueActive
 
     private void CleanupRescueEvent()
     {
+        _struggleCapReached = false;
+        _totalStruggleTimePaused = 0f;
         _activeTarget = null;
+        LastBlowEnemy = null;
+        var pulse = soulPlayer?.GetComponent<SoulPulseSystem>();
+        pulse?.ClearLastBlowEnemy();
+        _activeGhostCount = 0;
         OnActiveTargetChanged?.Invoke(null);
         _activeSoulAbility = null;
         _mashProgress = 0f;

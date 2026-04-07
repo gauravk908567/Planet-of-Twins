@@ -60,6 +60,7 @@ public class PlayerAttackController : MonoBehaviour, IDamageMultiplier
     private IAnimationController _animController;
     private AttackRangeIndicator _rangeIndicator;
     private bool _soulMode;
+    private bool _hasWeapon = false;
 
     private void Awake()
     {
@@ -83,12 +84,14 @@ public class PlayerAttackController : MonoBehaviour, IDamageMultiplier
     public void PerformAttack()
     {
         if (_soulMode) return;
+        if (!_hasWeapon && !isSoul) return;
         _animController?.PlayAttack();
     }
 
     public void ExecuteHitDetection()
     {
         if (_soulMode) return;
+        if (!_hasWeapon && !isSoul) return;
 
         _rangeIndicator?.Show(attackRange);
         _attackStrategy?.ExecuteAttack();
@@ -112,4 +115,6 @@ public class PlayerAttackController : MonoBehaviour, IDamageMultiplier
     }
 
     public void SetSoulMode(bool value) => _soulMode = value;
+    public bool HasWeapon => _hasWeapon;
+    public void SetHasWeapon(bool value) => _hasWeapon = value;
 }

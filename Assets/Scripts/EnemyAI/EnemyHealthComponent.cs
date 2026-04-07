@@ -30,6 +30,14 @@ public class EnemyHealthComponent : MonoBehaviour, IDamageable
 
     /// <summary>Fires whenever health changes (damage or heal). Arg = normalised 0-1.</summary>
     public event Action<float> OnHealthChanged;
+
+    /// <summary>
+    /// Fires on every damage hit before death is evaluated.
+    /// Args: this component, raw damage amount, world position of the hit.
+    /// Used by SeveredEnemy (linked damage) and PenitentEnemy (trap reaction).
+    /// </summary>
+    public event Action<EnemyHealthComponent, float, Vector3> OnDamageTaken;
+
     public event Action OnDeath;
 
     private void Awake()
@@ -52,6 +60,9 @@ public class EnemyHealthComponent : MonoBehaviour, IDamageable
         LastDamageType = data.Type;
         _currentHealth -= data.Amount;
         _damageDisplay?.ShowDamage(data.Amount);
+
+        // Notify listeners (SeveredEnemy linked damage, PenitentEnemy, etc.)
+        OnDamageTaken?.Invoke(this, data.Amount, transform.position);
 
         if (_currentHealth <= 0f)
         {

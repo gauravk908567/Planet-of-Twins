@@ -21,4 +21,8 @@ public class CheckpointData
     public int[] nodeUnlockLevels;
 
     // HP is always restored to full on respawn (by design).
+
+    // Sword pickup state — did each twin have the sword when checkpoint was saved?
+    public bool leftHasSword;
+    public bool rightHasSword;
 }

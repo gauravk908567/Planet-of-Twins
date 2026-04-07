@@ -3,6 +3,21 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// WorldSpaceRescueUI — drives the world-space rescue HUD on each player.
+///
+/// Three rings:
+///   TTK ring  (red)   — drains as killer's timer counts down. Always centred on grab.
+///                        Slides left when soul arrives so the rescue ring has room.
+///   F-key ring (green) — appears when soul arrives. Player mashes F to fill it.
+///   Struggle ring (white/gold) — appears ONLY for tier-1 traps (CanGrabbedPlayerStruggle).
+///                        Shows "Press E!" prompt. Flashes/fills for 0.4 s on each E press.
+///                        Sits below the TTK ring, independent of soul proximity.
+///
+/// INSPECTOR SETUP:
+///   Wire all three Image rings and the two TMP_Text labels.
+///   Struggle ring sits on a separate RectTransform child; position it freely.
+/// </summary>
 public class WorldSpaceRescueUI : MonoBehaviour
 {
     [Header("Owner")]
@@ -24,9 +39,22 @@ public class WorldSpaceRescueUI : MonoBehaviour
     [SerializeField] private Image fKeyRing;
     [SerializeField] private Vector2 fKeySplitPos = new Vector2(50f, 0f);
 
+    [Header("Struggle Ring (white/gold — E mash, tier-1 traps only)")]
+    [Tooltip("Radial Image — fill 0→1 on each struggle press, drains back down.")]
+    [SerializeField] private Image struggleRing;
+    [Tooltip("Duration the ring stays filled before draining. Match GroupGrabEnemy.strugglePauseDuration.")]
+    [SerializeField] private float struggleFillDuration = 0.4f;
+    [SerializeField] private Color struggleColour = new Color(1f, 0.85f, 0.2f, 1f); // gold
+
     [Header("Text")]
     [SerializeField] private TMP_Text pressFText;
+    [SerializeField] private TMP_Text pressEText;   // "Press E!" — shown next to struggle ring
     [SerializeField] private TMP_Text cooldownText;
+
+    [Header("Chain Prompt (Tether-Breaker)")]
+    [Tooltip("Separate panel shown when player is chain-grabbed. Independent of rescue system.")]
+    [SerializeField] private GameObject chainPromptPanel;
+    [SerializeField] private TMP_Text chainPromptText;
 
     [Header("Colours")]
     [SerializeField] private Color ttkColour = new Color(0.9f, 0.15f, 0.15f, 1f);
@@ -36,6 +64,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private float splitDuration = 0.3f;
 
+    // ── Runtime ────────────────────────────────────────────────
     private RescueState _state;
     private IRescueTarget _activeTarget;
 
@@ -44,6 +73,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
     private bool _isOwnerInDanger;
     private bool _soulInRange;
     private Coroutine _splitCoroutine;
+    private Coroutine _struggleCoroutine;
 
     // ── Lifecycle ──────────────────────────────────────────────
     private void Awake()
@@ -61,6 +91,8 @@ public class WorldSpaceRescueUI : MonoBehaviour
         rescueEventController.OnCooldownTimeUpdated += HandleCooldownTime;
         rescueEventController.OnPlayerInDanger += HandlePlayerInDanger;
         rescueEventController.OnActiveTargetChanged += HandleActiveTargetChanged;
+        rescueEventController.OnStruggleActivated += HandleStruggleActivated;
+        rescueEventController.OnStruggleCapReached += HandleStruggleCapReached;
     }
 
     private void OnDisable()
@@ -72,24 +104,62 @@ public class WorldSpaceRescueUI : MonoBehaviour
         rescueEventController.OnCooldownTimeUpdated -= HandleCooldownTime;
         rescueEventController.OnPlayerInDanger -= HandlePlayerInDanger;
         rescueEventController.OnActiveTargetChanged -= HandleActiveTargetChanged;
+        rescueEventController.OnStruggleActivated -= HandleStruggleActivated;
+        rescueEventController.OnStruggleCapReached -= HandleStruggleCapReached;
     }
 
-    private void Start() => HideAll();
+    private float _chainRefreshTimer;
+    private const float ChainRefreshInterval = 1f; // recheck every second for new spawns
+
+    private void Start()
+    {
+        HideAll();
+        RefreshChainSubscriptions();
+    }
+
+    private void RefreshChainSubscriptions()
+    {
+        foreach (var tb in FindObjectsByType<TetherBreakerEnemy>(FindObjectsSortMode.None))
+        {
+            tb.OnChainGrabbed -= HandleChainGrabbed;
+            tb.OnChainReleased -= HandleChainReleased;
+            tb.OnChainGrabbed += HandleChainGrabbed;
+            tb.OnChainReleased += HandleChainReleased;
+        }
+    }
+
+    private void HandleChainGrabbed(Player grabbed)
+    {
+        if (grabbed != ownerPlayer) return;
+        chainPromptPanel?.SetActive(true);
+    }
+
+    private void HandleChainReleased()
+    {
+        chainPromptPanel?.SetActive(false);
+    }
 
     private void Update()
     {
+        // Periodically resubscribe to handle TetherBreakers spawned after scene load
+        _chainRefreshTimer -= Time.deltaTime;
+        if (_chainRefreshTimer <= 0f)
+        {
+            _chainRefreshTimer = ChainRefreshInterval;
+            RefreshChainSubscriptions();
+        }
+
         if (!_isOwnerInDanger) return;
 
         // Drain TTK ring every frame
         if (_activeTarget != null && ttkRing != null)
             ttkRing.fillAmount = _activeTarget.NormalisedTTK;
 
-        // Keep panel visible while in danger
         if (!rootPanel.activeSelf)
             rootPanel.SetActive(true);
     }
 
-    // ── OnPlayerInDanger — fires at moment of grab, before soul arrives ──
+    // ── OnPlayerInDanger ───────────────────────────────────────
     private void HandlePlayerInDanger(Player grabbed)
     {
         if (grabbed != ownerPlayer) return;
@@ -100,13 +170,16 @@ public class WorldSpaceRescueUI : MonoBehaviour
         rootPanel?.SetActive(true);
         cooldownOverlay?.SetActive(false);
 
-        // TTK ring centred, full, red — soul not here yet
         SetTTKRingCentred();
         if (ttkRing) { ttkRing.fillAmount = 1f; ttkRing.color = ttkColour; }
 
-        // F-key ring hidden until soul arrives
         fKeyRing?.gameObject.SetActive(false);
         if (pressFText) pressFText.gameObject.SetActive(false);
+
+        // Show struggle ring if this trap supports it
+        // Read from controller directly — _activeTarget may not be set yet when this fires
+        bool canStruggle = rescueEventController?.ActiveTarget?.CanGrabbedPlayerStruggle ?? false;
+        SetStruggleRingVisible(canStruggle);
     }
 
     // ── RescueState changes ────────────────────────────────────
@@ -117,11 +190,6 @@ public class WorldSpaceRescueUI : MonoBehaviour
         switch (state)
         {
             case RescueState.Idle:
-                // Three paths reach here:
-                // 1. Killer died before soul arrived (_isOwnerInDanger=true) — hide UI
-                // 2. CleanupRescueEvent after Failed/Success (_isOwnerInDanger=false,
-                //    panel already hidden) — do nothing, skip spurious collapse
-                // 3. Genuinely idle with panel visible — run collapse animation
                 if (_isOwnerInDanger)
                 {
                     _isOwnerInDanger = false;
@@ -135,6 +203,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
                     _splitCoroutine = StartCoroutine(AnimateCollapse());
                 }
                 break;
+
             case RescueState.Success:
             case RescueState.Failed:
                 _isOwnerInDanger = false;
@@ -144,9 +213,10 @@ public class WorldSpaceRescueUI : MonoBehaviour
                 break;
 
             case RescueState.Triggered:
-                // Soul has arrived in radius — animate split
                 if (!_isOwnerInDanger) return;
                 _soulInRange = true;
+                // Teleport fired — hide struggle ring, cap reached or not
+                SetStruggleRingVisible(false);
                 if (_splitCoroutine != null) StopCoroutine(_splitCoroutine);
                 _splitCoroutine = StartCoroutine(AnimateSplit());
                 break;
@@ -161,17 +231,66 @@ public class WorldSpaceRescueUI : MonoBehaviour
                 if (!_isOwnerInDanger) return;
                 cooldownOverlay?.SetActive(true);
                 if (fKeyRing) fKeyRing.color = cooldownColour;
-                if (pressFText) pressFText.text = "Wait...";
                 break;
 
             case RescueState.SoulDied:
                 if (!_isOwnerInDanger) return;
-                // Soul died — collapse back to single TTK ring
                 _soulInRange = false;
                 if (_splitCoroutine != null) StopCoroutine(_splitCoroutine);
                 _splitCoroutine = StartCoroutine(AnimateCollapse());
                 break;
         }
+    }
+
+    // ── Struggle ring ──────────────────────────────────────────
+    private void HandleStruggleActivated()
+    {
+        // Only show on the grabbed player's UI
+        if (!_isOwnerInDanger) return;
+        if (_activeTarget?.GrabbedPlayer != ownerPlayer) return;
+
+        if (_struggleCoroutine != null) StopCoroutine(_struggleCoroutine);
+        _struggleCoroutine = StartCoroutine(AnimateStruggleRing());
+    }
+
+    private void HandleStruggleCapReached()
+    {
+        if (!_isOwnerInDanger) return;
+        if (_activeTarget?.GrabbedPlayer != ownerPlayer) return;
+        // 30% cap hit — hide E ring, player can no longer struggle
+        SetStruggleRingVisible(false);
+        if (_struggleCoroutine != null) { StopCoroutine(_struggleCoroutine); _struggleCoroutine = null; }
+    }
+
+    private IEnumerator AnimateStruggleRing()
+    {
+        if (struggleRing == null) yield break;
+
+        // Fill instantly to full, hold for struggleFillDuration, then drain
+        struggleRing.fillAmount = 1f;
+        struggleRing.color = struggleColour;
+
+        yield return new WaitForSeconds(struggleFillDuration);
+
+        // Drain back to 0
+        float elapsed = 0f;
+        float drainDuration = 0.15f;
+        while (elapsed < drainDuration)
+        {
+            struggleRing.fillAmount = Mathf.Lerp(1f, 0f, elapsed / drainDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        struggleRing.fillAmount = 0f;
+        _struggleCoroutine = null;
+    }
+
+    private void SetStruggleRingVisible(bool visible)
+    {
+        if (struggleRing == null) return;
+        struggleRing.gameObject.SetActive(visible);
+        if (struggleRing.fillAmount <= 0f) struggleRing.fillAmount = 0f;
+        if (pressEText != null) pressEText.gameObject.SetActive(visible);
     }
 
     // ── Mash progress → F-key ring fill ───────────────────────
@@ -181,13 +300,11 @@ public class WorldSpaceRescueUI : MonoBehaviour
         fKeyRing.fillAmount = normalised;
     }
 
-    // ── Mash time remaining → F-key ring color pulse ──────────
     private void HandleMashTime(float secondsRemaining)
     {
         if (!_isOwnerInDanger || fKeyRing == null) return;
         if (secondsRemaining < 1f)
-            fKeyRing.color = Color.Lerp(fKeyColour, ttkColour,
-                1f - secondsRemaining); // pulses toward red as time runs out
+            fKeyRing.color = Color.Lerp(fKeyColour, ttkColour, 1f - secondsRemaining);
     }
 
     private void HandleCooldownTime(float secondsRemaining)
@@ -196,18 +313,14 @@ public class WorldSpaceRescueUI : MonoBehaviour
         cooldownText.text = secondsRemaining.ToString("F1");
     }
 
-    // ── Split animation ────────────────────────────────────────
-    // TTK ring slides left, F-key ring fades + slides in from right
+    // ── Split / collapse animations ────────────────────────────
     private IEnumerator AnimateSplit()
     {
-        // Prepare F-key ring
         fKeyRing?.gameObject.SetActive(true);
-        if (_fKeyRect) _fKeyRect.anchoredPosition = Vector2.zero; // start at centre
+        if (_fKeyRect) _fKeyRect.anchoredPosition = Vector2.zero;
         if (fKeyRing) { fKeyRing.fillAmount = 1f; fKeyRing.color = fKeyColour; }
         if (pressFText) pressFText.gameObject.SetActive(true);
-        if (pressFText) pressFText.text = "Press F!";
 
-        // Animate both rings sliding apart
         float elapsed = 0f;
         Vector2 ttkStart = _ttkRect != null ? _ttkRect.anchoredPosition : ttkCentrePos;
         Vector2 fKeyStart = _fKeyRect != null ? _fKeyRect.anchoredPosition : Vector2.zero;
@@ -216,10 +329,8 @@ public class WorldSpaceRescueUI : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / splitDuration);
-
             if (_ttkRect) _ttkRect.anchoredPosition = Vector2.Lerp(ttkStart, ttkSplitPos, t);
             if (_fKeyRect) _fKeyRect.anchoredPosition = Vector2.Lerp(fKeyStart, fKeySplitPos, t);
-
             yield return null;
         }
 
@@ -228,7 +339,6 @@ public class WorldSpaceRescueUI : MonoBehaviour
         _splitCoroutine = null;
     }
 
-    // Collapse back to single centred TTK ring (soul died)
     private IEnumerator AnimateCollapse()
     {
         float elapsed = 0f;
@@ -239,10 +349,8 @@ public class WorldSpaceRescueUI : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / splitDuration);
-
             if (_ttkRect) _ttkRect.anchoredPosition = Vector2.Lerp(ttkStart, ttkCentrePos, t);
             if (_fKeyRect) _fKeyRect.anchoredPosition = Vector2.Lerp(fKeyStart, Vector2.zero, t);
-
             yield return null;
         }
 
@@ -265,6 +373,12 @@ public class WorldSpaceRescueUI : MonoBehaviour
         if (pressFText) pressFText.gameObject.SetActive(false);
         cooldownOverlay?.SetActive(false);
         if (_ttkRect) _ttkRect.anchoredPosition = ttkCentrePos;
+
+        // Hide struggle ring
+        SetStruggleRingVisible(false);
+        if (_struggleCoroutine != null) { StopCoroutine(_struggleCoroutine); _struggleCoroutine = null; }
+        if (struggleRing) struggleRing.fillAmount = 0f;
+        chainPromptPanel?.SetActive(false);
     }
 
     private void HandleActiveTargetChanged(IRescueTarget target)

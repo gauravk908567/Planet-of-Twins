@@ -1,9 +1,9 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 /// <summary>
 /// Carries force and source context for a knockback event.
 /// Source lets individual enemies decide whether to accept or block
-/// based on which ability triggered it — same pattern as DamageType on DamageData.
+/// based on which ability triggered it ï¿½ same pattern as DamageType on DamageData.
 /// </summary>
 public struct KnockbackData
 {
@@ -22,5 +22,6 @@ public enum KnockbackSource
     Empower,        // EmpowerSystem pulse
     AccordState,    // X bar Accord State abilities
     AccordSpirits,  // Dual Cast ancient warrior spirits
-    Environmental   // anything else / default
+    Environmental,  // anything else / default
+    Bomb            // BombProjectile explosion pushback
 }

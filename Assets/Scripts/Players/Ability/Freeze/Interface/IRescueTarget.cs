@@ -24,6 +24,8 @@ public interface IRescueTarget
 
     /// <summary>Tier 1 = true (can struggle), Tier 2 = false (fully frozen).</summary>
     bool CanGrabbedPlayerStruggle { get; }
+    /// <summary>Seconds TTK is paused per struggle mash. Used by RescueEventController for 30% cap tracking.</summary>
+    float StrugglePauseDuration { get; }
 
     // ── Events ────────────────────────────────────────────────
     event Action<Player> OnPlayerGrabbed;

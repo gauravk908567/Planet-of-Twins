@@ -37,7 +37,6 @@ public class CheckpointLoader : MonoBehaviour
     private IEnumerator ApplyAfterFrame()
     {
         // Wait two frames — Awake/Start on all scene objects need to run first
-        // so twins, SkillTreeManager etc. are fully initialised before we patch them.
         yield return null;
         yield return null;
 
@@ -48,9 +47,6 @@ public class CheckpointLoader : MonoBehaviour
     private void ApplyCheckpoint()
     {
         // ── Find twins ─────────────────────────────────────────
-        // FIX: discovery order via FindObjectsByType is non-deterministic.
-        // Match by saved position instead — the twin closest to each saved
-        // position is the correct one to teleport there.
         var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
         Player leftTwin = null;
         Player rightTwin = null;
@@ -69,36 +65,40 @@ public class CheckpointLoader : MonoBehaviour
         TeleportPlayer(leftTwin, _data.leftTwinPosition);
         TeleportPlayer(rightTwin, _data.rightTwinPosition);
 
-        // HP full (scene reload already resets HP — this is a safety call)
+        // HP full
         leftTwin?.HealthTracker?.RestoreToFull();
         rightTwin?.HealthTracker?.RestoreToFull();
 
-        // Unfreeze — scene reload resets traps so movement should already
-        // be unfrozen, but call explicitly as belt-and-suspenders.
+        // Unfreeze
         (leftTwin?.Movement as IMovementFreezable)?.SetFrozen(false);
         (rightTwin?.Movement as IMovementFreezable)?.SetFrozen(false);
         leftTwin?.Movement?.SetMovementLocked(false);
         rightTwin?.Movement?.SetMovementLocked(false);
 
-        // ── Find SkillTreeManager ──────────────────────────────
+        // ── Restore sword state ────────────────────────────────
+        Debug.Log($"[CheckpointLoader] Sword state to restore — left={_data.leftHasSword} right={_data.rightHasSword}");
+        var swordPickups = FindObjectsByType<SwordPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Debug.Log($"[CheckpointLoader] Found {swordPickups.Length} SwordPickup(s) in scene");
+        foreach (var pickup in swordPickups)
+        {
+            bool shouldApply = pickup.IsForLeftTwin ? _data.leftHasSword : _data.rightHasSword;
+            Debug.Log($"[CheckpointLoader] SwordPickup '{pickup.gameObject.name}' isLeft={pickup.IsForLeftTwin} shouldApply={shouldApply}");
+            if (shouldApply) pickup.ForceApply();
+        }
+
+        // ── Skill tree ─────────────────────────────────────────
         var skillTree = FindAnyObjectByType<SkillTreeManager>();
         if (skillTree != null)
         {
-            // SkillTreeManager.Awake() already called ResetAll — just restore saved state
             skillTree.AddPoints(_data.skillPoints);
             RestoreNodeLevels(skillTree, _data.nodeUnlockLevels);
-
-            // FIX: RestoreNodeLevels calls UnlockNextNode() directly which increments
-            // currentNodeIndex but never calls RaiseUnlockFlags(). Without this,
-            // IsDualCastUnlocked / IsCoalesceUnlocked / IsSoulConvergenceUnlocked
-            // all stay false — subscribed systems don't activate, HUD doesn't show
-            // unlocked abilities, and SoulConvergence shows as 0/0 (IsActive = false).
             skillTree.RebuildUnlockFlags();
         }
 
         Debug.Log($"[CheckpointLoader] Applied checkpoint — " +
                   $"L={_data.leftTwinPosition} R={_data.rightTwinPosition} " +
-                  $"pts={_data.skillPoints}");
+                  $"pts={_data.skillPoints} " +
+                  $"swords=({_data.leftHasSword},{_data.rightHasSword})");
     }
 
     private void TeleportPlayer(Player p, Vector3 pos)

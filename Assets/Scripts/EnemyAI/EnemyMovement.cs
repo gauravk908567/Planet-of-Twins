@@ -19,6 +19,7 @@ public class EnemyMovement : MonoBehaviour, ITimeAffected
     public void MoveTowards(Vector3 targetPosition)
     {
         if (!_agent.enabled || !_agent.isOnNavMesh) return;
+        if (!_agent.enabled || !_agent.isOnNavMesh) return;
         _agent.isStopped = false;
         _agent.SetDestination(targetPosition);
     }

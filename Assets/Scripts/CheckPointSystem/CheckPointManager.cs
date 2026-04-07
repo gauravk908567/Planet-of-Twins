@@ -27,25 +27,30 @@ public class CheckpointManager : MonoBehaviour
     private CheckpointData _saved;
 
     // ── Persistent loader ─────────────────────────────────────
-    // On respawn we reload the scene. A DontDestroyOnLoad object carries
-    // the saved data across the reload and applies it after the new scene loads.
     private static CheckpointLoader _pendingLoader;
 
     // ── Public API ────────────────────────────────────────────
     public void SaveCheckpoint(Vector3 leftPos, Vector3 rightPos)
     {
+        // Read sword state from each twin's PlayerAttackController
+        var leftAttack = leftTwin?.GetComponent<PlayerAttackController>();
+        var rightAttack = rightTwin?.GetComponent<PlayerAttackController>();
+
         _saved = new CheckpointData
         {
             leftTwinPosition = leftPos,
             rightTwinPosition = rightPos,
             skillPoints = skillTreeManager?.CurrentPoints ?? 0,
-            nodeUnlockLevels = CaptureNodeLevels()
+            nodeUnlockLevels = CaptureNodeLevels(),
+            leftHasSword = leftAttack?.HasWeapon ?? false,
+            rightHasSword = rightAttack?.HasWeapon ?? false
         };
 
         HasCheckpoint = true;
         flashUI?.Flash("Checkpoint saved");
         Debug.Log($"[CheckpointManager] Saved at L={leftPos} R={rightPos} " +
-                  $"pts={_saved.skillPoints}");
+                  $"pts={_saved.skillPoints} " +
+                  $"swords=({_saved.leftHasSword},{_saved.rightHasSword})");
     }
 
     /// <summary>
@@ -60,7 +65,6 @@ public class CheckpointManager : MonoBehaviour
             return false;
         }
 
-        // Create a persistent loader that survives the scene reload
         if (_pendingLoader != null)
             Destroy(_pendingLoader.gameObject);
 

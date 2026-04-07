@@ -15,6 +15,11 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
     private IRescueActive _rescueActive;  // gate — teleport only usable during rescue
 
     private CharacterController _soulCC;
+    // Exposed so TwinAbilitySetup can configure world slow during soul travel
+    // Default 0.85 = 85% world speed. Set to 1.0 to disable.
+    private float _soulTravelTimeFactor = 0.85f;
+    public void SetSoulTravelTimeFactor(float factor) =>
+        _soulTravelTimeFactor = Mathf.Clamp(factor, 0.1f, 1f);
     private SoulPulseSystem _soulPulse;     // cached on construction
     private AbilityUpgradeData _gateData;   // injected for pulse upgrade values
     private bool _soulHasArrived = false;
@@ -220,6 +225,10 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
                         _soulPulse.StartPulsing();
                     }
 
+                    // Slow world to 85% so enemies move during soul travel
+                    // Soul movement uses unscaled deltaTime — unaffected by timeScale
+                    Time.timeScale = _soulTravelTimeFactor;
+
                     // Open cancel window after arrival
                     _cancelWindowOpen = true;
                     _cancelHoldProgress = 0f;
@@ -258,6 +267,9 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
 
         // Stop soul pulse
         _soulPulse?.StopPulsing();
+
+        // Restore world speed
+        Time.timeScale = 1f;
 
         _soul?.Movement?.SetMovementLocked(true);
 
@@ -300,7 +312,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
             if (_soulCC != null) _soulCC.enabled = false;
 
             Vector3 newPos = Vector3.MoveTowards(
-                origin.position, destination, speed * UnityEngine.Time.deltaTime);
+                origin.position, destination, speed * UnityEngine.Time.unscaledDeltaTime);
 
             _distanceTravelled += Vector3.Distance(origin.position, newPos);
             origin.position = newPos;

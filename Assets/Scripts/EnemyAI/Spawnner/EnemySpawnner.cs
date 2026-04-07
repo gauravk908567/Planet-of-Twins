@@ -18,6 +18,9 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private Transform barrierTransform;
     [SerializeField] private EnemyDeathNotifier deathNotifier;
     [SerializeField] private MonoBehaviour rescueControllerObject; // → IRescueTrapRegistry
+    [SerializeField] private Player _leftPlayer;
+    [SerializeField] private Player _rightPlayer;
+    [SerializeField] private SoulPlayer _soulPlayer;
 
     // ── Runtime ────────────────────────────────────────────────
     private IEnemyPoolProvider _pool;
@@ -39,6 +42,11 @@ public class EnemySpawner : MonoBehaviour
     private readonly Dictionary<SideTypeEntry, int> _activeCountsRight = new();
     private readonly HashSet<GameObject> _allActive = new();
 
+    // Severed pair tracking — keyed by prefab, one pending per side
+    private readonly Dictionary<GameObject, GameObject> _pendingSeveredLeft = new();
+    private readonly Dictionary<GameObject, GameObject> _pendingSeveredRight = new();
+
+
     // FIX: store named delegates keyed by instance so we can -= before += on pool reuse.
     // The old approach used anonymous lambdas which can never be removed with -=,
     // causing OnDeath to accumulate one extra handler per reuse.
@@ -52,6 +60,13 @@ public class EnemySpawner : MonoBehaviour
     {
         _pool = poolProviderObject as IEnemyPoolProvider;
         _rescueRegistry = rescueControllerObject as IRescueTrapRegistry;
+
+        // Inject Siphon scene refs into pool so ghost spawning works
+        if (_pool is EnemyPool enemyPool && _leftPlayer != null && _rightPlayer != null)
+        {
+            var rescue = rescueControllerObject as RescueEventController;
+            enemyPool.SetSiphonReferences(_leftPlayer, _rightPlayer, _soulPlayer, rescue);
+        }
 
         foreach (var zone in allZones)
         {
@@ -144,6 +159,8 @@ public class EnemySpawner : MonoBehaviour
         _activeCountsRight.Clear();
         _activeLeft = 0;
         _activeRight = 0;
+        _pendingSeveredLeft.Clear();
+        _pendingSeveredRight.Clear();
 
         StopAllCoroutines();
         StartCoroutine(SpawnLoop(SpawnSide.Left));
@@ -300,8 +317,46 @@ public class EnemySpawner : MonoBehaviour
             tracker.HomeZone = _activeZone;
         }
 
-        if (enemy is GroupGrabEnemy grabEnemy)
-            _rescueRegistry?.RegisterTrap(grabEnemy);
+        if (enemy is IRescueTarget rescueTarget)
+            _rescueRegistry?.RegisterTrap(rescueTarget);
+
+        // Severed pair wiring
+        if (enemy is SeveredEnemy severed)
+        {
+            Debug.Log($"[Spawner] Severed detected side={side}");
+            if (side == SpawnSide.Left)
+            {
+                _pendingSeveredLeft[entry.prefab] = instance;
+                if (_pendingSeveredRight.TryGetValue(entry.prefab, out var rightGO))
+                {
+                    var rightSevered = rightGO?.GetComponent<SeveredEnemy>();
+                    if (rightSevered != null)
+                    {
+                        severed.InitialisePair(rightSevered);
+                        rightSevered.InitialisePair(severed);
+                        _pendingSeveredLeft.Remove(entry.prefab);
+                        _pendingSeveredRight.Remove(entry.prefab);
+                        Debug.Log("[Spawner] Severed pair wired.");
+                    }
+                }
+            }
+            else
+            {
+                _pendingSeveredRight[entry.prefab] = instance;
+                if (_pendingSeveredLeft.TryGetValue(entry.prefab, out var leftGO))
+                {
+                    var leftSevered = leftGO?.GetComponent<SeveredEnemy>();
+                    if (leftSevered != null)
+                    {
+                        severed.InitialisePair(leftSevered);
+                        leftSevered.InitialisePair(severed);
+                        _pendingSeveredLeft.Remove(entry.prefab);
+                        _pendingSeveredRight.Remove(entry.prefab);
+                        Debug.Log("[Spawner] Severed pair wired.");
+                    }
+                }
+            }
+        }
 
         _allActive.Add(instance);
         deathNotifier?.Register(enemy.Health);
@@ -391,8 +446,8 @@ public class EnemySpawner : MonoBehaviour
             tracker.HomeZone = _activeZone;
         }
 
-        if (enemy is GroupGrabEnemy grabEnemy)
-            _rescueRegistry?.RegisterTrap(grabEnemy);
+        if (enemy is IRescueTarget rescueTarget)
+            _rescueRegistry?.RegisterTrap(rescueTarget);
 
         _allActive.Add(instance);
         deathNotifier?.Register(enemy.Health);
