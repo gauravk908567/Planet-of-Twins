@@ -12,14 +12,39 @@ public class AbilityController : MonoBehaviour, IAbilityLock
 
     private int _abilityLockCounter = 0;
     public bool AbilitiesLocked => _abilityLockCounter > 0;
-    public void LockAbilities() => _abilityLockCounter++;
+
+    // Events for UI — fired when suppression starts/ends
+    public event System.Action OnSuppressed;
+    public event System.Action OnSuppressionLifted;
+
+    public void LockAbilities()
+    {
+        _abilityLockCounter++;
+        if (_abilityLockCounter == 1) OnSuppressed?.Invoke();
+    }
 
     // ── Primary-only lock (for Q-only suppression from bombs) ─
     private int _primaryLockCounter = 0;
     public bool PrimaryLocked => _primaryLockCounter > 0 || AbilitiesLocked;
-    public void LockPrimaryOnly() => _primaryLockCounter++;
-    public void UnlockPrimaryOnly() => _primaryLockCounter = Mathf.Max(0, _primaryLockCounter - 1);
-    public void UnlockAbilities() => _abilityLockCounter = Mathf.Max(0, _abilityLockCounter - 1);
+
+    public event System.Action OnPrimarySuppressed;
+    public event System.Action OnPrimarySuppressionLifted;
+
+    public void LockPrimaryOnly()
+    {
+        _primaryLockCounter++;
+        if (_primaryLockCounter == 1) OnPrimarySuppressed?.Invoke();
+    }
+    public void UnlockPrimaryOnly()
+    {
+        _primaryLockCounter = Mathf.Max(0, _primaryLockCounter - 1);
+        if (_primaryLockCounter == 0) OnPrimarySuppressionLifted?.Invoke();
+    }
+    public void UnlockAbilities()
+    {
+        _abilityLockCounter = Mathf.Max(0, _abilityLockCounter - 1);
+        if (_abilityLockCounter == 0) OnSuppressionLifted?.Invoke();
+    }
 
     private void Awake()
     {

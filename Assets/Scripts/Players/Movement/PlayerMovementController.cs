@@ -59,6 +59,27 @@ public class PlayerMovementController : MonoBehaviour, IMovementFreezable
         _speedMultiplier = Mathf.Max(0f, multiplier);
 
     /// <summary>
+    /// Applies an external force impulse — used by BombProjectile pushback.
+    /// Force is applied over a short duration via CharacterController.Move.
+    /// </summary>
+    public void ApplyExternalForce(Vector3 force, float duration = 0.15f)
+    {
+        StartCoroutine(ExternalForceRoutine(force, duration));
+    }
+
+    private IEnumerator ExternalForceRoutine(Vector3 force, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            float dt = _useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            _controller.Move(force * dt);
+            elapsed += dt;
+            yield return null;
+        }
+    }
+
+    /// <summary>
     /// Triggers a short forward burst for the empowered twin during Vigil.
     /// Called by VigilSystem when Shift is pressed.
     /// </summary>

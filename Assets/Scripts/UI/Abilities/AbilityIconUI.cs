@@ -71,8 +71,8 @@ public class AbilityIconUI : MonoBehaviour
                 : progress < 1f ? cooldownColour : readyColour;
         }
 
-        if (lockedOverlay != null)
-            lockedOverlay.gameObject.SetActive(false);
+        // Suppression overlay managed by AbilitySuppressionUI — don't force-hide it here
+        // lockedOverlay is only shown by AbilitySuppressionUI when ability is suppressed
 
         if (chargeText != null)
         {

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
@@ -16,6 +16,12 @@ public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
 
     private Transform _leftTwin;
     private Transform _rightTwin;
+
+    // Extended scene refs � used to inject into enemies that need them (e.g. SiphonEnemy)
+    private Player _leftPlayer;
+    private Player _rightPlayer;
+    private SoulPlayer _soulPlayer;
+    private RescueEventController _rescueController;
 
     private readonly Dictionary<GameObject, Queue<GameObject>> _pools
         = new Dictionary<GameObject, Queue<GameObject>>();
@@ -47,6 +53,19 @@ public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
         _rightTwin = right;
     }
 
+    /// <summary>
+    /// Call after SetTwinReferences if SiphonEnemy is in the pool.
+    /// Provides the additional scene refs Siphon needs for ghost spawn logic.
+    /// </summary>
+    public void SetSiphonReferences(Player left, Player right,
+                                     SoulPlayer soul, RescueEventController rescue)
+    {
+        _leftPlayer = left;
+        _rightPlayer = right;
+        _soulPlayer = soul;
+        _rescueController = rescue;
+    }
+
     // IEnemyPoolProvider
     public GameObject Get(GameObject prefab)
     {
@@ -64,6 +83,12 @@ public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
 
         instance.SetActive(true);
 
+        // Inject scene refs into enemies that need them.
+        // SiphonEnemy can't hold scene refs on the prefab asset � pool injects at spawn.
+        var siphon = instance.GetComponent<SiphonEnemy>();
+        if (siphon != null && _rescueController != null)
+            siphon.Initialise(_leftPlayer, _rightPlayer, _soulPlayer, _rescueController);
+
         // Position is set by EnemySpawner AFTER this returns
         // Agent re-enabled in EnemySpawner after position is set
         return instance;
@@ -72,6 +97,12 @@ public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
     public void Return(GameObject prefab, GameObject instance)
     {
         if (instance == null) return;
+
+        // Release injected refs before generic reset
+        instance.GetComponent<SiphonEnemy>()?.Release();
+        instance.GetComponent<SeveredEnemy>()?.Release();
+        instance.GetComponent<TetherBreakerEnemy>()?.Release();
+        instance.GetComponentInChildren<EnemyVFXController>()?.StopAll();
 
         // Reset enemy state before returning to pool
         var enemy = instance.GetComponent<Enemy>();

@@ -25,6 +25,10 @@ public class TwinAbilitySetup : MonoBehaviour
     [SerializeField] private MonoBehaviour twinSelectorObject;
     [SerializeField] private RescueEventController rescueEventController;
 
+    [Header("Gate Soul Travel")]
+    [Tooltip("World speed during soul travel. 0.85 = 85% speed. 1.0 = no slow.")]
+    [SerializeField] private float _soulTravelTimeFactor = 0.85f;
+
     [Header("Accord State")]
     [Tooltip("Drag AccordStateSystem GO here — subscribes to OnAccordDeactivated to restore abilities.")]
     [SerializeField] private AccordStateSystem accordStateSystem;
@@ -139,6 +143,17 @@ public class TwinAbilitySetup : MonoBehaviour
         // Inject Gate upgrade data so pulse scales with tree upgrades
         if (gateUpgradeData != null)
             ta.SetGateData(gateUpgradeData);
+
+        // Inject world slow factor
+        ta.SetSoulTravelTimeFactor(_soulTravelTimeFactor);
+
+        // Inject gate data into SoulPulseSystem so it can gate behind Node 3
+        if (gateUpgradeData != null)
+        {
+            var pulse = soulTwin.GetComponent<SoulPulseSystem>();
+            if (pulse != null)
+                pulse.SetGateData(gateUpgradeData);
+        }
 
         return ta;
     }

@@ -51,15 +51,20 @@ public class TwinAttackDispatcher : MonoBehaviour
             return;
         }
 
-        // ── Struggle check ────────────────────────────────────
+        // ── Rescue active — restrict melee ───────────────────
+        // If a twin is grabbed: only the FREE twin attacks.
+        // The grabbed twin cannot melee — they are held.
+        // If CanGrabbedPlayerStruggle: grabbed twin mashes E via struggle,
+        // free twin attacks normally.
         Player grabbedPlayer = rescueEventController?.ActiveGrabbedPlayer;
         IRescueTarget target = rescueEventController?.ActiveTarget;
 
-        if (grabbedPlayer != null &&
-            target != null &&
-            target.CanGrabbedPlayerStruggle)
+        if (grabbedPlayer != null && target != null)
         {
-            target.OnStruggle();
+            if (target.CanGrabbedPlayerStruggle)
+                target.OnStruggle();
+
+            // Only the FREE twin attacks — grabbed twin is held
             Player freeTwin = (grabbedPlayer == leftTwin) ? rightTwin : leftTwin;
             freeTwin?.GetComponent<PlayerAttackController>()?.PerformAttack();
             return;

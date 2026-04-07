@@ -5,7 +5,7 @@ using UnityEngine;
 public class GroupGrabEnemy : Enemy, IRescueTarget
 {
     [Header("Grab Config")]
-    [SerializeField] private float behindTimeRequired = 1.5f;
+    [SerializeField] private float behindTimeRequired = 2.5f;
     [SerializeField] private float behindDotThreshold = -0.3f;
     [SerializeField] private float pileRadius = 4f;   // nearby allies join pile
     [SerializeField] private LayerMask enemyLayer;
@@ -50,6 +50,7 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
     public float MashCooldown => _mashCooldown;
     public float PartialHealAmount => _partialHealAmount;
     public bool CanGrabbedPlayerStruggle => _trapTier == 1;
+    public float StrugglePauseDuration => strugglePauseDuration;
     public float RescueProximityRadius => 1.5f;
 
     public event Action<Player> OnPlayerGrabbed;
@@ -73,8 +74,10 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
         IdleState = new EnemyIdleState(this);
         ChaseState = new EnemyChaseState(this);
 
-        // FIX: AttackState now points to FrontAttackState — NOT BehindTimerState
-        // This breaks the infinite loop
+        // Chain: ChaseState → FrontAttackState → BehindTimerState → GrabState
+        // FrontAttackState checks if enemy is behind player → BehindTimerState starts timer
+        // BehindTimerState checks HasNearbyAlly() — solo grabber never grabs, attacks only
+        // Timer completes + ally present → GrabState → StartGrab()
         AttackState = FrontAttackState;
 
         PossessedState = new PossessedState(this, possessedTargetLayer);
@@ -213,9 +216,14 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
     {
         if (_isGrabbing)
         {
-            _grabbedPlayer?.SetGrabbed(false);  // ADD
+            _grabbedPlayer?.SetGrabbed(false);
             ReleasePlayer(0f);
         }
+
+        // Clean up FrontAttackState static encirclement registry
+        if (StateMachine?.CurrentState == FrontAttackState)
+            FrontAttackState?.Exit();
+
         base.HandleDeath();
     }
 

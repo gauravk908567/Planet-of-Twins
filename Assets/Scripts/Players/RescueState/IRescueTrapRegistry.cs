@@ -1,4 +1,4 @@
 public interface IRescueTrapRegistry
 {
-    void RegisterTrap(GroupGrabEnemy trap);
+    void RegisterTrap(IRescueTarget trap);
 }

@@ -30,6 +30,16 @@ public class SoulPulseSystem : MonoBehaviour
     [Header("Layer")]
     [SerializeField] private LayerMask _enemyLayer;
 
+    [Header("Upgrade Gate")]
+    [Tooltip("Drag Gate AbilityUpgradeData SO here — pulse only active at Node 3+")]
+    [SerializeField] private AbilityUpgradeData _gateData;
+    [Tooltip("Minimum Gate node index required to unlock pulse. Default 3 = Node 3.")]
+    [SerializeField] private int _requiredNodeIndex = 3;
+
+    [Header("VFX")]
+    [Tooltip("Particle prefab spawned at soul position on each pulse — drag KnockbackParticle here.")]
+    [SerializeField] private GameObject _pulseVFXPrefab;
+
     [Header("Pulse — override by AbilityUpgradeData at runtime")]
     [SerializeField] private float _pulseInterval = 3.5f;
     [SerializeField] private float _pulseRadius = 4f;
@@ -38,10 +48,11 @@ public class SoulPulseSystem : MonoBehaviour
     [SerializeField] private float _slowDuration = 1.5f;
 
     [Header("Ashen Tide (Accord mode only)")]
-    [SerializeField] private float _burnDps = 0.35f;
-    [SerializeField] private float _burnDuration = 1.8f; // per pulse hit, stacks
+    [SerializeField] private float _burnDps = 3.5f;  // 0.35 per 0.1s tick = visible damage
+    [SerializeField] private float _burnDuration = 3.0f; // per pulse hit, stacks — designer tunable
 
     // ── Runtime ───────────────────────────────────────────────
+    private GameObject _lastBlowEnemy; // set by RescueEventController via SetLastBlowEnemy()
     private IAccordModeProvider _accordMode;
     private Coroutine _pulseCoroutine;
 
@@ -54,10 +65,25 @@ public class SoulPulseSystem : MonoBehaviour
         _accordMode = _accordModeMono as IAccordModeProvider;
     }
 
+    // ── Called by TwinAbilitySetup ────────────────────────────
+    public void SetGateData(AbilityUpgradeData data) => _gateData = data;
+
+    // ── Called by RescueEventController ──────────────────────
+    /// <summary>Set the enemy that caused the rescue — excluded from fear/burn.</summary>
+    public void SetLastBlowEnemy(GameObject enemy) => _lastBlowEnemy = enemy;
+    public void ClearLastBlowEnemy() => _lastBlowEnemy = null;
+
     // ── Called by TeleportAbility ─────────────────────────────
     /// <summary>Start auto-pulsing. Called when soul arrives at destination.</summary>
     public void StartPulsing()
     {
+        // Gate behind Gate Node 3 — pulse not available at lower upgrade levels
+        if (_gateData != null && _gateData.currentNodeIndex < _requiredNodeIndex)
+        {
+            Debug.Log($"[SoulPulse] Pulse locked — Gate node {_gateData.currentNodeIndex} < required {_requiredNodeIndex}");
+            return;
+        }
+
         StopPulsing();
         _pulseCoroutine = StartCoroutine(PulseLoop());
         _burnTickCoroutine = StartCoroutine(BurnTickLoop());
@@ -104,31 +130,40 @@ public class SoulPulseSystem : MonoBehaviour
 
     private void FirePulse()
     {
-        Collider[] hits = Physics.OverlapSphere(
-            transform.position, _pulseRadius, _enemyLayer);
+        // Spawn pulse VFX at soul position
+        if (_pulseVFXPrefab != null)
+        {
+            var vfx = Instantiate(_pulseVFXPrefab, transform.position, Quaternion.identity);
+            var ps = vfx.GetComponent<ParticleSystem>();
+            Destroy(vfx, ps != null ? ps.main.duration + 0.1f : 1.6f);
+        }
 
+        // No-mask overlap then filter by enemy component — handles child colliders
+        Collider[] hits = Physics.OverlapSphere(transform.position, _pulseRadius);
         bool accordActive = _accordMode != null && _accordMode.IsAccordActive;
+        int enemiesHit = 0;
 
         foreach (Collider hit in hits)
         {
-            // Skip the enemy that caused the rescue (IRescueTarget check)
-            if (IsRescueAttacker(hit.gameObject)) continue;
+            var enemy = hit.GetComponent<Enemy>() ?? hit.GetComponentInParent<Enemy>();
+            if (enemy == null) continue;
+            if ((_enemyLayer.value & (1 << enemy.gameObject.layer)) == 0) continue;
+            if (IsRescueAttacker(enemy.gameObject)) continue;
+
+            enemiesHit++;
 
             // Fear
-            hit.GetComponent<IFearReceiver>()
-               ?.ApplyFear(transform.position, _fearDuration);
+            (enemy as IFearReceiver)?.ApplyFear(transform.position, _fearDuration);
 
             // Slow
-            hit.GetComponent<ISlowReceiver>()
-               ?.ApplySlow(_slowMultiplier, _slowDuration, "soul_pulse");
+            (enemy as ISlowReceiver)?.ApplySlow(_slowMultiplier, _slowDuration, "soul_pulse");
 
             // Ashen Tide burn (Accord mode only)
             if (accordActive)
             {
-                var health = hit.GetComponent<EnemyHealthComponent>();
+                var health = enemy.GetComponent<EnemyHealthComponent>();
                 if (health != null)
                 {
-                    // Stack burn duration — each pulse hit adds _burnDuration
                     if (_burnTimers.ContainsKey(health))
                         _burnTimers[health] += _burnDuration;
                     else
@@ -136,6 +171,8 @@ public class SoulPulseSystem : MonoBehaviour
                 }
             }
         }
+
+        Debug.Log($"[SoulPulse] Fired — enemies affected={enemiesHit} accord={accordActive}");
     }
 
     // ── Burn tick loop ────────────────────────────────────────
@@ -147,11 +184,12 @@ public class SoulPulseSystem : MonoBehaviour
         {
             yield return new WaitForSeconds(tickInterval);
 
+            // Snapshot keys to avoid modifying dictionary during enumeration
+            var keys = new List<EnemyHealthComponent>(_burnTimers.Keys);
             var toRemove = new List<EnemyHealthComponent>();
 
-            foreach (var kvp in _burnTimers)
+            foreach (var health in keys)
             {
-                var health = kvp.Key;
                 if (health == null || !health.gameObject.activeInHierarchy)
                 {
                     toRemove.Add(health);
@@ -178,8 +216,19 @@ public class SoulPulseSystem : MonoBehaviour
         if (_rescueController == null) return false;
         var activeTarget = _rescueController.ActiveTarget;
         if (activeTarget == null) return false;
-        // The rescue attacker is the IRescueTarget on the enemy GO
-        var rescueTarget = enemyGO.GetComponent<IRescueTarget>();
-        return rescueTarget != null && rescueTarget == activeTarget;
+
+        // Compare by MonoBehaviour GameObject — interface reference equality
+        // can fail if the activeTarget was set before the component fully initialised
+        var rescueTargetMono = activeTarget as MonoBehaviour;
+        if (rescueTargetMono == null) return false;
+
+        // Check if the enemy GO or any parent is the rescue attacker's GO
+        var check = enemyGO.transform;
+        while (check != null)
+        {
+            if (check.gameObject == rescueTargetMono.gameObject) return true;
+            check = check.parent;
+        }
+        return false;
     }
 }

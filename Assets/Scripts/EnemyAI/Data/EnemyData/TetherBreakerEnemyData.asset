@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: badf423abdb04f54493fd6b158646b6c, type: 3}
+  m_Name: TetherBreakerEnemyData
+  m_EditorClassIdentifier: Assembly-CSharp::TetherBreakerEnemyData
+  enemyName: TetherBreakerEnemy
+  maxHealth: 100
+  moveSpeed: 4
+  wanderRadius: 20
+  wanderTimerMin: 5
+  wanderTimerMax: 12
+  knockbackForceMultiplier: 1
+  detectionRange: 20
+  possessedDetectionMultiplier: 15
+  attackRange: 2
+  attackDamage: 15
+  attackCooldown: 1.5
+  attackWindup: 0.3
+  returnAnimDuration: 1.5
+  canDamageSpirits: 0
+  spiritDamage: 25
+  canBePossessed: 1
+  possessionDuration: 5
+  timeToKill: 8
+  mashFrequency: 4
+  mashWindowDuration: 3
+  mashCooldown: 0.75
+  partialHealAmount: 20
+  chainAttackRange: 8
+  chainTravelTime: 1
+  chainHitRadius: 0.55
+  chainMashThreshold: 4
+  chainMissCooldown: 1.2
+  chainConnectDelay: 0.15
+  sprintSpeedMultiplier: 2.2
+  rageSpeedMultiplier: 2.4

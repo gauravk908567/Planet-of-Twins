@@ -29,4 +29,11 @@ public class TwinInputReader : MonoBehaviour, IInputProvider
     // Vigil (Anchor): hold R to enter meditative form.
     // VigilSystem reads this every frame — active while R is held, ends on release.
     public bool GetEmpowerHeld() => Input.GetKey(KeyCode.R);
+
+    // E key — mash to struggle while grabbed (tier-1 traps only).
+    // Safe to reuse E because grabbed player cannot attack.
+    public bool GetStruggleMash() => Input.GetKeyDown(KeyCode.E);
+
+    // C key — mash while soul is chain-bound by SiphonGhost.
+    public bool GetSoulBreakMash() => Input.GetKeyDown(KeyCode.C);
 }

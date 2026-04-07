@@ -92,23 +92,28 @@ public class TwinAbilityDispatcher : MonoBehaviour
         }
 
         // ── Teleport (C) ──────────────────────────────────────
-        // Only active when emergency condition is met.
-        // C held  → show marker preview (updates position every frame in TeleportMarkerPreview.Update)
-        // C released → hide preview, launch soul to marker position
         bool emergencyAvailable = emergencyMonitor != null && emergencyMonitor.IsEmergencyAvailable;
-        if (emergencyAvailable && _currentAbilityController != null)
-        {
-            if (_input.GetTeleportHeld())
-                _currentAbilityController.ShowTeleportPreview();
 
-            if (_input.GetTeleportReleased())
-            {
-                _currentAbilityController.HideTeleportPreview();
-                // ActivateTeleportEmergency bypasses the barrier distance check.
-                // During rescue the caster can be anywhere on the map — the normal
-                // barrier check would block the cast if they aren't near the barrier.
+        // Always hide preview on C release regardless of emergency state —
+        // prevents marker getting stuck when rescue fires mid-hold
+        if (_input.GetTeleportReleased())
+        {
+            _leftController?.HideTeleportPreview();
+            _rightController?.HideTeleportPreview();
+
+            if (emergencyAvailable && _currentAbilityController != null)
                 _currentAbilityController.ActivateTeleportEmergency();
-            }
+        }
+
+        if (_input.GetTeleportHeld() && emergencyAvailable && _currentAbilityController != null)
+            _currentAbilityController.ShowTeleportPreview();
+
+        // Force hide preview if emergency is no longer available mid-hold
+        // (e.g. health recovered above threshold while C was held)
+        if (!emergencyAvailable && !_input.GetTeleportHeld())
+        {
+            _leftController?.HideTeleportPreview();
+            _rightController?.HideTeleportPreview();
         }
 
         // ── Teleport cancel window (X) ────────────────────────

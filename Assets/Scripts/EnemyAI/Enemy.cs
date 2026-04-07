@@ -4,16 +4,20 @@ using UnityEngine;
 
 [RequireComponent(typeof(EnemyStateMachine))]
 [RequireComponent(typeof(EnemyHealthComponent))]
-public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGrabbable, IAlertReceiver, IKnockbackReceiver
+public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGrabbable, IAlertReceiver, IKnockbackReceiver, IFearReceiver, ISlowReceiver
 {
     private bool _isStunned = false;
     private bool _isPossessed = false;
     private bool _isGrabbed = false;
-    private Renderer _renderer;
-    private Color _originalColor;
+    protected Renderer _renderer;
+    protected Color _originalColor;
     private static readonly Color StunColor = new Color(0.2f, 0.6f, 1f);
 
     private Coroutine _stunCoroutine;
+    private Coroutine _fearCoroutine;
+    private Coroutine _slowCoroutine;
+    private bool _isFeared = false;
+    private float _baseSpeed = -1f; // cached on first slow, restored after
 
     [SerializeField] private EnemyData defaultData;
     public EnemyData Data { get; private set; }
@@ -30,6 +34,8 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     public EnemyHealthComponent Health { get; private set; }
     public FactionComponent FactionComp { get; private set; }
     public StatusEffectController StatusEffects { get; private set; }
+    public EnemyVFXController enemyVFXController { get; private set; }
+    public EnemyStateUIController enemyStateUIController { get; private set; }
 
     // ── States ─────────────────────────────────────────────────
     public IEnemyState IdleState { get; protected set; }
@@ -46,6 +52,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private IEnemyPoolProvider _pool;
 
     public float AttackRange => attackRange;
+    protected void SetAttackRange(float range) => attackRange = range;
     public Transform Target { get; private set; }
     public void SetTarget(Transform t) => Target = t;
     public void ClearTarget() => Target = null;
@@ -127,8 +134,8 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     }
 
     // ── ITimeAffected ──────────────────────────────────────────
-    public void OnEffectStarted() { StateMachine.Pause(); Movement.OnFreeze(); }
-    public void OnEffectEnded() { StateMachine.Resume(); Movement.OnUnfreeze(); }
+    public virtual void OnEffectStarted() { StateMachine.Pause(); Movement.OnFreeze(); }
+    public virtual void OnEffectEnded() { StateMachine.Resume(); Movement.OnUnfreeze(); }
 
     // ── Death ──────────────────────────────────────────────────
     protected virtual void HandleDeath()
@@ -156,9 +163,14 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         _isPossessed = false;
         _isStunned = false;
         _isGrabbed = false;
+        _isFeared = false;
         StopAllCoroutines();
+        StateMachine.Resume(); // CRITICAL — clear paused state from previous life
+        Movement.SetSpeed(Data?.moveSpeed ?? 3.5f);
+        Movement.Stop();
         FactionComp.CurrentFaction = Faction.Enemy;
         AttackController.ClearDamageMultiplier();
+        AttackController.ClearAttackSlowdown();
         AttackController.ResetAttack();
         ClearTarget();
     }
@@ -340,6 +352,66 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
             SetTarget(chasedPlayerTransform);
             StateMachine.ChangeState(ChaseState);
         }
+    }
+
+    // ── IFearReceiver ──────────────────────────────────────
+    public void ApplyFear(Vector3 fleeFrom, float duration)
+    {
+        if (_isStunned || _isPossessed) return;
+
+        if (_fearCoroutine != null)
+            StopCoroutine(_fearCoroutine);
+
+        _fearCoroutine = StartCoroutine(FearRoutine(fleeFrom, duration));
+    }
+
+    private IEnumerator FearRoutine(Vector3 fleeFrom, float duration)
+    {
+        _isFeared = true;
+        StateMachine.Pause();
+        enemyVFXController?.PlayFear();
+        enemyStateUIController?.ShowIkariFear();
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            // Move directly away from fleeFrom position
+            Vector3 fleeDir = (transform.position - fleeFrom).normalized;
+            fleeDir.y = 0f;
+            Movement.MoveTowards(transform.position + fleeDir * 2f);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        _isFeared = false;
+        StateMachine.Resume();
+        enemyVFXController?.StopFear();
+        _fearCoroutine = null;
+    }
+
+    // ── ISlowReceiver ──────────────────────────────────────
+    public void ApplySlow(float speedMultiplier, float duration, string sourceKey)
+    {
+        if (_slowCoroutine != null)
+            StopCoroutine(_slowCoroutine);
+
+        _slowCoroutine = StartCoroutine(SlowRoutine(speedMultiplier, duration));
+    }
+
+    private IEnumerator SlowRoutine(float speedMultiplier, float duration)
+    {
+        // Cache base speed on first slow
+        if (_baseSpeed < 0f)
+            _baseSpeed = Data?.moveSpeed ?? 3f; // fallback if no data
+
+        Movement.SetSpeed(_baseSpeed * speedMultiplier);
+
+        yield return new WaitForSeconds(duration);
+
+        // Restore base speed
+        Movement.SetSpeed(_baseSpeed);
+        _baseSpeed = -1f;
+        _slowCoroutine = null;
     }
 
     private void OnDestroy()

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1841019147790041066}
   - component: {fileID: 5656704587807279755}
   - component: {fileID: 226821386485084478}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: SkillPointOrb
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -84,7 +84,7 @@ GameObject:
   - component: {fileID: 12256358008446603}
   - component: {fileID: 4048565034057918972}
   - component: {fileID: 8919896988203929347}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: Orb
   m_TagString: Untagged
   m_Icon: {fileID: 0}

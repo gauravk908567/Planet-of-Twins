@@ -18,7 +18,14 @@ public enum DamageType
     /// Caused by the >18u distance drain. Does NOT reset the regen timer —
     /// a player shouldn't lose their regen window just from drifting.
     /// </summary>
-    Environmental
+    Environmental,
+
+    /// <summary>
+    /// Damage transferred between linked enemies (e.g. Severed pair).
+    /// Does NOT reset regen timer. Skipped by linked-damage handlers to prevent
+    /// infinite loops. Never triggers kill credit or Accord bar fill.
+    /// </summary>
+    LinkedDamage
 }
 
 /// <summary>

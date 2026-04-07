@@ -72,6 +72,7 @@ public class SkeletonTrap : MonoBehaviour, IRescueTarget, IDamageable, IStunnabl
     public float MashCooldown => mashCooldown;
     public float PartialHealAmount => partialHealAmount;
     public bool CanGrabbedPlayerStruggle => trapTier == 1;
+    public float StrugglePauseDuration => strugglePauseDuration;
     public float RescueProximityRadius => rescueProximityRadius;
 
     public event Action<Player> OnPlayerGrabbed;
