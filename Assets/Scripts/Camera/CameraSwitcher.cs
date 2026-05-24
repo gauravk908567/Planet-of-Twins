@@ -1,5 +1,17 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Drives distance-based camera switching for both gameplay and tutorial cameras.
+///
+/// Gameplay mode:  switches between CinemachineCloseCam / CinemachineTopDownCam
+/// Tutorial mode:  switches between TutorialCloseCam   / TutorialTopDownCam
+///
+/// Mode is set externally via SetTutorialMode(bool) — call this from a
+/// Timeline Signal when the tutorial starts and again when it ends.
+///
+/// QTE suppression still works identically — SuppressAutoSwitch(true) hands
+/// camera control to QTEController entirely.
+/// </summary>
 public class CameraSwitcher : MonoBehaviour
 {
     [SerializeField] private float cameraSwitchToTopDownThreshold = 12f;
@@ -11,25 +23,39 @@ public class CameraSwitcher : MonoBehaviour
     private IOverviewBroadcaster overviewBroadcaster;
 
     private bool _isOverviewForced = false;
-    private bool _isQTESuppressed = false;  // true while a QTE camera is active
+    private bool _isQTESuppressed = false;
+    private bool _isTutorialMode = false;
 
-    // ── Public API — called by QTEController ──────────────────
+    [SerializeField] private bool startInTutorialMode = false;
+    // ── Public API ────────────────────────────────────────────────────────
+
     /// <summary>
-    /// Call with true when a QTE starts, false when it ends.
-    /// Blocks both distance-based switching AND overview cam while active.
+    /// Call with true when QTE starts, false when it ends.
+    /// Blocks distance-based and overview switching while active.
     /// </summary>
+    private void Start()
+    {
+        _isTutorialMode = startInTutorialMode;
+    }
+
     public void SuppressAutoSwitch(bool suppress)
     {
         _isQTESuppressed = suppress;
 
-        // If QTE just ended and overview was held during it, force-end the overview
-        // so we don't snap to bird's-eye the moment QTE finishes.
         if (!suppress && _isOverviewForced)
-        {
             _isOverviewForced = false;
-            // CameraSwitcher.Update will resume normal distance-based logic next frame
-        }
     }
+
+    /// <summary>
+    /// Call from Timeline Signal at tutorial start (true) and tutorial end (false).
+    /// Switches the distance-based pair to tutorial cams or gameplay cams.
+    /// </summary>
+    public void SetTutorialMode(bool tutorial)
+    {
+        _isTutorialMode = tutorial;
+    }
+
+    // ── Unity ─────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -56,9 +82,7 @@ public class CameraSwitcher : MonoBehaviour
 
     private void HandleOverview(bool isActive)
     {
-        // FIX: ignore overview input while a QTE is running
         if (_isQTESuppressed) return;
-
         _isOverviewForced = isActive;
         if (_isOverviewForced)
             cameraController.SwitchToCamera(cameraManager.CinemachineOverviewCam);
@@ -66,17 +90,26 @@ public class CameraSwitcher : MonoBehaviour
 
     private void Update()
     {
-        // QTE active — hands-off entirely, QTEController owns the camera
         if (_isQTESuppressed) return;
-
-        // Overview forced — hands-off, OverviewCamController owns the camera
         if (_isOverviewForced) return;
 
-        // Normal distance-based switching
         float dist = distanceProvider.GetDistance();
-        if (dist >= cameraSwitchToTopDownThreshold)
-            cameraController.SwitchToCamera(cameraManager.CinemachineTopDownCam);
+
+        if (_isTutorialMode)
+        {
+            // Tutorial distance-based switching
+            if (dist >= cameraSwitchToTopDownThreshold)
+                cameraController.SwitchToCamera(cameraManager.TutorialTopDownCam);
+            else
+                cameraController.SwitchToCamera(cameraManager.TutorialCloseCam);
+        }
         else
-            cameraController.SwitchToCamera(cameraManager.CinemachineCloseCam);
+        {
+            // Gameplay distance-based switching
+            if (dist >= cameraSwitchToTopDownThreshold)
+                cameraController.SwitchToCamera(cameraManager.CinemachineTopDownCam);
+            else
+                cameraController.SwitchToCamera(cameraManager.CinemachineCloseCam);
+        }
     }
 }

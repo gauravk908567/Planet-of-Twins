@@ -1,10 +1,11 @@
-﻿using System.Collections;
+﻿using CommonCore;
+using System.Collections;
 using UnityEngine;
 
 public class EnemyAttackController : MonoBehaviour
 {
-    [SerializeField] private float attackRange = 2f;
-    [SerializeField] private float attackDamage = 10f;
+    private float attackRange;
+    private float attackDamage;
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private LayerMask enemyLayer;
 
@@ -17,7 +18,16 @@ public class EnemyAttackController : MonoBehaviour
     private bool _isAttacking;
     private float _damageMultiplier = 1f;
     private float _attackSlowdownMultiplier = 1f;
+
+    // ── Attack context flags ──────────────────────────────────
+    // _isPossessedAttack: true ONLY when this enemy is possessed — drives
+    //   damage calc (bypasses clan war reduction, triggers possessed hit reaction).
+    // _targetEnemyLayer: true when hit detection should scan the enemy layer
+    //   (possession AND clan war both need this, but only possession is "possessed").
     private bool _isPossessedAttack;
+    private bool _targetEnemyLayer;
+
+    private Enemy _enemy;
 
     // ── Ranged state ──────────────────────────────────────────
     private bool _isRanged;
@@ -37,6 +47,7 @@ public class EnemyAttackController : MonoBehaviour
     {
         _animController = GetComponent<IAnimationController>();
         _rangeIndicator = GetComponentInChildren<AttackRangeIndicator>();
+        _enemy = GetComponent<Enemy>();
     }
 
     // ── Called by RangedEnemy.ApplyData ───────────────────────
@@ -50,30 +61,33 @@ public class EnemyAttackController : MonoBehaviour
         _projectileSpeed = projectileSpeed;
     }
 
-    /// <summary>
-    /// FIX: resets _isAttacking and stops any in-flight windup coroutine.
-    /// Called from Enemy.ResetForPool() so pooled enemies aren't permanently
-    /// locked out of attacking after being stunned or killed mid-windup.
-    /// </summary>
     public void ResetAttack()
     {
         _isAttacking = false;
+        _isPossessedAttack = false;
+        _targetEnemyLayer = false;
         StopAllCoroutines();
     }
 
-    // ── Melee path — called by EnemyAttackState ───────────────
-    public void TryAttack(bool isPossessed = false)
+    // ── Melee path ─────────────────────────────────────────────
+    /// <param name="isPossessed">True only when this enemy is possessed —
+    ///   drives damage reduction bypass and hit-reaction logic.</param>
+    /// <param name="targetEnemyLayer">True when hit detection should scan
+    ///   the enemy layer. Pass true for both possession AND clan war attacks.
+    ///   Separate from isPossessed so clan war reduction fires correctly.</param>
+    public void TryAttack(bool isPossessed = false, bool targetEnemyLayer = false)
     {
         if (_isAttacking) return;
         if (Time.time < _lastAttackTime + _attackCooldown * _attackSlowdownMultiplier) return;
 
         _isAttacking = true;
         _isPossessedAttack = isPossessed;
+        _targetEnemyLayer = isPossessed || targetEnemyLayer;
         _animController?.PlayAttack();
         _lastAttackTime = Time.time;
     }
 
-    // ── Ranged path — called by RangedAttackState ─────────────
+    // ── Ranged path ────────────────────────────────────────────
     public void TryRangedAttack(Transform target)
     {
         if (_isAttacking) return;
@@ -81,10 +95,6 @@ public class EnemyAttackController : MonoBehaviour
 
         _isAttacking = true;
         _lastAttackTime = Time.time;
-
-        // FIX: was missing — ranged enemies played no attack animation at all.
-        // Cosmetic only for projectile path (arrow already in flight when anim plays).
-        // For raycast path with windup, the animation covers the delay visually.
         _animController?.PlayAttack();
 
         if (_useProjectile)
@@ -97,7 +107,7 @@ public class EnemyAttackController : MonoBehaviour
     public void ExecuteHitDetection()
     {
         _rangeIndicator?.Show(attackRange);
-        LayerMask targetLayer = _isPossessedAttack ? enemyLayer : playerLayer;
+        LayerMask targetLayer = _targetEnemyLayer ? enemyLayer : playerLayer;
 
         int hitCount = Physics.OverlapSphereNonAlloc(
             transform.position, attackRange, _hitBuffer, targetLayer);
@@ -110,8 +120,6 @@ public class EnemyAttackController : MonoBehaviour
                 possessable?.OnHitByPossessed(GetComponent<Enemy>());
             }
 
-            // Use GetComponentInParent — collider may be on a child GO
-            // while PlayerHealthComponent lives on the root Player GO
             var playerHealth = _hitBuffer[i].GetComponentInParent<PlayerHealthComponent>();
             if (playerHealth != null && playerHealth.IsDead) continue;
 
@@ -119,19 +127,21 @@ public class EnemyAttackController : MonoBehaviour
             if (damageable == null) continue;
 
             damageable.TakeDamage(new DamageData(
-                attackDamage * _damageMultiplier,
+                attackDamage * GetOutgoingDamageMultiplier(_hitBuffer[i]),
                 DamageType.Combat,
                 gameObject,
                 _hitBuffer[i].transform.position));
 
+            FactionEnergySystem.Instance?.OnTwinTookDamage();
+
             if (playerHealth != null && playerHealth.IsDead)
             {
-                Debug.Log($"[EnemyAttack] Melee killing blow on {_hitBuffer[i].name}");
                 _hitBuffer[i].GetComponentInParent<PlayerDeathRescueProxy>()
                              ?.Activate(GetComponent<Enemy>());
             }
         }
 
+        // Possessed miss — self damage
         if (_isPossessedAttack && hitCount == 0)
         {
             GetComponent<IDamageable>()?.TakeDamage(new DamageData(
@@ -147,6 +157,7 @@ public class EnemyAttackController : MonoBehaviour
     public void OnProjectileHit(Collider hit)
     {
         ApplyDamageToTarget(hit);
+        FactionEnergySystem.Instance?.OnTwinTookDamage();
     }
 
     // ── Shared damage pipeline ────────────────────────────────
@@ -159,16 +170,38 @@ public class EnemyAttackController : MonoBehaviour
         if (damageable == null) return;
 
         damageable.TakeDamage(new DamageData(
-            attackDamage * _damageMultiplier,
+            attackDamage * GetOutgoingDamageMultiplier(col),
             DamageType.Combat,
             gameObject,
             col.transform.position));
 
         if (playerHealth != null && playerHealth.IsDead)
-        {
-            Debug.Log($"[EnemyAttack] Ranged killing blow on {col.name}");
             col.GetComponentInParent<PlayerDeathRescueProxy>()?.Activate(GetComponent<Enemy>());
+    }
+
+    /// <summary>
+    /// Computes final outgoing damage multiplier.
+    /// Clan war reduction (0.3x) only fires when:
+    ///   - Target is an Enemy
+    ///   - ClanWarActive on shared BB
+    ///   - This is NOT a possession attack (possessed enemies fight at full damage)
+    /// Future multipliers (buff auras, elemental resist) drop in here.
+    /// </summary>
+    private float GetOutgoingDamageMultiplier(Collider target)
+    {
+        float m = _damageMultiplier;
+
+        if (!_isPossessedAttack && target.GetComponentInParent<Enemy>() != null)
+        {
+            var shared = BlackboardManager.GetSharedBlackboard(PoTNames.SharedBlackboardID);
+            if (shared != null &&
+                shared.TryGet(PoTNames.ClanWarActive, out bool cw, false) && cw)
+            {
+                m *= _enemy?.Data?.clanWarDamageMultiplier ?? 0.3f;
+            }
         }
+
+        return m;
     }
 
     // ── Ranged internals ──────────────────────────────────────
@@ -196,17 +229,9 @@ public class EnemyAttackController : MonoBehaviour
         }
 
         arrow.Initialise(dir, _projectileSpeed, this);
-
-        // Clear immediately after launch — a miss or out-of-layer hit
-        // would lock firing forever if we waited for OnProjectileHit.
         _isAttacking = false;
     }
 
-    /// <summary>
-    /// Instant-hit raycast with optional windup delay driven by _attackWindup.
-    /// _isAttacking remains true during the wait so no overlap is possible.
-    /// ResetAttack() stops the coroutine if the enemy is stunned/pooled mid-windup.
-    /// </summary>
     private void ExecuteRaycast(Transform target)
     {
         if (_attackWindup > 0f)
@@ -235,7 +260,6 @@ public class EnemyAttackController : MonoBehaviour
             ApplyDamageToTarget(hit.collider);
     }
 
-    // ── Called by Enemy.ApplyData ─────────────────────────────
     public void SetStats(float range, float damage, float cooldown, float windup)
     {
         attackRange = range;

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af9960f5ce9b0a34fa22e17a937517da, type: 3}
+  m_Name: TestAreaZoneConfig
+  m_EditorClassIdentifier: Assembly-CSharp::AreaZoneConfig
+  areaName: TestArea
+  spawnSetup: {fileID: 11400000, guid: 04cc85b9c457793498ef5debe0185c45, type: 2}
+  environment: {fileID: 11400000, guid: ee1c710f1f1fa5c4984369196cd36781, type: 2}
+  groupSpawn: {fileID: 11400000, guid: 7ff6e64dbc1917447958a0a3ed59794d, type: 2}

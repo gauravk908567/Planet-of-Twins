@@ -36,7 +36,7 @@ public class SkillTreeUI : MonoBehaviour
     private ISkillTreePurchaser _purchaser;
     private IPointBank _pointBank;
 
-    void Awake()
+    void Start()
     {
         _dataStore = _dataStoreMono as IAbilityDataStore;
         _purchaser = _purchaserMono as ISkillTreePurchaser;
@@ -67,16 +67,27 @@ public class SkillTreeUI : MonoBehaviour
 
     void Update()
     {
-        bool togglePressed = Input.GetKeyDown(ToggleKey)
-                          || Input.GetKeyDown(KeyCode.Escape);
+        bool escPressed = Input.GetKeyDown(KeyCode.Escape);
+        bool togglePressed = Input.GetKeyDown(ToggleKey) || escPressed;
 
         if (!togglePressed) return;
 
+        // Escape priority order:
+        // 1. Modal open → close modal only, skill tree stays
+        // 2. Modal closed + skill tree open → close skill tree
+        // 3. Everything closed → do nothing
+        if (escPressed)
+        {
+            if (SkillPreviewModal.Instance != null && SkillPreviewModal.Instance.IsOpen)
+            {
+                SkillPreviewModal.Instance.Close();
+                return;
+            }
+
+            if (!SkillTreePanel.activeSelf) return;
+        }
+
         bool opening = !SkillTreePanel.activeSelf;
-
-        // Escape only closes — never opens
-        if (Input.GetKeyDown(KeyCode.Escape) && !SkillTreePanel.activeSelf) return;
-
         SkillTreePanel.SetActive(opening);
 
         if (opening)
@@ -123,7 +134,6 @@ public class SkillTreeUI : MonoBehaviour
 
     AbilityUpgradeData[] GetKaiData() => new[] { _dataStore?.StunData };
     AbilityUpgradeData[] GetLyraData() => new[] { _dataStore?.PossessData };
-
     AbilityUpgradeData[] GetSharedData() => new[]
     {
         _dataStore?.GateData,
@@ -132,6 +142,6 @@ public class SkillTreeUI : MonoBehaviour
         _dataStore?.CoalesceData,
         _dataStore?.SoulConvData,
         _dataStore?.EmpowerData,
-        _dataStore?.AccordData     // ← Accord State node in Shared tab
+        _dataStore?.AccordData
     };
 }

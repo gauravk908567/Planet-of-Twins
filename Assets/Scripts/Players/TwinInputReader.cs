@@ -1,39 +1,71 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Raw input reader. All dispatchers wire to this permanently.
+///
+/// Optional tutorialGateMono — wire to TutorialInputGate in tutorial scene.
+/// If null (all other scenes), every input is allowed unconditionally.
+/// This means multi-scene works without any tutorial manager present.
+/// </summary>
 public class TwinInputReader : MonoBehaviour, IInputProvider
 {
+    [Tooltip("Optional — wire to TutorialInputGate in tutorial scene only. " +
+             "Leave null in all other scenes.")]
+    [SerializeField] private MonoBehaviour tutorialGateMono;
+
+    private ITutorialGate _gate;
+
+    private void Awake()
+    {
+        _gate = tutorialGateMono as ITutorialGate;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────
+    private bool AttackAllowed => _gate == null || _gate.IsAttackAllowed;
+    private bool AbilityAllowed => _gate == null || _gate.IsAbilityAllowed;
+    private bool TeleportAllowed => _gate == null || _gate.IsTeleportAllowed;
+    private bool RescueAllowed => _gate == null || _gate.IsRescueAllowed;
+    private bool SwitchAllowed => _gate == null || _gate.IsSwitchAllowed;
+    private bool InteractAllowed => _gate == null || _gate.IsInteractAllowed;
+
+    // ── IInputProvider ────────────────────────────────────────
     public Vector2 GetMovementInput() =>
         new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
     public Vector3 GetMovementDirection() =>
         new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical")).normalized;
 
-    // E key OR Left Mouse Button
+    // Attack — E or LMB
     public bool GetAttackDown() =>
-        Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0);
+        AttackAllowed &&
+        (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0));
 
-    public bool GetSwitchDown() => Input.GetKeyDown(KeyCode.LeftShift);
+    // Switch — Shift
+    public bool GetSwitchDown() =>
+        SwitchAllowed && Input.GetKeyDown(KeyCode.LeftShift);
 
-    // Q key OR Right Mouse Button
+    // Ability — Q or RMB
     public bool GetAbilityDown() =>
-        Input.GetKeyDown(KeyCode.Q) || Input.GetMouseButtonDown(1);
+        AbilityAllowed &&
+        (Input.GetKeyDown(KeyCode.Q) || Input.GetMouseButtonDown(1));
 
-    // Hold C to show gate preview; release to launch soul
-    public bool GetTeleportHeld() => Input.GetKey(KeyCode.C);
-    public bool GetTeleportReleased() => Input.GetKeyUp(KeyCode.C);
+    // Teleport — hold/release C
+    public bool GetTeleportHeld() => TeleportAllowed && Input.GetKey(KeyCode.C);
+    public bool GetTeleportReleased() => TeleportAllowed && Input.GetKeyUp(KeyCode.C);
 
-    public bool GetRescueMash() => Input.GetKeyDown(KeyCode.F);
-    public bool GetInteractDown() => Input.GetKeyDown(KeyCode.F);
+    // Rescue mash — F
+    public bool GetRescueMash() => RescueAllowed && Input.GetKeyDown(KeyCode.F);
+    public bool GetInteractDown() => InteractAllowed && Input.GetKeyDown(KeyCode.F);
+
+    // Cancel — X (always allowed — needed to cancel QTE, soul chain etc)
     public bool GetCancelHeld() => Input.GetKey(KeyCode.X);
 
-    // Vigil (Anchor): hold R to enter meditative form.
-    // VigilSystem reads this every frame — active while R is held, ends on release.
-    public bool GetEmpowerHeld() => Input.GetKey(KeyCode.R);
+    // Empower — hold R
+    public bool GetEmpowerHeld() => AbilityAllowed && Input.GetKey(KeyCode.R);
 
-    // E key — mash to struggle while grabbed (tier-1 traps only).
-    // Safe to reuse E because grabbed player cannot attack.
+    // Struggle — E while grabbed (always allowed — attack lock shouldn't block escape)
     public bool GetStruggleMash() => Input.GetKeyDown(KeyCode.E);
 
-    // C key — mash while soul is chain-bound by SiphonGhost.
+    // Soul break — C mash while chain-bound
     public bool GetSoulBreakMash() => Input.GetKeyDown(KeyCode.C);
 }

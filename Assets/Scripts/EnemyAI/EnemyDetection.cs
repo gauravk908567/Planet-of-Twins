@@ -39,7 +39,7 @@ public class EnemyDetection : MonoBehaviour
 
         for (int i = 0; i < hitCount; i++)
         {
-            var faction = _hitBuffer[i].GetComponent<FactionComponent>();
+            var faction = _hitBuffer[i].GetComponent<OldFactionComponent>();
             if (faction == null) continue;
             if (faction.CurrentFaction == myFaction) continue;
 

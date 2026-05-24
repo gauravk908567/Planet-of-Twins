@@ -27,11 +27,11 @@ public class QTEController : MonoBehaviour
     [SerializeField] private KeyCode mashKey = KeyCode.F;
 
     [Header("UI — matches RescueButtonUI layout")]
-    [SerializeField] private GameObject rootPanel;        // whole mash UI panel
-    [SerializeField] private Image fillBar;               // fills 0→1 as player mashes (matches FKeyRingImg in rescue)
-    [SerializeField] private Image timerRing;             // drains full→0, shifts green→red
-    [SerializeField] private TMP_Text instructionText;    // "Press F!"
-    [SerializeField] private TMP_Text countdownText;      // timed mode only
+    [SerializeField] private GameObject rootPanel;
+    [SerializeField] private Image fillBar;
+    [SerializeField] private Image timerRing;
+    [SerializeField] private TMP_Text instructionText;
+    [SerializeField] private TMP_Text countdownText;
 
     [Header("Colours — match RescueButtonUI")]
     [SerializeField] private Color activeColour = new Color(0.2f, 0.8f, 0.3f, 1f);
@@ -48,6 +48,9 @@ public class QTEController : MonoBehaviour
     private enum QTEPhase { Inactive, WaitingForPlayers, Mashing, Success, Failed }
     private QTEPhase _phase = QTEPhase.Inactive;
 
+    /// <summary>Polled by QTESuccessWatcher and TutorialQTEStepSO.</summary>
+    public bool IsSuccess => _phase == QTEPhase.Success;
+
     private int _mashCount;
     private float _mashTimer;
     private float _windowTimer;
@@ -61,8 +64,10 @@ public class QTEController : MonoBehaviour
         for (int i = 0; i < _activatables.Length; i++)
             _activatables[i] = activatableMono[i] as IActivatable;
 
-        if (_freezeService == null) Debug.LogWarning("[QTEController] EnemyFreezeService not assigned.", this);
-        if (_cameraController == null) Debug.LogWarning("[QTEController] CameraController not assigned.", this);
+        if (_freezeService == null)
+            Debug.LogWarning("[QTEController] EnemyFreezeService not assigned.", this);
+        if (_cameraController == null)
+            Debug.LogWarning("[QTEController] CameraController not assigned.", this);
 
         SetPanelVisible(false);
     }
@@ -107,10 +112,9 @@ public class QTEController : MonoBehaviour
 
                 float progress = Mathf.Clamp01((float)_mashCount / mashCountRequired);
 
-                // fillBar — fills as player mashes (same as rescue)
-                if (fillBar != null) fillBar.fillAmount = progress;
+                if (fillBar != null)
+                    fillBar.fillAmount = progress;
 
-                // timerRing — drains as time runs out, shifts green→red on progress (same as rescue)
                 if (timerRing != null)
                 {
                     timerRing.fillAmount = mashDuration > 0f
@@ -125,6 +129,11 @@ public class QTEController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Starts the QTE. Switches camera immediately so the player sees the
+    /// gate before the trigger points activate.
+    /// Called by QTEZoneTrigger (gameplay) or TutorialQTEStepSO (tutorial).
+    /// </summary>
     public void BeginQTE()
     {
         if (_phase != QTEPhase.Inactive) return;
@@ -133,6 +142,11 @@ public class QTEController : MonoBehaviour
         _windowTimer = windowDuration;
 
         _freezeService?.FreezeAll();
+
+        // ── Camera switches HERE — before trigger points activate ──
+        cameraSwitcher?.SuppressAutoSwitch(true);
+        if (qteCamera != null && _cameraController != null)
+            _cameraController.SwitchToCamera(qteCamera);
 
         foreach (var tp in triggerPoints)
             tp?.SetActive(true);
@@ -147,10 +161,7 @@ public class QTEController : MonoBehaviour
     {
         if (_phase != QTEPhase.WaitingForPlayers) return;
 
-        cameraSwitcher?.SuppressAutoSwitch(true);
-        if (qteCamera != null && _cameraController != null)
-            _cameraController.SwitchToCamera(qteCamera);
-
+        // Camera already switched in BeginQTE — just check if all locked
         bool allLocked = true;
         foreach (var t in triggerPoints)
         {
@@ -173,11 +184,9 @@ public class QTEController : MonoBehaviour
         _mashCount = 0;
         _mashTimer = mashDuration;
 
-        // Reset to initial state — same as RescueButtonUI Triggered state
         if (fillBar != null) { fillBar.fillAmount = 0f; }
         if (timerRing != null) { timerRing.fillAmount = 1f; timerRing.color = activeColour; }
         if (instructionText != null) instructionText.text = "Press F!";
-
         if (countdownText != null) countdownText.gameObject.SetActive(false);
 
         SetPanelVisible(true);

@@ -15,6 +15,10 @@ public class EnemyData : ScriptableObject
     public float wanderTimerMin = 5f;
     public float wanderTimerMax = 12f;
 
+    [Header("Social Bond")]
+    [Tooltip("Grace window before dying with bond partner. Severed=1.2, BasicMelee=0.8 etc.")]
+    public float deathBondGraceDuration = 1.2f;
+
     [Tooltip("Knockback force multiplier. 1 = full force, 0 = immune, 0.5 = half push.")]
     public float knockbackForceMultiplier = 1f;
 
@@ -41,10 +45,23 @@ public class EnemyData : ScriptableObject
     public bool canBePossessed = true;
     public float possessionDuration = 5f;
 
-    [Header("Killing Blow TTK � any enemy that can down a player")]
+    [Header("Killing Blow TTK — any enemy that can down a player")]
     public float timeToKill = 8f;
     public float mashFrequency = 4f;
     public float mashWindowDuration = 3f;
     public float mashCooldown = 0.75f;
     public float partialHealAmount = 20f;
+
+    [Header("Clan War")]
+    [Tooltip("If either twin is within this range, TwinInDangerRange = true on the per-enemy blackboard. " +
+             "GOAPGoalAttackEnemy hard-gates off this flag — so the enemy abandons clan combat and " +
+             "switches priority to attacking the twin. Typical range: slightly larger than detectionRange " +
+             "so disengagement happens before full aggro. Set to 0 to disable threat switching — " +
+             "enemy stays locked on clan combat regardless of twin proximity (useful for scripted scenes).")]
+    public float twinThreatRange = 10f;
+
+    [Tooltip("Damage multiplier when attacking another Enemy during clan war. " +
+         "0.3 = 30% damage. Possession overrides — possessed attackers deal full damage.")]
+    [Range(0.1f, 1f)]
+    public float clanWarDamageMultiplier = 0.3f;
 }

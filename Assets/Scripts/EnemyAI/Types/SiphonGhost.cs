@@ -2,19 +2,26 @@
 using UnityEngine;
 
 /// <summary>
-/// SiphonGhost — pursues the soul during rescue events.
+/// SiphonGhost — pursues and binds the soul during rescue events.
+/// Lifetime tied to SiphonEnemy — dies when owner dies or rescue resolves.
+///
+/// Architecture:
+///   GOAP + BT drives all decisions (GOAPBrainSiphonGhost wires goals/actions).
+///   Coroutines handle bind physics and mash detection (self-contained).
+///   Full component stack — perception, dark energy, mood all pluggable later.
+///   No NavMeshAgent — direct transform movement (ghost floats, no pathfinding).
 ///
 /// FLOW:
-///   Spawn → 2.2s kill window (soul can E-attack ghost to kill it)
-///   → kill window closes → ghost becomes immune to damage
-///   → reaches soul → Bind (soul frozen, TTK paused, mash F to break free)
-///   → mash success: soul freed, ghost backs away for stun duration, then retries
-///   → bind timer expire: soul freed, ghost backs away for retry delay, then retries
-///   → loop until ghost killed OR rescue resolves
+///   Spawn → kill window open (soul can attack ghost)
+///   → kill window closes → ghost immune
+///   → reaches soul → Bind (soul frozen, mash E to break)
+///   → mash success OR timer expire → retreat → retry
+///   → loop until ghost killed OR rescue resolves OR siphon dies
 ///
 /// SETUP:
-///   Prefab: root GO + SiphonGhost + EnemyHealthComponent (HP=8). No NavMeshAgent.
-///   Wire _ghostRenderer for bind colour feedback.
+///   Prefab: root GO + SiphonGhost + EnemyHealthComponent (HP=8)
+///   Wire _ghostRenderer for colour feedback.
+///   No NavMeshAgent needed.
 /// </summary>
 [RequireComponent(typeof(EnemyHealthComponent))]
 public class SiphonGhost : MonoBehaviour
@@ -28,24 +35,39 @@ public class SiphonGhost : MonoBehaviour
     [SerializeField] private Color _pursuitColour = new Color(0.5f, 0.5f, 1f, 1f);
     [SerializeField] private Color _bindColour = new Color(1f, 0.35f, 0f, 1f);
 
-    // ── Runtime ───────────────────────────────────────────────
+    // ── Runtime refs ──────────────────────────────────────────
     private SoulPlayer _soul;
     private RescueEventController _rescueController;
     private SiphonEnemyData _data;
     private EnemyHealthComponent _health;
 
-    private bool _binding;
-    private bool _retreating;
-    private bool _resolved;
+    // ── State — public for GOAP brain/BT actions to read ─────
+    public bool IsBinding { get; private set; }
+    public bool IsRetreating { get; private set; }
+    public bool IsImmune { get; private set; }
+    public bool IsResolved { get; private set; }
+    public bool KillWindowOpen { get; private set; }
+
+    public SoulPlayer Soul => _soul;
+    public SiphonEnemyData GhostData => _data;
+    public EnemyHealthComponent Health => _health;
+    public float PursuitSpeed => _pursuitSpeed;
+
+    // ── Events — GOAP brain can subscribe ────────────────────
+    public event System.Action OnKillWindowClosed;
+    public event System.Action OnBindStarted;
+    public event System.Action OnBindEnded;
+    public event System.Action OnGhostResolved;
 
     // ── Init ──────────────────────────────────────────────────
     public void Initialise(SoulPlayer soul, RescueEventController rescueController,
-                            SiphonEnemyData data)
+                           SiphonEnemyData data)
     {
         _soul = soul;
         _rescueController = rescueController;
         _data = data;
         _health = GetComponent<EnemyHealthComponent>();
+        KillWindowOpen = true;
 
         if (_health != null)
         {
@@ -58,6 +80,7 @@ public class SiphonGhost : MonoBehaviour
         if (_rescueController != null)
             _rescueController.OnRescueResolved += OnRescueResolved;
 
+        StartCoroutine(KillWindowRoutine());
         StartCoroutine(PursuitLoop());
     }
 
@@ -67,48 +90,38 @@ public class SiphonGhost : MonoBehaviour
             _rescueController.OnRescueResolved -= OnRescueResolved;
     }
 
-    // ── Pursuit ───────────────────────────────────────────────
+    // ── Kill window ───────────────────────────────────────────
+    private IEnumerator KillWindowRoutine()
+    {
+        float killWindow = _data?.ghostKillWindowDuration ?? 2.2f;
+        yield return new WaitForSeconds(killWindow);
+
+        KillWindowOpen = false;
+        IsImmune = true;
+        if (_health != null) _health.enabled = false;
+        OnKillWindowClosed?.Invoke();
+    }
+
+    // ── Pursuit — driven by GOAP goals but movement here ──────
     private IEnumerator PursuitLoop()
     {
-        // Kill window — soul can E-attack ghost during this time to kill it
-        float killWindow = _data?.ghostKillWindowDuration ?? 2.2f;
-        float killElapsed = 0f;
-        bool killWindowOpen = true;
-
-        while (!_resolved)
+        while (!IsResolved)
         {
             if (_soul == null || !_soul.gameObject.activeSelf)
-            {
-                yield return null;
-                continue;
-            }
+            { yield return null; continue; }
 
-            if (_retreating)
+            if (IsRetreating)
             {
-                // Back away from soul — gives real breathing room before next bind attempt
                 Vector3 fleeDir = (transform.position - _soul.transform.position).normalized;
                 fleeDir.y = 0f;
                 transform.position += fleeDir * _pursuitSpeed * Time.deltaTime;
             }
-            else if (!_binding)
+            else if (!IsBinding)
             {
-                // Pursue soul directly
                 transform.position = Vector3.MoveTowards(
                     transform.position,
                     _soul.transform.position,
                     _pursuitSpeed * Time.deltaTime);
-
-                // Track kill window
-                if (killWindowOpen)
-                {
-                    killElapsed += Time.deltaTime;
-                    if (killElapsed >= killWindow)
-                    {
-                        killWindowOpen = false;
-                        if (_health != null) _health.enabled = false;
-                        Debug.Log("[SiphonGhost] Kill window closed — ghost immune");
-                    }
-                }
 
                 float dist = Vector3.Distance(transform.position, _soul.transform.position);
                 if (dist <= 0.8f)
@@ -119,12 +132,18 @@ public class SiphonGhost : MonoBehaviour
         }
     }
 
-    // ── Chain Bind ────────────────────────────────────────────
+    // ── Bind ──────────────────────────────────────────────────
+    public void TryBind()
+    {
+        if (IsBinding || IsRetreating || IsResolved) return;
+        StartCoroutine(BindRoutine());
+    }
+
     private IEnumerator BindRoutine()
     {
-        _binding = true;
+        IsBinding = true;
         SetColour(_bindColour);
-        Debug.Log("[SiphonGhost] Bind started — soul mash E to break free");
+        OnBindStarted?.Invoke();
 
         var activeTarget = _rescueController?.ActiveTarget;
         activeTarget?.PauseTTK();
@@ -134,36 +153,24 @@ public class SiphonGhost : MonoBehaviour
         _soul?.GetComponent<SoulFrozenVFX>()?.SetFrozen(true);
 
         var input = _rescueController?.InputProvider;
-
         int mashCount = 0;
         int mashNeeded = _data?.ghostMashThreshold ?? 8;
         float bindDuration = _data?.ghostBindDuration ?? 2f;
         float elapsed = 0f;
 
-        while (elapsed < bindDuration && !_resolved)
+        while (elapsed < bindDuration && !IsResolved)
         {
             bool mashed = input != null
-                ? input.GetStruggleMash()        // E key — consistent with all self-rescue
+                ? input.GetStruggleMash()
                 : Input.GetKeyDown(KeyCode.E);
 
             if (mashed)
             {
                 mashCount++;
-                Debug.Log($"[SiphonGhost] Mash {mashCount}/{mashNeeded}");
                 if (mashCount >= mashNeeded)
                 {
-                    // Mash success — free soul, ghost backs away then retries
-                    activeTarget?.ResumeTTK();
-                    soulMovement?.SetFrozen(false);
-                    _soul?.GetComponent<SoulFrozenVFX>()?.SetFrozen(false);
-                    _binding = false;
-                    _retreating = true;
-                    SetColour(_pursuitColour);
-
-                    float stunDuration = _data?.ghostStunOnBreakDuration ?? 1.25f;
-                    yield return new WaitForSeconds(stunDuration);
-                    _retreating = false;
-                    yield break; // PursuitLoop resumes pursuit
+                    EndBind(activeTarget, soulMovement, stun: true);
+                    yield break;
                 }
             }
 
@@ -171,47 +178,59 @@ public class SiphonGhost : MonoBehaviour
             yield return null;
         }
 
-        // Bind timer expired — free soul, back away, retry
+        // Timer expired
+        EndBind(activeTarget, soulMovement, stun: false);
+    }
+
+    private void EndBind(IRescueTarget activeTarget, IMovementFreezable soulMovement, bool stun)
+    {
         activeTarget?.ResumeTTK();
         soulMovement?.SetFrozen(false);
         _soul?.GetComponent<SoulFrozenVFX>()?.SetFrozen(false);
-        _binding = false;
-        _retreating = true;
+        IsBinding = false;
+        IsRetreating = true;
         SetColour(_pursuitColour);
-        Debug.Log("[SiphonGhost] Bind expired — retreating before retry");
+        OnBindEnded?.Invoke();
 
-        float retryDelay = _data?.ghostRetryDelay ?? 0.75f;
-        yield return new WaitForSeconds(retryDelay);
-        _retreating = false;
+        float delay = stun
+            ? (_data?.ghostStunOnBreakDuration ?? 1.25f)
+            : (_data?.ghostRetryDelay ?? 0.75f);
+
+        StartCoroutine(EndRetreatAfter(delay));
+    }
+
+    private IEnumerator EndRetreatAfter(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        IsRetreating = false;
     }
 
     // ── Death / Resolution ────────────────────────────────────
     private void OnGhostDied()
     {
-        if (_resolved) return;
-        DieGhost();
+        if (IsResolved) return;
+        Resolve();
     }
 
     private void OnRescueResolved()
     {
-        if (_resolved) return;
-        DieGhost(); // full cleanup — unfreeze, resume TTK, unregister, destroy
+        if (IsResolved) return;
+        Resolve();
     }
 
-    private void DieGhost()
+    private void Resolve()
     {
-        // Unconditional cleanup — ghost may die at any point in bind/retreat sequence
         _soul?.GetComponent<IMovementFreezable>()?.SetFrozen(false);
         _soul?.GetComponent<SoulFrozenVFX>()?.SetFrozen(false);
         _rescueController?.ActiveTarget?.ResumeTTK();
-        _binding = false;
-        _retreating = false;
-        _resolved = true;
+        IsBinding = false;
+        IsRetreating = false;
+        IsResolved = true;
+        OnGhostResolved?.Invoke();
         _rescueController?.UnregisterGhost();
         Destroy(gameObject);
     }
 
-    // ── Helpers ───────────────────────────────────────────────
     private void SetColour(Color c)
     {
         if (_ghostRenderer != null)
@@ -223,12 +242,10 @@ public class SiphonGhost : MonoBehaviour
         _health?.TakeDamage(new DamageData(amount, DamageType.Ability));
     }
 
-    /// <summary>Called by SiphonEnemy when it dies — ghost has no purpose without owner.</summary>
+    /// <summary>Called by SiphonEnemy on its own death.</summary>
     public void KillOnSiphonDeath()
     {
-        if (_resolved) return;
-        DieGhost();
+        if (IsResolved) return;
+        Resolve();
     }
-
-    public EnemyHealthComponent Health => _health;
 }

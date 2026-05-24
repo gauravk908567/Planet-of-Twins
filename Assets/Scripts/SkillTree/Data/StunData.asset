@@ -16,9 +16,27 @@ MonoBehaviour:
   baseDuration: 3
   baseRange: 5
   baseCooldown: 7
+  baseEmpowerDuration: 6
+  baseEmpowerCooldown: 12
+  baseEmpowerKnockbackInterval: 1.5
+  baseEmpowerKnockbackForce: 8
+  baseEmpowerKnockbackRadius: 5
+  baseAccordDuration: 12
+  baseAccordBarCap: 35
+  baseAccordShockwaveForce: 15
+  baseAccordMeleeSlowDuration: 1.25
+  baseAccordMeleeAggroLossDuration: 0.75
+  basePulseInterval: 3.5
+  basePulseRadius: 4
+  basePulseFearDuration: 1.5
+  basePulseSlowMultiplier: 0.6
+  basePulseSlowDuration: 1.5
+  baseBurnDps: 0.35
+  baseBurnDuration: 1.8
   nodes:
   - label: 'Stun Depth I '
     pointCost: 3
+    previewClip: {fileID: 32900000, guid: c01873167c38fa347988e1769a5afe46, type: 3}
     durationBonus: 0.9
     cooldownReduction: 0.9
     targetCountBonus: 1
@@ -30,10 +48,23 @@ MonoBehaviour:
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
     description: "Duration extended. Gains a second target.\r\nDuration 3.0\u21923.9s 
       |  Cooldown 7.0\u21926.1s  |  Targets 1\u21922"
   - label: 'Stun Depth II '
     pointCost: 6
+    previewClip: {fileID: 32900000, guid: c01873167c38fa347988e1769a5afe46, type: 3}
     durationBonus: 0.45
     cooldownReduction: 0.45
     targetCountBonus: 1
@@ -45,10 +76,23 @@ MonoBehaviour:
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
     description: "Duration extended further. Gains a third target. Range increased.\r\nDuration
       3.9\u21924.35s  |  Cooldown 6.1\u21925.65s  |  Targets 2\u21923  |  Range 5.0\u21925.4m"
   - label: 'Stun Depth III '
     pointCost: 10
+    previewClip: {fileID: 32900000, guid: c01873167c38fa347988e1769a5afe46, type: 3}
     durationBonus: 0.23
     cooldownReduction: 0.23
     targetCountBonus: 0
@@ -60,6 +104,18 @@ MonoBehaviour:
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
     description: "Maximum duration and range. Cooldown reduced further.\r\nDuration
       4.35\u21924.58s  |  Cooldown 5.65\u21925.42s  |  Range 5.4\u21925.75m"
-  currentNodeIndex: 1
+  currentNodeIndex: 0

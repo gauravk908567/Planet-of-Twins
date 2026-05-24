@@ -2,13 +2,34 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(EnemyStateMachine))]
+/// <summary>
+/// Base class for all Planet of Twins enemies.
+///
+/// REWORKED: Removed EnemyStateMachine, EnemyDetection, OldFactionComponent,
+/// and all state machine references. Brain is now handled by PoTGOAPBrainBase.
+/// Detection is handled by PerceptionListener + FactionComponent.
+///
+/// What stays: Movement, AttackController, Health, all status effects
+/// (stun, fear, slow, possession, knockback), pool support, time factor.
+///
+/// Brain pause/resume: instead of StateMachine.Pause/Resume, sets _brainPaused
+/// flag. PoTGOAPBrainBase checks this flag in OnPreTickBrain and skips ticking
+/// when true. This keeps all existing stun/fear/grab logic working unchanged.
+/// </summary>
 [RequireComponent(typeof(EnemyHealthComponent))]
-public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGrabbable, IAlertReceiver, IKnockbackReceiver, IFearReceiver, ISlowReceiver
+public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGrabbable,
+                     IAlertReceiver, IKnockbackReceiver, IFearReceiver, ISlowReceiver
 {
     private bool _isStunned = false;
     private bool _isPossessed = false;
     private bool _isGrabbed = false;
+    private bool _isFeared = false;
+    private float _baseSpeed = -1f;
+
+    // Brain pause flag — replaces StateMachine.Pause/Resume
+    // PoTGOAPBrainBase reads this in OnPreTickBrain
+    public bool IsBrainPaused { get; private set; } = false;
+
     protected Renderer _renderer;
     protected Color _originalColor;
     private static readonly Color StunColor = new Color(0.2f, 0.6f, 1f);
@@ -16,8 +37,6 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private Coroutine _stunCoroutine;
     private Coroutine _fearCoroutine;
     private Coroutine _slowCoroutine;
-    private bool _isFeared = false;
-    private float _baseSpeed = -1f; // cached on first slow, restored after
 
     [SerializeField] private EnemyData defaultData;
     public EnemyData Data { get; private set; }
@@ -27,23 +46,14 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     public bool IsGrabbedByTrap => _isGrabbed;
 
     // ── Components ─────────────────────────────────────────────
-    public EnemyStateMachine StateMachine { get; private set; }
     public EnemyMovement Movement { get; private set; }
-    public EnemyDetection Detection { get; private set; }
     public EnemyAttackController AttackController { get; private set; }
     public EnemyHealthComponent Health { get; private set; }
-    public FactionComponent FactionComp { get; private set; }
     public StatusEffectController StatusEffects { get; private set; }
     public EnemyVFXController enemyVFXController { get; private set; }
     public EnemyStateUIController enemyStateUIController { get; private set; }
 
-    // ── States ─────────────────────────────────────────────────
-    public IEnemyState IdleState { get; protected set; }
-    public IEnemyState ChaseState { get; protected set; }
-    public IEnemyState AttackState { get; protected set; }
-    public IEnemyState PossessedState { get; protected set; }
-
-    [SerializeField] private float attackRange = 2f;
+    private float attackRange;
     [SerializeField] private MonoBehaviour timeFactorRegistryObject;
     [SerializeField] private float returnAnimDuration = 1.5f;
     [SerializeField] protected LayerMask possessedTargetLayer;
@@ -53,40 +63,37 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
 
     public float AttackRange => attackRange;
     protected void SetAttackRange(float range) => attackRange = range;
+
+    // Target is now written by GOAP/BT via Blackboard — kept for compatibility
+    // with existing systems (rescue, alerts, possessed targeting)
     public Transform Target { get; private set; }
     public void SetTarget(Transform t) => Target = t;
     public void ClearTarget() => Target = null;
 
     private ITimeFactorRegistry _timeFactorRegistry;
 
-    // ── Knockback duration — designer-tunable ─────────────────
-    // How long (seconds) the NavMesh agent stays disabled during knockback.
-    // Higher = pushed further. Exposed here so SOs don't need it if the
-    // knockback force multiplier on EnemyData is sufficient granularity.
     [SerializeField] private float _knockbackDuration = 0.25f;
 
     protected virtual void Awake()
     {
-        StateMachine = GetComponent<EnemyStateMachine>();
         Movement = GetComponent<EnemyMovement>();
-        Detection = GetComponent<EnemyDetection>();
         AttackController = GetComponent<EnemyAttackController>();
         Health = GetComponent<EnemyHealthComponent>();
-        FactionComp = GetComponent<FactionComponent>();
         StatusEffects = GetComponent<StatusEffectController>();
+        enemyVFXController = GetComponentInChildren<EnemyVFXController>();
+        enemyStateUIController = GetComponentInChildren<EnemyStateUIController>();
 
         _timeFactorRegistry = timeFactorRegistryObject as ITimeFactorRegistry;
         if (_timeFactorRegistry == null)
             _timeFactorRegistry = TimeFactorManager.Instance;
         if (_timeFactorRegistry == null)
-            Debug.LogWarning($"[Enemy] {name}: no ITimeFactorRegistry found — freeze won't work", this);
+            Debug.LogWarning($"[Enemy] {name}: no ITimeFactorRegistry — freeze won't work", this);
 
         _renderer = GetComponentInChildren<Renderer>();
         if (_renderer != null)
             _originalColor = _renderer.material.color;
 
         Health.OnDeath += HandleDeath;
-        InitStates();
     }
 
     public virtual void ApplyData(EnemyData data)
@@ -97,17 +104,8 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         Movement?.SetSpeed(data.moveSpeed);
         AttackController?.SetStats(data.attackRange, data.attackDamage,
                                    data.attackCooldown, data.attackWindup);
-        Detection.SetRanges(data.detectionRange, data.possessedDetectionMultiplier);
         attackRange = data.attackRange;
         returnAnimDuration = data.returnAnimDuration;
-    }
-
-    protected virtual void InitStates()
-    {
-        IdleState = new EnemyIdleState(this);
-        ChaseState = new EnemyChaseState(this);
-        AttackState = new EnemyAttackState(this);
-        PossessedState = new PossessedState(this, possessedTargetLayer);
     }
 
     protected void Start()
@@ -117,9 +115,6 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
 
     private void OnEnable()
     {
-        if (IdleState != null)
-            StateMachine?.ChangeState(IdleState);
-
         if (_timeFactorRegistry != null)
         {
             _timeFactorRegistry.Register(this);
@@ -133,9 +128,22 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         _timeFactorRegistry?.Unregister(Movement);
     }
 
+    // ── Brain pause (replaces StateMachine.Pause/Resume) ───────
+    public void PauseBrain()
+    {
+        IsBrainPaused = true;
+        Movement.OnFreeze();
+    }
+
+    public void ResumeBrain()
+    {
+        IsBrainPaused = false;
+        Movement.OnUnfreeze();
+    }
+
     // ── ITimeAffected ──────────────────────────────────────────
-    public virtual void OnEffectStarted() { StateMachine.Pause(); Movement.OnFreeze(); }
-    public virtual void OnEffectEnded() { StateMachine.Resume(); Movement.OnUnfreeze(); }
+    public virtual void OnEffectStarted() => PauseBrain();
+    public virtual void OnEffectEnded() => ResumeBrain();
 
     // ── Death ──────────────────────────────────────────────────
     protected virtual void HandleDeath()
@@ -164,11 +172,10 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         _isStunned = false;
         _isGrabbed = false;
         _isFeared = false;
+        IsBrainPaused = false;
         StopAllCoroutines();
-        StateMachine.Resume(); // CRITICAL — clear paused state from previous life
         Movement.SetSpeed(Data?.moveSpeed ?? 3.5f);
         Movement.Stop();
-        FactionComp.CurrentFaction = Faction.Enemy;
         AttackController.ClearDamageMultiplier();
         AttackController.ClearAttackSlowdown();
         AttackController.ResetAttack();
@@ -176,31 +183,22 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     }
 
     // ── IKnockbackReceiver ─────────────────────────────────────
-    /// <summary>
-    /// Base implementation: apply force scaled by EnemyData.knockbackForceMultiplier.
-    /// Override in subclasses to add conditional blocking (e.g. SummonerEnemy,
-    /// GroupGrabEnemy during active grab).
-    /// </summary>
     public virtual void ReceiveKnockback(KnockbackData data)
     {
-        // Read per-enemy resistance from SO. Default 1f if no data assigned.
         float multiplier = Data?.knockbackForceMultiplier ?? 1f;
-        if (multiplier <= 0f) return; // fully immune — skip coroutine entirely
-
+        if (multiplier <= 0f) return;
         StartCoroutine(KnockbackRoutine(data.Force * multiplier));
     }
 
     private IEnumerator KnockbackRoutine(Vector3 force)
     {
-        // Disable NavMeshAgent so it doesn't fight against positional change
-        var agent = GetComponent<UnityEngine.AI.NavMeshAgent>(); // routed through EnemyMovement — see note below
+        var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         if (agent != null) agent.enabled = false;
 
         float elapsed = 0f;
-
         while (elapsed < _knockbackDuration)
         {
-            float t = 1f - (elapsed / _knockbackDuration); // dampen over time
+            float t = 1f - (elapsed / _knockbackDuration);
             transform.position += force * t * Time.deltaTime;
             elapsed += Time.deltaTime;
             yield return null;
@@ -216,9 +214,13 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         if (_isPossessed || _isStunned) return;
 
         _isPossessed = true;
-        FactionComp.CurrentFaction = global::Faction.PossessedEnemy;
+
+        // Update faction via new FactionComponent
+        var factionComp = GetComponent<CommonCore.FactionComponent>();
+        // Possessed faction logic — GOAP goal reads IsPossessed from Blackboard
+        // FactionComponent faction swap handled when GOAP brain writes to Blackboard
+
         AttackController.SetDamageMultiplier(damageMultiplier);
-        StateMachine.ChangeState(PossessedState);
 
         float actualDuration = Data != null ? Data.possessionDuration : duration;
         StartCoroutine(PossessionDurationRoutine(actualDuration));
@@ -228,7 +230,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     {
         if (_isPossessed) return;
         SetTarget(attacker.transform);
-        StateMachine.ChangeState(AttackState);
+        // GOAP brain will detect target change via Blackboard next tick
     }
 
     private IEnumerator PossessionDurationRoutine(float duration)
@@ -243,40 +245,30 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
 
     public void OnPossessionEnded()
     {
-        FactionComp.CurrentFaction = global::Faction.Enemy;
         ClearTarget();
-        StateMachine.ChangeState(IdleState);
+        // GOAP brain re-evaluates goals next tick — AttackTwin goal will fire
     }
 
     // ── IStunnable ─────────────────────────────────────────────
     public void ApplyStun(float duration)
     {
         if (_isPossessed) return;
-
-        if (_stunCoroutine != null)
-            StopCoroutine(_stunCoroutine);
-
+        if (_stunCoroutine != null) StopCoroutine(_stunCoroutine);
         _stunCoroutine = StartCoroutine(StunRoutine(duration));
     }
 
     private IEnumerator StunRoutine(float duration)
     {
         _isStunned = true;
-        StateMachine.Pause();
-        Movement.OnFreeze();
-
+        PauseBrain();
         if (_renderer != null) _renderer.material.color = StunColor;
 
         yield return new WaitForSeconds(duration);
 
         _isStunned = false;
-        StateMachine.Resume();
-        Movement.OnUnfreeze();
-
+        ResumeBrain();
         if (_renderer != null)
-            _renderer.material.color = _isPossessed
-                ? new Color(0.5f, 0f, 1f)
-                : _originalColor;
+            _renderer.material.color = _isPossessed ? new Color(0.5f, 0f, 1f) : _originalColor;
 
         _stunCoroutine = null;
     }
@@ -285,16 +277,14 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     public void GrabByTrap(float killDelay)
     {
         _isGrabbed = true;
-        StateMachine.Pause();
-        Movement.OnFreeze();
+        PauseBrain();
         StartCoroutine(TrapKillRoutine(killDelay));
     }
 
     public void ReleaseFromTrap()
     {
         _isGrabbed = false;
-        StateMachine.Resume();
-        Movement.OnUnfreeze();
+        ResumeBrain();
     }
 
     private IEnumerator TrapKillRoutine(float delay)
@@ -313,17 +303,13 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private IEnumerator ReturnAnimationRoutine(float duration)
     {
         var combatants = FindDirectCombatants();
-        foreach (var c in combatants) { c.StateMachine.Pause(); c.Movement.OnFreeze(); }
+        foreach (var c in combatants) c.PauseBrain();
 
-        StateMachine.Pause();
-        Movement.OnFreeze();
-
+        PauseBrain();
         yield return new WaitForSeconds(duration);
+        ResumeBrain();
 
-        StateMachine.Resume();
-        Movement.OnUnfreeze();
-        foreach (var c in combatants) { c.StateMachine.Resume(); c.Movement.OnUnfreeze(); }
-
+        foreach (var c in combatants) c.ResumeBrain();
         OnPossessionEnded();
     }
 
@@ -340,42 +326,34 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     // ── IAlertReceiver ─────────────────────────────────────────
     public void OnGrabAlert(Transform grabbedPlayerTransform)
     {
-        if (StateMachine.CurrentState != ChaseState) return;
-        if (Target != grabbedPlayerTransform) return;
-        StateMachine.ChangeState(ChaseState);
+        // GOAP brain handles this via Blackboard — no direct state machine call needed
     }
 
     public void OnChaseAlert(Transform chasedPlayerTransform)
     {
-        if (StateMachine.CurrentState == IdleState)
-        {
-            SetTarget(chasedPlayerTransform);
-            StateMachine.ChangeState(ChaseState);
-        }
+        // PerceptionListener will detect the twin — GOAP re-evaluates naturally
+        // Keep SetTarget for systems that still read it directly
+        SetTarget(chasedPlayerTransform);
     }
 
-    // ── IFearReceiver ──────────────────────────────────────
+    // ── IFearReceiver ──────────────────────────────────────────
     public void ApplyFear(Vector3 fleeFrom, float duration)
     {
         if (_isStunned || _isPossessed) return;
-
-        if (_fearCoroutine != null)
-            StopCoroutine(_fearCoroutine);
-
+        if (_fearCoroutine != null) StopCoroutine(_fearCoroutine);
         _fearCoroutine = StartCoroutine(FearRoutine(fleeFrom, duration));
     }
 
     private IEnumerator FearRoutine(Vector3 fleeFrom, float duration)
     {
         _isFeared = true;
-        StateMachine.Pause();
+        PauseBrain();
         enemyVFXController?.PlayFear();
         enemyStateUIController?.ShowIkariFear();
 
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            // Move directly away from fleeFrom position
             Vector3 fleeDir = (transform.position - fleeFrom).normalized;
             fleeDir.y = 0f;
             Movement.MoveTowards(transform.position + fleeDir * 2f);
@@ -384,31 +362,25 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         }
 
         _isFeared = false;
-        StateMachine.Resume();
+        ResumeBrain();
         enemyVFXController?.StopFear();
         _fearCoroutine = null;
     }
 
-    // ── ISlowReceiver ──────────────────────────────────────
+    // ── ISlowReceiver ──────────────────────────────────────────
     public void ApplySlow(float speedMultiplier, float duration, string sourceKey)
     {
-        if (_slowCoroutine != null)
-            StopCoroutine(_slowCoroutine);
-
+        if (_slowCoroutine != null) StopCoroutine(_slowCoroutine);
         _slowCoroutine = StartCoroutine(SlowRoutine(speedMultiplier, duration));
     }
 
     private IEnumerator SlowRoutine(float speedMultiplier, float duration)
     {
-        // Cache base speed on first slow
         if (_baseSpeed < 0f)
-            _baseSpeed = Data?.moveSpeed ?? 3f; // fallback if no data
+            _baseSpeed = Data?.moveSpeed ?? 3f;
 
         Movement.SetSpeed(_baseSpeed * speedMultiplier);
-
         yield return new WaitForSeconds(duration);
-
-        // Restore base speed
         Movement.SetSpeed(_baseSpeed);
         _baseSpeed = -1f;
         _slowCoroutine = null;
@@ -416,10 +388,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
 
     private void OnDestroy()
     {
-        if (_timeFactorRegistry != null)
-        {
-            _timeFactorRegistry.Unregister(this);
-            _timeFactorRegistry.Unregister(Movement);
-        }
+        _timeFactorRegistry?.Unregister(this);
+        _timeFactorRegistry?.Unregister(Movement);
     }
 }

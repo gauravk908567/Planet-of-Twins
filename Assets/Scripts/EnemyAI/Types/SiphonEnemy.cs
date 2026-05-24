@@ -2,78 +2,40 @@
 
 /// <summary>
 /// Siphon — ranged kiting enemy that spawns a Ghost during rescue events.
-///
-/// STATES: Idle → KiteState ↔ RetreatState → PossessedState
-///
-/// GHOST SPAWN: When rescue fires AND soul has arrived AND Siphon is within
-/// ghostTriggerRadius of either twin → spawns SiphonGhost via RescueEventController.
-///
-/// POOL SETUP:
-///   Do NOT wire scene references on the prefab asset — they'll be null at spawn.
-///   Call Initialise() after pulling from pool. Call Release() before returning.
-///   Your pool/spawner holds references to leftTwin, rightTwin, soulPlayer,
-///   rescueController and passes them in at spawn time.
-///
-/// PREFAB SETUP:
-///   - Assign SiphonEnemyData SO (this IS safe on the prefab — it's a project asset)
-///   - Assign _ghostPrefab, _bombPrefab, _panicBombData (project assets, safe on prefab)
-///   - Leave _leftTwin, _rightTwin, _rescueController, _soulPlayer EMPTY on prefab
+/// Extends RangedEnemy for projectile attack and kite behaviour.
+/// Ghost spawn is event-driven via Initialise() and rescue events.
 /// </summary>
-public class SiphonEnemy : Enemy
+public class SiphonEnemy : RangedEnemy
 {
-    [Header("Siphon — References (project assets — safe to wire on prefab)")]
-    [SerializeField] private Transform _bombMuzzle; // child GO at feet — bomb spawns here
+    [Header("Siphon — project assets")]
+    [SerializeField] private Transform _bombMuzzle;
     [SerializeField] private GameObject _ghostPrefab;
     [SerializeField] private GameObject _bombPrefab;
     [SerializeField] private BombEffectData _panicBombData;
     [SerializeField] private LayerMask _playerLayer;
 
-    // Injected at spawn via Initialise() — not serialized, never wire on prefab
+    // Injected at spawn
     private Player _leftTwin;
     private Player _rightTwin;
     private RescueEventController _rescueController;
     private SoulPlayer _soulPlayer;
 
-    // ── States ─────────────────────────────────────────────────
-    public SiphonKiteState KiteState { get; private set; }
-    public SiphonRetreatState RetreatState { get; private set; }
-
     private SiphonEnemyData _siphonData;
     private bool _ghostSpawned;
 
-    protected override void InitStates()
-    {
-        base.InitStates();
-
-        _siphonData = Data as SiphonEnemyData ?? ScriptableObject.CreateInstance<SiphonEnemyData>();
-
-        KiteState = new SiphonKiteState(this, _siphonData);
-        RetreatState = new SiphonRetreatState(this, _siphonData);
-
-        AttackState = KiteState;
-    }
-
+    /// <summary>Debug only — simulates soul arrived event for ghost spawn testing.</summary>
+    public void TestTriggerGhostSpawn() => HandleSoulArrived();
     public override void ApplyData(EnemyData data)
     {
-        base.ApplyData(data);
+        base.ApplyData(data); // calls RangedEnemy.ApplyData → SetRangedMode
         if (data is SiphonEnemyData sd)
-        {
             _siphonData = sd;
-            KiteState = new SiphonKiteState(this, _siphonData);
-            RetreatState = new SiphonRetreatState(this, _siphonData);
-            AttackState = KiteState;
-        }
+        else
+            Debug.LogWarning($"[SiphonEnemy] Expected SiphonEnemyData, got {data?.GetType().Name}", this);
     }
 
-    // ── Pool lifecycle ─────────────────────────────────────────
-
-    /// <summary>
-    /// Call this immediately after pulling from the pool.
-    /// Injects all scene references and subscribes to rescue events.
-    /// OnEnable fires BEFORE this — do not subscribe in OnEnable.
-    /// </summary>
     public void Initialise(Player left, Player right, SoulPlayer soul,
-                            RescueEventController rescue)
+                           RescueEventController rescue)
     {
         _leftTwin = left;
         _rightTwin = right;
@@ -85,12 +47,6 @@ public class SiphonEnemy : Enemy
         _rescueController.OnRescueResolved += HandleRescueResolved;
     }
 
-
-
-    /// <summary>
-    /// Call this before returning to the pool.
-    /// Unsubscribes events so a dormant pooled Siphon doesn't react to live rescues.
-    /// </summary>
     public void Release()
     {
         if (_rescueController != null)
@@ -106,35 +62,21 @@ public class SiphonEnemy : Enemy
         _rescueController = null;
     }
 
-    // OnEnable/OnDisable intentionally absent.
-    // Pool objects use Initialise()/Release() — OnEnable fires before injection.
-
-    // ── Ghost spawn ────────────────────────────────────────────
     private void HandleSoulArrived()
     {
         if (_ghostSpawned) return;
-        if (_ghostPrefab == null) { Debug.LogWarning("[SiphonEnemy] No ghost prefab assigned."); return; }
-        if (_soulPlayer == null) { Debug.LogWarning("[SiphonEnemy] SoulPlayer null — was Initialise() called?"); return; }
+        if (_ghostPrefab == null) return;
+        if (_soulPlayer == null) return;
 
-        // Check trigger radius — only spawn if Siphon is close enough to matter
         if (_leftTwin != null && _rightTwin != null)
         {
             float distLeft = Vector3.Distance(transform.position, _leftTwin.transform.position);
             float distRight = Vector3.Distance(transform.position, _rightTwin.transform.position);
             float triggerRadius = _siphonData?.ghostTriggerRadius ?? 9f;
-
-            if (distLeft > triggerRadius && distRight > triggerRadius)
-            {
-                Debug.Log("[SiphonEnemy] Too far from both twins — ghost not spawned.");
-                return;
-            }
+            if (distLeft > triggerRadius && distRight > triggerRadius) return;
         }
 
-        if (!_rescueController.TryRegisterGhost())
-        {
-            Debug.Log("[SiphonEnemy] TryRegisterGhost() returned false — cap reached.");
-            return;
-        }
+        if (!_rescueController.TryRegisterGhost()) return;
 
         _ghostSpawned = true;
         SpawnGhost();
@@ -148,7 +90,6 @@ public class SiphonEnemy : Enemy
         var ghost = go.GetComponent<SiphonGhost>();
         if (ghost == null)
         {
-            Debug.LogError("[SiphonEnemy] Ghost prefab missing SiphonGhost component.");
             Destroy(go);
             _rescueController.UnregisterGhost();
             _ghostSpawned = false;
@@ -156,44 +97,28 @@ public class SiphonEnemy : Enemy
         }
 
         ghost.Initialise(_soulPlayer, _rescueController, _siphonData);
-
-        // Ghost dies when Siphon dies — no purpose without its owner
         Health.OnDeath += () => ghost?.KillOnSiphonDeath();
     }
 
-    private void HandleRescueResolved()
-    {
-        _ghostSpawned = false;
-    }
+    private void HandleRescueResolved() => _ghostSpawned = false;
 
-    // ── Panic bomb ─────────────────────────────────────────────
-    /// <summary>
-    /// Spawns bomb at Siphon position and rolls it toward the target's current position.
-    /// Called by SiphonRetreatState after wind-up completes.
-    /// </summary>
     public void SpawnPanicBomb()
     {
         if (_bombPrefab == null || _panicBombData == null) return;
         if (Target == null) return;
 
-        // Use muzzle point if set — avoids ground raycast issues
         Vector3 spawnPos = _bombMuzzle != null ? _bombMuzzle.position : transform.position;
         Vector3 targetPos = Target.position;
-
-        // Keep bomb on ground — match Siphon Y
         targetPos.y = spawnPos.y;
 
         var go = Instantiate(_bombPrefab, spawnPos, Quaternion.identity);
         var bomb = go.GetComponent<BombProjectile>();
         if (bomb == null) return;
 
-        float travelDuration = _siphonData?.panicBombTravelDuration ?? 1.0f;
-        float delay = _siphonData?.panicBombDetonationDelay ?? 0.75f;
-        float radius = _siphonData?.panicBombAoeRadius ?? 1.5f;
-
-        bomb.Roll(spawnPos, targetPos, travelDuration, delay, radius,
-                  _panicBombData, _playerLayer, LayerMask.GetMask("Enemy"));
+        bomb.Roll(spawnPos, targetPos,
+            _siphonData?.panicBombTravelDuration ?? 1f,
+            _siphonData?.panicBombDetonationDelay ?? 0.75f,
+            _siphonData?.panicBombAoeRadius ?? 1.5f,
+            _panicBombData, _playerLayer, LayerMask.GetMask("Enemy"));
     }
-
-    public new EnemyData Data => base.Data;
 }

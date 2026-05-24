@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RescueEventController : MonoBehaviour, IRescueActive
+public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialRescueProvider
 {
     [Header("Twin References")]
     [SerializeField] private Player leftTwin;
@@ -25,7 +25,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     [Tooltip("Soul must be within this radius of grabbed player to register F press")]
     [SerializeField] private float mashProximityRadius = 2.5f;
 
-    // ââ Public events for UI âââââââââââââââââââââââââââââââââââ
+    // ââ Public events for UI 
     public event Action<RescueState> OnRescueStateChanged;
     public event Action<float> OnMashProgressUpdated;
     public event Action<float> OnMashTimeUpdated;
@@ -34,6 +34,8 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     public event Action<IRescueTarget> OnActiveTargetChanged;
     public event Action OnSoulArrived;      // fires when soul reaches destination
     public event Action OnRescueResolved;   // fires on Success or Failed
+
+    public RescueState CurrentRescueState { get; private set; }
 
     /// <summary>
     /// Fires when the grabbed player successfully presses E to struggle.
@@ -77,6 +79,15 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     public bool IsRescueActive => _state != RescueState.Idle;
     public bool HasActiveRescueTarget => _activeTarget != null;
 
+    /// <summary>
+    /// Latches true when rescue succeeds. Stays true until ResetSuccessFlag() is called.
+    /// Used by TutorialRescueWatchStepSO to detect success without missing
+    /// the one-frame window before state resets to Idle.
+    /// </summary>
+    public bool WasSuccessful { get; private set; } = false;
+
+    public void ResetSuccessFlag() => WasSuccessful = false;
+
     /// <summary>Exposed so SiphonGhost can read soul break-mash input without raw Input calls.</summary>
     public IInputProvider InputProvider => _input;
 
@@ -111,7 +122,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
     private readonly Dictionary<IRescueTarget, TrapDelegates> _trapDelegates
         = new Dictionary<IRescueTarget, TrapDelegates>();
 
-    // ââ Unity lifecycle ââââââââââââââââââââââââââââââââââââââââ
+    // ââ Unity lifecycle
     private void Awake()
     {
         _selector = twinSelectorObject as ITwinSelector;
@@ -145,7 +156,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         if (rightProxy != null) RegisterDyingProxy(rightProxy, rightTwin);
     }
 
-    // ââ Proxy registration âââââââââââââââââââââââââââââââââââââ
+    // ââ Proxy registration 
     public void RegisterDyingProxy(PlayerDeathRescueProxy proxy, Player owner)
     {
         if (_dyingDelegates.ContainsKey(proxy)) return;
@@ -222,7 +233,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _trapDelegates.Clear();
     }
 
-    // ââ Trap registration ââââââââââââââââââââââââââââââââââââââ
+    // ââ Trap registration 
     public void RegisterTrap(IRescueTarget target)
     {
         if (_trapDelegates.ContainsKey(target)) return;
@@ -252,7 +263,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _trapDelegates.Remove(target);
     }
 
-    // ââ TeleportAbility registration âââââââââââââââââââââââââââ
+    // ââ TeleportAbility registration 
     public void RegisterTeleportAbility(TeleportAbility ability)
     {
         ability.OnSoulArrived += HandleSoulArrived;
@@ -263,7 +274,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _activeSoulAbility = ability;
     }
 
-    // ââ Grab handlers ââââââââââââââââââââââââââââââââââââââââââ
+    // ââ Grab handlers 
     private void HandlePlayerGrabbed(Player grabbedPlayer, IRescueTarget target)
     {
         if (_activeTarget != null)
@@ -374,7 +385,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
             TransitionTo(RescueState.Triggered);
     }
 
-    // ââ Update âââââââââââââââââââââââââââââââââââââââââââââââââ
+    // âUpdate
     private void Update()
     {
         // ── Struggle (E mash by grabbed player, tier-1 traps only) ──
@@ -491,12 +502,14 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         }
     }
 
-    // ââ State machine ââââââââââââââââââââââââââââââââââââââââââ
+    // State machine
     private void TransitionTo(RescueState next)
     {
         Debug.Log($"[RescueEventController] TransitionTo {next}");
         ExitState(_state);
         _state = next;
+        CurrentRescueState = next;
+        if (next == RescueState.Success) WasSuccessful = true;
         EnterState(next);
         OnRescueStateChanged?.Invoke(next);
     }
@@ -591,6 +604,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive
         _activeSoulAbility = null;
         _mashProgress = 0f;
         _state = RescueState.Idle;
+        CurrentRescueState = RescueState.Idle;
         OnRescueStateChanged?.Invoke(RescueState.Idle);
     }
 

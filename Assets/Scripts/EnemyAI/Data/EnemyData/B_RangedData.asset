@@ -21,7 +21,7 @@ MonoBehaviour:
   knockbackForceMultiplier: 2.5
   detectionRange: 12
   possessedDetectionMultiplier: 14
-  attackRange: 6
+  attackRange: 8
   attackDamage: 9
   attackCooldown: 2.2
   attackWindup: 1.2

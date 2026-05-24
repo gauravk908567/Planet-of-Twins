@@ -35,11 +35,11 @@ MonoBehaviour:
   mashWindowDuration: 3
   mashCooldown: 0.75
   partialHealAmount: 20
-  chainAttackRange: 8
-  chainTravelTime: 1
+  chainAttackRange: 10
+  chainTravelTime: 1.2
   chainHitRadius: 0.55
   chainMashThreshold: 4
   chainMissCooldown: 1.2
   chainConnectDelay: 0.15
   sprintSpeedMultiplier: 2.2
-  rageSpeedMultiplier: 2.4
+  rageSpeedMultiplier: 2.6

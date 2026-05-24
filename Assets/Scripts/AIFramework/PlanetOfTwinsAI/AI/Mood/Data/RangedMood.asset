@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9aeab05f8ebbbd942b1513269dae89a5, type: 3}
+  m_Name: RangedMood
+  m_EditorClassIdentifier: Assembly-CSharp::MoodTransitionProfile
+  defaultMood: 0
+  cautiousThreshold: 0.45
+  woundedThreshold: 0.25
+  modifierLerpDuration: 0.3
+  modifiers:
+  - mood: 0
+    utilityMultiplier: 1
+    speedMultiplier: 1
+    attackCooldownMult: 1
+    anticipationFactor: 0.5
+  - mood: 5
+    utilityMultiplier: 0.85
+    speedMultiplier: 0.85
+    attackCooldownMult: 1.2
+    anticipationFactor: 0.4
+  - mood: 6
+    utilityMultiplier: 0.7
+    speedMultiplier: 0.75
+    attackCooldownMult: 1.4
+    anticipationFactor: 0.2
+  - mood: 3
+    utilityMultiplier: 1.15
+    speedMultiplier: 1.1
+    attackCooldownMult: 0.85
+    anticipationFactor: 0.65
+  - mood: 2
+    utilityMultiplier: 1.25
+    speedMultiplier: 1.1
+    attackCooldownMult: 0.75
+    anticipationFactor: 0.85
+  - mood: 7
+    utilityMultiplier: 1.05
+    speedMultiplier: 1
+    attackCooldownMult: 0.95
+    anticipationFactor: 0.55
+  rules:
+  - triggerEvent: 0
+    useEventTrigger: 1
+    maxOwnHP: 1
+    minOwnHP: 0
+    minEnergy: 0
+    maxEventRange: 40
+    excludeMoods: 0400000009000000
+    targetMood: 2
+    duration: 6
+    decayMood: 0
+    vfxTag: 1
+    playReactionAnim: 1
+  - triggerEvent: 2
+    useEventTrigger: 1
+    maxOwnHP: 1
+    minOwnHP: 0
+    minEnergy: 0
+    maxEventRange: 45
+    excludeMoods: 0400000009000000
+    targetMood: 7
+    duration: 3
+    decayMood: 0
+    vfxTag: 2
+    playReactionAnim: 1
+  - triggerEvent: 4
+    useEventTrigger: 1
+    maxOwnHP: 1
+    minOwnHP: 0
+    minEnergy: 0
+    maxEventRange: 25
+    excludeMoods: 0400000009000000
+    targetMood: 3
+    duration: 6
+    decayMood: 0
+    vfxTag: 4
+    playReactionAnim: 1
+  - triggerEvent: 10
+    useEventTrigger: 1
+    maxOwnHP: 1
+    minOwnHP: 0
+    minEnergy: 0
+    maxEventRange: 0
+    excludeMoods: 0400000009000000
+    targetMood: 2
+    duration: 3
+    decayMood: 0
+    vfxTag: 1
+    playReactionAnim: 1
+  - triggerEvent: 1
+    useEventTrigger: 1
+    maxOwnHP: 1
+    minOwnHP: 0
+    minEnergy: 0
+    maxEventRange: 16
+    excludeMoods: 0400000009000000
+    targetMood: 2
+    duration: 5
+    decayMood: 0
+    vfxTag: 1
+    playReactionAnim: 1
+  moodContagionRadius: 8
+  rageContagionStrength: 0.2

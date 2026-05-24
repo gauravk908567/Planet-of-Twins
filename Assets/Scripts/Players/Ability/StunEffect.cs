@@ -1,36 +1,29 @@
 using UnityEngine;
 
+/// <summary>
+/// Stun effect — disables movement and pauses GOAP brain for duration.
+/// Replaces old StateMachine.enabled = false pattern.
+/// </summary>
 public class StunEffect : StatusEffectBase
 {
-    private Enemy enemy;
-    private FactionComponent fc;
+    private Enemy _enemy;
 
     public StunEffect(GameObject target, float duration) : base(target, duration)
     {
-        enemy = target.GetComponent<Enemy>();
-        fc = target.GetComponent<FactionComponent>();
+        _enemy = target.GetComponent<Enemy>();
     }
 
     public override void OnApply()
     {
         base.OnApply();
+        if (_enemy == null) return;
 
-        if (enemy.Movement != null)
-            enemy.Movement.enabled = false;
-
-        if (enemy.StateMachine != null)
-            enemy.StateMachine.enabled = false;
-        //fc.SetDebugText("Stun");
+        _enemy.ApplyStun(duration);
     }
 
     public override void OnRemove()
     {
-        if (enemy.Movement != null)
-            enemy.Movement.enabled = true;
-
-        if (enemy.StateMachine != null)
-            enemy.StateMachine.enabled = true;
-        enemy.StateMachine.ChangeState(enemy.IdleState);
-        fc.SetDebugText("Enemy");
+        // ApplyStun handles its own cleanup via coroutine
+        // Nothing to do here — stun coroutine resumes brain on expiry
     }
 }
