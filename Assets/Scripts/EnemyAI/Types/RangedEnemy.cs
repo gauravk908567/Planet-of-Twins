@@ -11,14 +11,14 @@ public class RangedEnemy : Enemy
 
     public IEnemyState RetreatState { get; private set; }
 
-    protected override void InitStates()
-    {
-        IdleState = new EnemyIdleState(this);
-        ChaseState = new EnemyChaseState(this, AttackRange);
-        AttackState = new RangedAttackState(this);
-        RetreatState = new RetreatState(this);
-        PossessedState = new PossessedState(this, possessedTargetLayer);
-    }
+    //protected override void InitStates()
+    //{
+    //    IdleState = new EnemyIdleState(this);
+    //    ChaseState = new EnemyChaseState(this, AttackRange);
+    //    AttackState = new RangedAttackState(this);
+    //    RetreatState = new RetreatState(this);
+    //    PossessedState = new PossessedState(this, possessedTargetLayer);
+    //}
 
     public override void ApplyData(EnemyData data)
     {
@@ -40,6 +40,8 @@ public class RangedEnemy : Enemy
                 rangedData.projectilePrefab,
                 firePoint,
                 rangedData.projectileSpeed);
+
+           // Debug.Log($"[RangedEnemy] SetRangedMode called — useProjectile={rangedData.useProjectile} prefab={rangedData.projectilePrefab?.name} firePoint={firePoint?.name}");
         }
         else
         {

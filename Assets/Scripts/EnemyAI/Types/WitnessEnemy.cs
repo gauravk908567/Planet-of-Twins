@@ -2,55 +2,39 @@
 using UnityEngine;
 
 /// <summary>
-/// Witness — support enemy that summons a melee ally and buffs nearby enemies.
-///
-/// FLOW:
-///   Spawn → immediately summon melee ally → shadow it (ShadowState)
-///   Ally dies → WitnessRitualState (4s channel to summon new ally)
-///   Player interrupts ritual (proximity or damage) → flee → restart ritual
-///   Ritual completes → new ally spawned → back to ShadowState
-///
-/// BUFF AURA: Always active. Nearby enemies get +40% damage, halved cooldowns.
-///   On possession: inverts to debuff aura.
-///
-/// BOMB: If twin enters bombTriggerRange while shadowing → wind-up → roll bomb.
-///
-/// DEATH BOMB: On death, drops bomb at feet.
-///
-/// IMPORTANT: Uses Awake subscription (not OnEnable) to avoid hiding Enemy.OnEnable.
+/// Witness — support enemy. Buffs allies, shadows summoned ally, rituals to resummon.
+/// Buff aura runs in Update — always active regardless of GOAP state.
+/// All behaviour decisions driven by GOAP+BT.
 /// </summary>
 public class WitnessEnemy : Enemy
 {
-    [Header("Witness — project assets, safe to wire on prefab")]
+    [Header("Witness — project assets")]
     [SerializeField] private WitnessEnemyData _witnessData;
     [SerializeField] private GameObject _bombPrefab;
     [SerializeField] private BombEffectData _witnessBombData;
     [SerializeField] private Transform _bombMuzzle;
-    [SerializeField] private GameObject _meleePrefab; // ally to summon
+    [SerializeField] private GameObject _meleePrefab;
     [SerializeField] private LayerMask _playerLayer;
     [SerializeField] private LayerMask _enemyLayer;
 
-    // ── States ─────────────────────────────────────────────────
-    public WitnessShadowState ShadowState { get; private set; }
-    public WitnessRitualState RitualState { get; private set; }
-
-    // ── Follow target ──────────────────────────────────────────
+    // ── Public state — read by GOAP brain ─────────────────────
     public Enemy FollowTarget { get; private set; }
+    public bool AllyIsAlive => FollowTarget != null
+    && FollowTarget.gameObject != null           // ← add
+    && FollowTarget.gameObject.activeInHierarchy // ← add
+    && !FollowTarget.Health.IsDead;
+    public bool IsRitualing { get; private set; }
+    public bool BombOnCooldown { get; private set; }
+    public bool IsRetreating { get; private set; }
+    public bool IsThrowing { get; private set; }
+    public WitnessEnemyData WitnessData => _witnessData;
+    public bool RitualBombDropped { get; set; } = false;
 
-    // ── Bomb state ─────────────────────────────────────────────
-    private bool _bombOnCooldown;
-    private bool _isThrowing;
-    private bool _isRetreating;
-
-    // ── Aura tracking ──────────────────────────────────────────
+    // ── Aura ───────────────────────────────────────────────────
     private readonly Collider[] _auraBuffer = new Collider[16];
     private Enemy[] _lastBuffed = new Enemy[0];
 
-    // ── Colour ─────────────────────────────────────────────────
     private static readonly Color RitualColour = new Color(0.5f, 0f, 1f);
-
-    // ── Shadow follow distance (not in SO, keep simple) ────────
-    private const float ShadowFollowDist = 2.5f;
 
     protected override void Awake()
     {
@@ -63,42 +47,32 @@ public class WitnessEnemy : Enemy
         if (data is WitnessEnemyData wd)
         {
             _witnessData = wd;
-            ShadowState = new WitnessShadowState(this, wd);
-            RitualState = new WitnessRitualState(this, wd);
-            AttackState = RitualState; // never standard attack
-
-            // Summon first ally and start shadowing
             StartCoroutine(InitialSummonRoutine());
         }
     }
 
-    protected override void InitStates()
-    {
-        base.InitStates();
-        // States created in ApplyData
-    }
-
     private IEnumerator InitialSummonRoutine()
     {
-        yield return null; // wait one frame for pool/spawner setup
+        yield return null;
         SummonAlly();
-        // SummonAlly sets FollowTarget and transitions to ShadowState
     }
 
-    // ── Update — aura only ─────────────────────────────────────
+    // ── Update — aura only (passive, always runs) ──────────────
     private void Update()
     {
         UpdateBuffAura();
     }
 
-    // ── Aura ───────────────────────────────────────────────────
+    // ── Buff Aura ──────────────────────────────────────────────
     private void UpdateBuffAura()
     {
         float radius = _witnessData?.buffAuraRadius ?? 6f;
         int count = Physics.OverlapSphereNonAlloc(
             transform.position, radius, _auraBuffer, _enemyLayer);
 
-        // Build new buffed list
+        if (count > 0)
+            FactionEnergySystem.Instance?.OnWitnessAuraActive();
+
         var newBuffed = new System.Collections.Generic.List<Enemy>();
         for (int i = 0; i < count; i++)
         {
@@ -108,7 +82,6 @@ public class WitnessEnemy : Enemy
             newBuffed.Add(enemy);
         }
 
-        // Unbuff enemies that LEFT the range (were buffed last frame, not in new list)
         foreach (var e in _lastBuffed)
         {
             if (e == null) continue;
@@ -120,15 +93,12 @@ public class WitnessEnemy : Enemy
             }
         }
 
-        // Apply buffs to enemies currently in range
         foreach (var enemy in newBuffed)
         {
             if (!IsPossessed)
             {
-                enemy.AttackController.SetDamageMultiplier(
-                    _witnessData?.buffDamageMultiplier ?? 1.4f);
-                enemy.AttackController.SetAttackSlowdown(
-                    _witnessData?.buffCooldownMultiplier ?? 0.5f);
+                enemy.AttackController.SetDamageMultiplier(_witnessData?.buffDamageMultiplier ?? 1.4f);
+                enemy.AttackController.SetAttackSlowdown(_witnessData?.buffCooldownMultiplier ?? 0.5f);
             }
             else
             {
@@ -136,7 +106,6 @@ public class WitnessEnemy : Enemy
                 enemy.AttackController.SetAttackSlowdown(2f);
             }
 
-            // Only notify buffed for NEW entries (not already tracked)
             bool wasAlreadyBuffed = System.Array.Exists(_lastBuffed, e => e == enemy);
             if (!wasAlreadyBuffed)
                 enemy.GetComponentInChildren<EnemyVFXController>()?.PlayBuff();
@@ -159,9 +128,9 @@ public class WitnessEnemy : Enemy
     // ── Summon ─────────────────────────────────────────────────
     public void SummonAlly()
     {
+        RitualBombDropped = false;
         if (_meleePrefab == null) return;
 
-        // Spawn near Witness position
         Vector3 spawnPos = transform.position +
                            transform.forward * 1.5f +
                            new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
@@ -177,28 +146,63 @@ public class WitnessEnemy : Enemy
     public void SetFollowTarget(Enemy target)
     {
         FollowTarget = target;
-        if (target != null && ShadowState != null)
-            StateMachine?.ChangeState(ShadowState);
     }
 
-    // ── Bomb ───────────────────────────────────────────────────
-    public void CheckBombThrow()
+    // ── Ritual — called by BTActionWitnessRitual ───────────────
+    public void StartRitual()
     {
-        if (_bombOnCooldown || _isThrowing || _isRetreating) return;
-        if (_bombPrefab == null || _witnessBombData == null) return;
+        if (IsRitualing) return;
+        StartCoroutine(RitualRoutine());
+    }
 
-        var twin = GetNearestTwin();
-        if (twin == null) return;
+    private IEnumerator RitualRoutine()
+    {
+        IsRitualing = true;
+        SetRitualColour(true);
+        Movement.Stop();
 
-        float dist = Vector3.Distance(transform.position, twin.transform.position);
-        if (dist <= (_witnessData?.bombTriggerRange ?? 5f))
-            StartCoroutine(BombThrowRoutine(twin.transform));
+        float elapsed = 0f;
+        float duration = _witnessData?.ritualDuration ?? 4f;
+
+        while (elapsed < duration)
+        {
+            // Check for interrupt — twin too close or took damage
+            var twin = GetNearestTwin();
+            if (twin != null)
+            {
+                float dist = Vector3.Distance(transform.position, twin.transform.position);
+                if (dist <= (_witnessData?.ritualInterruptRange ?? 5f))
+                {
+                    IsRitualing = false;
+                    SetRitualColour(false);
+                    yield break; // GOAP will re-evaluate, flee goal fires
+                }
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ritual complete — summon ally
+        SummonAlly();
+        IsRitualing = false;
+        SetRitualColour(false);
+    }
+
+    // ── Bomb — called by BTActionThrowBomb ─────────────────────
+    public bool CanThrowBomb => !BombOnCooldown && !IsThrowing && !IsRetreating
+                                && _bombPrefab != null && _witnessBombData != null;
+
+    public void ThrowBomb(Transform target)
+    {
+        if (!CanThrowBomb) return;
+        StartCoroutine(BombThrowRoutine(target));
     }
 
     private IEnumerator BombThrowRoutine(Transform target)
     {
-        _isThrowing = true;
-        _bombOnCooldown = true;
+        IsThrowing = true;
+        BombOnCooldown = true;
         GetComponentInChildren<EnemyVFXController>()?.PlayPanic();
 
         Vector3 dir = (target.position - transform.position);
@@ -221,15 +225,21 @@ public class WitnessEnemy : Enemy
                 _witnessBombData, _playerLayer, LayerMask.GetMask("Enemy"));
         }
 
-        _isThrowing = false;
+        IsThrowing = false;
         yield return StartCoroutine(RetreatRoutine());
-        _bombOnCooldown = false;
+        BombOnCooldown = false;
+    }
+
+    // ── Retreat — called by BTActionWitnessRetreat ─────────────
+    public void StartRetreat()
+    {
+        if (IsRetreating) return;
+        StartCoroutine(RetreatRoutine());
     }
 
     private IEnumerator RetreatRoutine()
     {
-        _isRetreating = true;
-        StateMachine.Pause();
+        IsRetreating = true;
 
         float originalSpeed = Data?.moveSpeed ?? 3.5f;
         Movement.SetSpeed(originalSpeed * (_witnessData?.fleeSpeedMultiplier ?? 1.6f));
@@ -249,19 +259,16 @@ public class WitnessEnemy : Enemy
 
         Movement.SetSpeed(originalSpeed);
         Movement.Stop();
-        StateMachine.Resume();
-        _isRetreating = false;
+        IsRetreating = false;
         GetComponentInChildren<EnemyVFXController>()?.StopPanic();
     }
 
-    // ── Ritual colour (called by WitnessRitualState) ───────────
     public void SetRitualColour(bool active)
     {
         if (_renderer != null)
             _renderer.material.color = active ? RitualColour : _originalColor;
     }
 
-    // ── Death bomb ─────────────────────────────────────────────
     protected override void HandleDeath()
     {
         GetComponent<WitnessAuraVFX>()?.StopAll();
@@ -275,8 +282,7 @@ public class WitnessEnemy : Enemy
             bomb?.Initialise(
                 _witnessData?.bombDetonationDelay ?? 0.75f,
                 _witnessData?.bombAoeRadius ?? 1.5f,
-                _witnessBombData, _playerLayer,
-                LayerMask.GetMask("Enemy"));
+                _witnessBombData, _playerLayer, LayerMask.GetMask("Enemy"));
         }
 
         base.HandleDeath();

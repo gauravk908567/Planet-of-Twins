@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Video;
 
 [Serializable]
 public class AbilityUpgradeNode
@@ -9,6 +10,13 @@ public class AbilityUpgradeNode
 
     [Tooltip("Skill-point cost to unlock this node")]
     public int pointCost = 3;
+
+    // ── Preview video ─────────────────────────────────────────
+    [Header("Preview")]
+    [Tooltip("Short looping clip showing what this node does. " +
+             "Plays silently in the card thumbnail. " +
+             "Leave empty — card shows a placeholder colour instead.")]
+    public VideoClip previewClip;
 
     // ── Core ability stats ────────────────────────────────────
     [Tooltip("Duration added in seconds (0 = no change)")]
@@ -81,7 +89,7 @@ public class AbilityUpgradeNode
     [Tooltip("Accord E aggro loss duration added in seconds (0 = no change)")]
     public float accordMeleeAggroLossBonus;
 
-    // ── Gate Pulse (Weaver's Gate + Ashen Tide) ─────────────
+    // ── Gate Pulse (Weaver's Gate + Ashen Tide) ──────────────
     [Header("Gate Pulse")]
     [Tooltip("Pulse interval REDUCED by this many seconds — pulses fire faster (0 = no change)")]
     public float pulseIntervalReduction;

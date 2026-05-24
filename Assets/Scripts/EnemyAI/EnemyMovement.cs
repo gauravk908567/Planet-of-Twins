@@ -16,6 +16,13 @@ public class EnemyMovement : MonoBehaviour, ITimeAffected
         _agent.speed = moveSpeed;
     }
 
+    private void OnEnable()
+    {
+        if (_agent == null) _agent = GetComponent<NavMeshAgent>();
+        if (_agent != null && _agent.isOnNavMesh)
+            _agent.isStopped = false;
+    }
+
     public void MoveTowards(Vector3 targetPosition)
     {
         if (!_agent.enabled || !_agent.isOnNavMesh) return;
@@ -54,4 +61,5 @@ public class EnemyMovement : MonoBehaviour, ITimeAffected
         if (_agent == null) _agent = GetComponent<NavMeshAgent>();
         if (_agent != null) _agent.speed = speed;
     }
+
 }

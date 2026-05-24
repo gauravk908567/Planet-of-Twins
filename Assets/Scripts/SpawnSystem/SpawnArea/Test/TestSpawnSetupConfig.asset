@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0337b476c214abc41a2a9498abe004c9, type: 3}
+  m_Name: TestSpawnSetupConfig
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnSetupConfig
+  spawnInterval: 3
+  leftSide:
+    maxTotalActive: 5
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 2
+      weight: 2
+      pairConfig: {fileID: 11400000, guid: c8feb55809ad58148b1240085c892ef9, type: 2}
+      darkEnergyBase: 0.1
+      bondBreakThreshold: 0.65
+      comboThreshold: 0.65
+  rightSide:
+    maxTotalActive: 5
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 2
+      weight: 2
+      pairConfig: {fileID: 11400000, guid: c8feb55809ad58148b1240085c892ef9, type: 2}
+      darkEnergyBase: 0.1
+      bondBreakThreshold: 0.65
+      comboThreshold: 0.65

@@ -119,7 +119,7 @@ Material:
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
-    - _seeThroughDistance: 52
+    - _seeThroughDistance: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 0.08679241, g: 0.08679241, b: 0.08679241, a: 1}

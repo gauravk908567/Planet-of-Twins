@@ -40,6 +40,21 @@ public class EnemyStateUIController : MonoBehaviour
     [SerializeField] private Color _panicColourA = new Color(1f, 0.9f, 0f, 1f);   // yellow
     [SerializeField] private Color _panicColourB = new Color(1f, 0.4f, 0f, 1f);   // orange
 
+    [Header("Opportunistic — dark red and gold")]
+    [SerializeField] private Sprite _opportunisticSprite;
+    [SerializeField] private Color _opportunisticColourA = new Color(0.6f, 0f, 0f, 1f);
+    [SerializeField] private Color _opportunisticColourB = new Color(0.8f, 0.6f, 0f, 1f);
+
+    [Header("Grieving — grey and dark blue")]
+    [SerializeField] private Sprite _grievingSprite;
+    [SerializeField] private Color _grievingColourA = new Color(0.4f, 0.4f, 0.5f, 1f);
+    [SerializeField] private Color _grievingColourB = new Color(0f, 0f, 0.2f, 1f);
+
+    [Header("Contemptuous — white and pale gold")]
+    [SerializeField] private Sprite _contemptuousSprite;
+    [SerializeField] private Color _contemptuousColourA = new Color(1f, 1f, 1f, 1f);
+    [SerializeField] private Color _contemptuousColourB = new Color(0.9f, 0.8f, 0.3f, 1f);
+
     private Coroutine _rageCoroutine;
     private Coroutine _ritualCoroutine;
 
@@ -79,6 +94,12 @@ public class EnemyStateUIController : MonoBehaviour
     public void ShowIkariPanic() => _ikariMark?.Play(_panicSprite, _panicColourA, _panicColourB);
     public void ShowIkari() => ShowIkariRage(); // default
 
+    public void ShowIkariOpportunistic()
+    => _ikariMark?.Play(_opportunisticSprite, _opportunisticColourA, _opportunisticColourB);
+    public void ShowIkariGrieving()
+        => _ikariMark?.Play(_grievingSprite, _grievingColourA, _grievingColourB);
+    public void ShowIkariContemptuous()
+        => _ikariMark?.Play(_contemptuousSprite, _contemptuousColourA, _contemptuousColourB);
     // ── Coroutines ─────────────────────────────────────────────
     private IEnumerator RageTimerRoutine(float duration)
     {

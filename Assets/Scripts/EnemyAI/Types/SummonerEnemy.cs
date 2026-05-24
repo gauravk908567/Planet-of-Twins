@@ -35,12 +35,6 @@ public class SummonerEnemy : RangedEnemy
             Debug.LogWarning("[SummonerEnemy] No EnemySpawner found in scene.", this);
     }
 
-    protected override void InitStates()
-    {
-        base.InitStates();
-        AttackState = new SummonerAttackState(this);
-    }
-
     public override void ApplyData(EnemyData data)
     {
         base.ApplyData(data);
@@ -58,6 +52,8 @@ public class SummonerEnemy : RangedEnemy
                 $"got {data?.GetType().Name}. Summon behaviour disabled.", this);
         }
     }
+
+    public void OnMinionDied() => _activeMinionCount = Mathf.Max(0, _activeMinionCount - 1);
 
     // ── IKnockbackReceiver override ────────────────────────────
     /// <summary>
@@ -83,6 +79,7 @@ public class SummonerEnemy : RangedEnemy
         {
             Vector3 spawnPos = transform.position + transform.forward * 1.5f;
             _spawner.SummonerSpawn(_summonEntry, spawnPos);
+            FactionEnergySystem.Instance?.OnSummonFired();
             _activeMinionCount++;
         }
 

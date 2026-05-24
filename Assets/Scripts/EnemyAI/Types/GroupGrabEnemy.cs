@@ -2,93 +2,61 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// GroupGrab enemy — gets behind twin, holds them while allies pile on.
+/// All config centralised in GroupGrabEnemyData SO.
+/// Base EnemyData fields used for TTK, mash, heal values.
+/// </summary>
 public class GroupGrabEnemy : Enemy, IRescueTarget
 {
-    [Header("Grab Config")]
-    [SerializeField] private float behindTimeRequired = 2.5f;
-    [SerializeField] private float behindDotThreshold = -0.3f;
-    [SerializeField] private float pileRadius = 4f;   // nearby allies join pile
-    [SerializeField] private LayerMask enemyLayer;
+    [Header("Layer Masks")]
+    [SerializeField] private LayerMask _enemyLayer;
 
-    [Header("IRescueTarget values")]
-    [SerializeField] private float _timeToKill = 5f;
-    [SerializeField] private float _mashFrequency = 4f;
-    [SerializeField] private float _mashWindowDuration = 3f;
-    [SerializeField] private float _mashCooldown = 0.75f;
-    [SerializeField] private float _partialHealAmount = 20f;
-    [SerializeField] private int _trapTier = 2;    // grabber = fully frozen
+    private GroupGrabEnemyData _grabData;
 
-    [Header("Struggle")]
-    [SerializeField] private float strugglePauseDuration = 0.4f;
+    // Grab state
+    private bool _isResolved;
+    private bool _grabOnCooldown;
+    private bool _isGrabbing;
+    private bool _ttkPaused;
+    private float _ttkRemaining;
+    private Player _grabbedPlayer;
     private Coroutine _strugglePauseCoroutine;
 
-    [Header("Alert Ranges")]
-    [SerializeField] private float chaseAlertRange = 6f;   // while chasing
-    [SerializeField] private float grabAlertRange = 14f;  // after grabbing — much larger
+    private readonly Collider[] _pileBuffer = new Collider[8];
 
-    private bool _isResolved;
+    // ── Public accessors for BT actions and debug ──────────────
+    public bool IsGrabbing => _isGrabbing;
+    public bool GrabOnCooldown => _grabOnCooldown;
+    public GroupGrabEnemyData GrabData => _grabData;
+    public LayerMask EnemyLayer => _enemyLayer;
 
-    // Grab cooldown — prevents re-grab after rescue
-    private bool _grabOnCooldown;
-    [SerializeField] private float grabCooldownAfterRescue = 3f;
-
-    public IEnemyState GrabState { get; private set; }
-    public IEnemyState BehindTimer { get; private set; }
-    public IEnemyState FrontAttackState { get; private set; }
-    public PileState PileStateObj { get; private set; }
-
-    public float ChaseAlertRange => chaseAlertRange;
-    public LayerMask EnemyLayer => enemyLayer;
-    public void AlertNearby(Transform playerTransform, bool isGrab)
-        => AlertNearbyEnemies(playerTransform, isGrab);
     // ── IRescueTarget ──────────────────────────────────────────
     public Transform GrabbedPlayerTransform => _grabbedPlayer?.transform;
     public Player GrabbedPlayer => _grabbedPlayer;
-    public float NormalisedTTK => _ttkRemaining / _timeToKill;
-    public float MashFrequency => _mashFrequency;
-    public float MashWindowDuration => _mashWindowDuration;
-    public float MashCooldown => _mashCooldown;
-    public float PartialHealAmount => _partialHealAmount;
-    public bool CanGrabbedPlayerStruggle => _trapTier == 1;
-    public float StrugglePauseDuration => strugglePauseDuration;
+    public float NormalisedTTK => Data != null && Data.timeToKill > 0f
+                                                ? _ttkRemaining / Data.timeToKill : 0f;
+    public float MashFrequency => Data?.mashFrequency ?? 4f;
+    public float MashWindowDuration => Data?.mashWindowDuration ?? 3f;
+    public float MashCooldown => Data?.mashCooldown ?? 0.75f;
+    public float PartialHealAmount => Data?.partialHealAmount ?? 20f;
+    public bool CanGrabbedPlayerStruggle => (_grabData?.trapTier ?? 2) == 1;
+    public float StrugglePauseDuration => _grabData?.strugglePauseDuration ?? 0.4f;
     public float RescueProximityRadius => 1.5f;
 
     public event Action<Player> OnPlayerGrabbed;
     public event Action OnPlayerReleased;
     public event Action OnPlayerKilled;
 
-    private Player _grabbedPlayer;
-    private float _ttkRemaining;
-    private bool _ttkPaused;
-    private bool _isGrabbing;
-
-    // Pre-allocated for pile detection
-    private readonly Collider[] _pileBuffer = new Collider[8];
-
-    protected override void InitStates()
-    {
-        BehindTimer = new BehindTimerState(this, behindTimeRequired, behindDotThreshold);
-        FrontAttackState = new FrontAttackState(this, behindDotThreshold); // NEW
-        GrabState = new GrabState(this);
-        PileStateObj = new PileState(this);
-        IdleState = new EnemyIdleState(this);
-        ChaseState = new EnemyChaseState(this);
-
-        // Chain: ChaseState → FrontAttackState → BehindTimerState → GrabState
-        // FrontAttackState checks if enemy is behind player → BehindTimerState starts timer
-        // BehindTimerState checks HasNearbyAlly() — solo grabber never grabs, attacks only
-        // Timer completes + ally present → GrabState → StartGrab()
-        AttackState = FrontAttackState;
-
-        PossessedState = new PossessedState(this, possessedTargetLayer);
-    }
-
     public override void ApplyData(EnemyData data)
     {
         base.ApplyData(data);
         if (data is GroupGrabEnemyData grabData)
-            behindTimeRequired = grabData.behindTimeRequired;
+            _grabData = grabData;
+        else
+            Debug.LogWarning($"[GroupGrabEnemy] Expected GroupGrabEnemyData, got {data?.GetType().Name}", this);
     }
+
     private void Update()
     {
         if (_isGrabbing && !_ttkPaused)
@@ -99,60 +67,59 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
         }
     }
 
-    // ── Called by GrabState.Enter() ───────────────────────────
-    public void StartGrab()
+    // ── Called by BTActionGrab ─────────────────────────────────
+    public bool StartGrab()
     {
-        if (Target == null) return;
-        if (_grabOnCooldown) return;
+        if (Target == null || _grabOnCooldown) return false;
 
         var player = Target.GetComponent<Player>();
-        if (player == null) return;
-        if (player.IsGrabbed) return;
+        if (player == null || player.IsGrabbed) return false;
 
-        _isResolved = false;   // ADD — reset on new grab
+        _isResolved = false;
         _grabbedPlayer = player;
-        _grabbedPlayer.SetGrabbed(true);  // ADD
-        _ttkRemaining = _timeToKill;
+        _grabbedPlayer.SetGrabbed(true);
+        _ttkRemaining = Data?.timeToKill ?? 5f;
         _ttkPaused = false;
         _isGrabbing = true;
 
-        if (_trapTier >= 2)
-            (player.Movement as IMovementFreezable)?.SetFrozen(true);
+        if ((_grabData?.trapTier ?? 2) >= 2)
+            (_grabbedPlayer.Movement as IMovementFreezable)?.SetFrozen(true);
 
         OnPlayerGrabbed?.Invoke(player);
+        MoodEventBus.AllyGrabbedTwin(player.gameObject);
+        FactionEnergySystem.Instance?.OnGrabPileActive();
         AlertNearbyEnemies(player.transform, isGrab: true);
+        PoTWorldStateWriter.Instance?.NotifyTargetEngaged(player.gameObject, true);
+
+        return true;
     }
 
     public void EndGrab()
     {
-        _grabbedPlayer?.SetGrabbed(false);  // ADD
+        _grabbedPlayer?.SetGrabbed(false);
         _isGrabbing = false;
         _grabbedPlayer = null;
-        StateMachine.ChangeState(IdleState);
+        PoTWorldStateWriter.Instance?.NotifyTargetEngaged(null, false);
     }
 
+    // ── Alert nearby enemies ───────────────────────────────────
     public void AlertNearbyEnemies(Transform playerTransform, bool isGrab)
     {
-        float range = isGrab ? grabAlertRange : chaseAlertRange;
+        float range = isGrab
+            ? (_grabData?.grabAlertRange ?? 14f)
+            : (_grabData?.chaseAlertRange ?? 6f);
+
         int count = Physics.OverlapSphereNonAlloc(
-            transform.position, range, _pileBuffer, enemyLayer);
+            transform.position, range, _pileBuffer, _enemyLayer);
 
         for (int i = 0; i < count; i++)
         {
             var receiver = _pileBuffer[i].GetComponent<IAlertReceiver>();
             if (receiver == null || (object)receiver == this) continue;
 
-            if (isGrab)
-                receiver.OnGrabAlert(playerTransform);
-            else
-                receiver.OnChaseAlert(playerTransform);
+            if (isGrab) receiver.OnGrabAlert(playerTransform);
+            else receiver.OnChaseAlert(playerTransform);
         }
-    }
-
-    public void JoinPile(Transform pileTarget)
-    {
-        PileStateObj.SetPileTarget(pileTarget);
-        StateMachine.ChangeState(PileStateObj);
     }
 
     // ── IRescueTarget ──────────────────────────────────────────
@@ -161,22 +128,21 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
 
     public void ReleasePlayer(float healAmount)
     {
-        if (!_isGrabbing || _isResolved) return;  // ADD _isResolved check
+        if (!_isGrabbing || _isResolved) return;
         _isResolved = true;
 
-        if (_trapTier >= 2)
+        if ((_grabData?.trapTier ?? 2) >= 2)
             (_grabbedPlayer?.Movement as IMovementFreezable)?.SetFrozen(false);
 
         _grabbedPlayer?.Health?.Heal(healAmount);
-        _grabbedPlayer?.SetGrabbed(false);  // ADD
+        _grabbedPlayer?.SetGrabbed(false);
         _isGrabbing = false;
 
-        // ADD: grab cooldown so rescued player can't be immediately re-grabbed
         StartCoroutine(GrabCooldownRoutine());
-
         _grabbedPlayer = null;
         OnPlayerReleased?.Invoke();
-        StateMachine.ChangeState(IdleState);
+        MoodEventBus.TwinEscaped(_grabbedPlayer?.gameObject);
+        PoTWorldStateWriter.Instance?.NotifyTargetEngaged(null, false);
     }
 
     public void KillPlayer()
@@ -184,8 +150,7 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
         if (!_isGrabbing || _isResolved) return;
         _isResolved = true;
 
-        // Unfreeze player regardless
-        if (_trapTier >= 2)
+        if ((_grabData?.trapTier ?? 2) >= 2)
             (_grabbedPlayer?.Movement as IMovementFreezable)?.SetFrozen(false);
 
         _grabbedPlayer?.SetGrabbed(false);
@@ -193,23 +158,47 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
         var proxy = _grabbedPlayer?.GetComponent<PlayerDeathRescueProxy>();
         _isGrabbing = false;
 
-        // Route through proxy if it owns the death state — avoids double-activation
-        // and prevents player getting stuck when ranged enemy also dealt damage
         if (proxy != null && proxy.IsActive)
-        {
-            // Proxy already running — just kill through it cleanly
             proxy.KillPlayer();
-        }
         else
         {
-            // Proxy not active — TTK expired naturally, fire event directly
             _grabbedPlayer?.Health?.TakeDamage(
                 new DamageData(9999f, DamageType.Environmental));
             OnPlayerKilled?.Invoke();
+            MoodEventBus.TwinDowned(_grabbedPlayer?.gameObject);
         }
 
         _grabbedPlayer = null;
-        StateMachine.ChangeState(IdleState);
+        PoTWorldStateWriter.Instance?.NotifyTargetEngaged(null, false);
+    }
+
+    public void OnStruggle()
+    {
+        if (!CanGrabbedPlayerStruggle || !_isGrabbing) return;
+        if (_strugglePauseCoroutine != null)
+            StopCoroutine(_strugglePauseCoroutine);
+        _strugglePauseCoroutine = StartCoroutine(StrugglePauseRoutine());
+    }
+
+    private IEnumerator StrugglePauseRoutine()
+    {
+        PauseTTK();
+        yield return new WaitForSeconds(_grabData?.strugglePauseDuration ?? 0.4f);
+        ResumeTTK();
+        _strugglePauseCoroutine = null;
+    }
+
+    private IEnumerator GrabCooldownRoutine()
+    {
+        _grabOnCooldown = true;
+        yield return new WaitForSeconds(_grabData?.grabCooldownAfterRescue ?? 3f);
+        _grabOnCooldown = false;
+    }
+
+    public override void ReceiveKnockback(KnockbackData data)
+    {
+        if (_isGrabbing) return;
+        base.ReceiveKnockback(data);
     }
 
     protected override void HandleDeath()
@@ -219,43 +208,6 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
             _grabbedPlayer?.SetGrabbed(false);
             ReleasePlayer(0f);
         }
-
-        // Clean up FrontAttackState static encirclement registry
-        if (StateMachine?.CurrentState == FrontAttackState)
-            FrontAttackState?.Exit();
-
         base.HandleDeath();
-    }
-
-    public void OnStruggle()
-    {
-        if (!CanGrabbedPlayerStruggle) return;  // tier 2 = fully frozen
-        if (!_isGrabbing) return;
-
-        if (_strugglePauseCoroutine != null)
-            StopCoroutine(_strugglePauseCoroutine);
-        _strugglePauseCoroutine = StartCoroutine(StrugglePauseRoutine());
-    }
-
-    private IEnumerator StrugglePauseRoutine()
-    {
-        PauseTTK();
-        yield return new WaitForSeconds(strugglePauseDuration);
-        ResumeTTK();
-        _strugglePauseCoroutine = null;
-    }
-
-    private IEnumerator GrabCooldownRoutine()
-    {
-        _grabOnCooldown = true;
-        yield return new WaitForSeconds(grabCooldownAfterRescue);
-        _grabOnCooldown = false;
-    }
-
-    //Knockback──────────────────────────────────────────
-    public override void ReceiveKnockback(KnockbackData data)
-    {
-        if (_isGrabbing) return;
-        base.ReceiveKnockback(data);
     }
 }

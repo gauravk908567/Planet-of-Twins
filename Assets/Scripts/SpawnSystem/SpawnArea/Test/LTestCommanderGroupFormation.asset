@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1b6b03b7b11a1746b2407244f9a734c, type: 3}
+  m_Name: LTestCommanderGroupFormation
+  m_EditorClassIdentifier: Assembly-CSharp::CommanderGroupDefinition
+  commanderPrefab: {fileID: 4835434787964155476, guid: 09c62481073a4b147b3e3e91801b0080, type: 3}
+  commanderData: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+  slots:
+  - prefab: {fileID: 9113977137480851281, guid: 327028d77bacbf747bb6195cd5dae517, type: 3}
+    data: {fileID: 11400000, guid: 79a9fdc5fd55b8e4fa952ceb433c8ea3, type: 2}
+    offset: {x: -4, y: 0, z: 0}
+    roleLabel: 
+  - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+    data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+    offset: {x: 4, y: 0, z: 0}
+    roleLabel: 
+  - prefab: {fileID: 932081067189722910, guid: 794e39d1ef120d544b1b800b4303774d, type: 3}
+    data: {fileID: 11400000, guid: 90725497fb44b7247969d97a3e76fa7e, type: 2}
+    offset: {x: -2, y: 0, z: 0}
+    roleLabel: 
+  - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+    data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+    offset: {x: 2, y: 0, z: 0}
+    roleLabel: 
+  spawnSide: 0
+  commanderDeathRageDuration: 4.5
+  commandRadius: 15

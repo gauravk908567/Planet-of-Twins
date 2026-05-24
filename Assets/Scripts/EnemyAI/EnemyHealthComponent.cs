@@ -70,6 +70,8 @@ public class EnemyHealthComponent : MonoBehaviour, IDamageable
             LastDeathPosition = transform.position;
             OnHealthChanged?.Invoke(0f);
             OnDeath?.Invoke();
+            MoodEventBus.AllyDied(gameObject);
+            FactionEnergySystem.Instance?.OnEnemyDied();
         }
         else
         {

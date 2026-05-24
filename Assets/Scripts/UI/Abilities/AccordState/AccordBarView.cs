@@ -56,9 +56,9 @@ public class AccordBarView : MonoBehaviour
     {
         _unlockState = unlockStateMono as ISkillUnlockState;
 
-        Debug.Log($"[AccordBarView] accordSystem={accordSystem != null} " +
-                  $"_unlockState={_unlockState != null} " +
-                  $"panel={panel != null}");
+        //Debug.Log($"[AccordBarView] accordSystem={accordSystem != null} " +
+        //          $"_unlockState={_unlockState != null} " +
+        //          $"panel={panel != null}");
 
         if (_unlockState != null)
             _unlockState.OnAccordStateUnlocked += HandleUnlocked;

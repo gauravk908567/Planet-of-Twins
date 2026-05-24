@@ -1,9 +1,13 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [CreateAssetMenu(fileName = "WitnessEnemyData",
                  menuName = "PlanetOfTwins/Enemy Data/Witness")]
 public class WitnessEnemyData : EnemyData
 {
+    [Header("Shadow Positioning")]
+    [Tooltip("Distance Witness maintains behind its ally (W → Ally → Twin formation).")]
+    public float shadowDistance = 2.5f;
+
     [Header("Buff Aura")]
     [Tooltip("Radius within which nearby enemies receive the buff.")]
     public float buffAuraRadius = 6f;
@@ -15,7 +19,7 @@ public class WitnessEnemyData : EnemyData
     [Header("Bomb")]
     [Tooltip("Distance at which Witness throws bomb at approaching twin.")]
     public float bombTriggerRange = 5f;
-    [Tooltip("Seconds before bomb throw � ability can interrupt during this window.")]
+    [Tooltip("Seconds before bomb throw — ability can interrupt during this window.")]
     public float bombWindUpDuration = 0.75f;
     [Tooltip("Seconds the bomb sits before exploding.")]
     public float bombDetonationDelay = 0.75f;

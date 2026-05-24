@@ -1,4 +1,4 @@
-using Unity.Cinemachine;
+﻿using Unity.Cinemachine;
 using UnityEngine;
 
 public class CameraManager : MonoBehaviour, ICameraController
@@ -7,15 +7,45 @@ public class CameraManager : MonoBehaviour, ICameraController
     public CinemachineCamera CinemachineCloseCam { get => cinemachineCloseCam; set => cinemachineCloseCam = value; }
     public CinemachineCamera CinemachineOverviewCam { get => cinemachineOverviewCam; set => cinemachineOverviewCam = value; }
 
+    /// <summary>
+    /// Fired when the active camera changes.
+    /// true  = camera-relative movement should be used (external/tutorial cam active)
+    /// false = raw world-Z movement (standard gameplay cam active)
+    /// TwinMovementDispatcher subscribes to this.
+    /// </summary>
+    public event System.Action<bool> OnMovementModeChanged;
+
     [Tooltip("All cameras that participate in distance-based switching. " +
-             "QTE cameras do NOT need to be here � SwitchToCamera handles them directly.")]
+             "Includes both gameplay AND tutorial transposers. " +
+             "QTE cameras do NOT go here — SwitchToCamera handles them directly.")]
     [SerializeField] private CinemachineCamera[] cinemachineCameras;
+
+    [Header("Gameplay cameras")]
     [SerializeField] private CinemachineCamera cinemachineCloseCam;
     [SerializeField] private CinemachineCamera cinemachineTopDownCam;
     [SerializeField] private CinemachineCamera cinemachineOverviewCam;
+
+    [Header("Tutorial cameras — same distance logic as gameplay cams")]
+    [SerializeField] private CinemachineCamera tutorialCloseCam;
+    [SerializeField] private CinemachineCamera tutorialTopDownCam;
+
     [SerializeField] private CinemachineCamera startCam;
 
+    // ── Public accessors for tutorial cams ───────────────────────────────
+    public CinemachineCamera TutorialCloseCam => tutorialCloseCam;
+    public CinemachineCamera TutorialTopDownCam => tutorialTopDownCam;
+
     private CinemachineCamera _currentCam;
+    private CinemachineCamera _previousExternalCam;
+
+    // Priorities — hardcoded, no serialised fields needed
+    // QTE/external cams: 30 (always win)
+    // Overview cam:      20
+    // Gameplay cams:     10
+    // Inactive:           0
+    private const int QTEPriority = 30;
+    private const int OverviewPriority = 20;
+    private const int GameplayPriority = 10;
 
     private void Start()
     {
@@ -30,22 +60,9 @@ public class CameraManager : MonoBehaviour, ICameraController
         UpdatePriorities(_currentCam);
     }
 
-    /// <summary>
-    /// FIX: old version only iterated cinemachineCameras[], so any camera
-    /// outside that array (QTE cams, cutscene cams) never got priority 20
-    /// and therefore never became active.
-    ///
-    /// New version: set priority 20 on the target directly, then demote
-    /// everything in the managed array that isn't the target.
-    /// Cameras outside the array that were previously elevated are demoted
-    /// via the _previousExternalCam reference so they don't stay active
-    /// after their QTE ends.
-    /// </summary>
-    private CinemachineCamera _previousExternalCam;
-
     private void UpdatePriorities(CinemachineCamera active)
     {
-        // Demote previous external camera (e.g. QTE cam returning to gameplay)
+        // Demote previous external cam
         if (_previousExternalCam != null && _previousExternalCam != active)
         {
             _previousExternalCam.Priority = 0;
@@ -54,14 +71,16 @@ public class CameraManager : MonoBehaviour, ICameraController
 
         bool isInManagedArray = false;
 
-        // Update managed cameras
         for (int i = 0; i < cinemachineCameras.Length; i++)
         {
             if (cinemachineCameras[i] == null) continue;
 
             if (cinemachineCameras[i] == active)
             {
-                cinemachineCameras[i].Priority = 20;
+                cinemachineCameras[i].Priority =
+                    cinemachineCameras[i] == cinemachineOverviewCam
+                    ? OverviewPriority
+                    : GameplayPriority;
                 isInManagedArray = true;
             }
             else
@@ -70,12 +89,18 @@ public class CameraManager : MonoBehaviour, ICameraController
             }
         }
 
-        // Camera is not in the managed array (QTE cam, cutscene cam, etc.)
-        // Give it the highest priority directly and track it for later demotion.
+        // External cam (QTE, cutscene) — always wins
         if (!isInManagedArray)
         {
-            active.Priority = 20;
+            active.Priority = QTEPriority;
             _previousExternalCam = active;
         }
+
+        // ── Broadcast movement mode ───────────────────────────────────────
+        // Camera-relative movement is needed when an external cam is active
+        // OR when the active cam is one of the tutorial cams.
+        bool isTutorialCam = active == tutorialCloseCam || active == tutorialTopDownCam;
+        bool needsCameraRelative = !isInManagedArray || isTutorialCam;
+        OnMovementModeChanged?.Invoke(needsCameraRelative);
     }
 }

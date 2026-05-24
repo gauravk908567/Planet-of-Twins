@@ -10,6 +10,8 @@ using UnityEngine;
 public class QTEZoneTrigger : MonoBehaviour
 {
     [SerializeField] private QTEController qteController;
+    [Header("Tutorial — only fire during this stage (None = always)")]
+    [SerializeField] private TutorialStage requiredStage = TutorialStage.None;
 
     [Tooltip("If true, waits for both players to enter before starting.")]
     [SerializeField] private bool requireBothPlayers = true;
@@ -20,6 +22,10 @@ public class QTEZoneTrigger : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (_triggered) return;
+
+        // Stage guard — won't fire if player wanders in during wrong tutorial step
+        if (requiredStage != TutorialStage.None &&
+            TutorialContext.Instance?.CurrentStage != requiredStage) return;
 
         var player = other.GetComponent<Player>();
         if (player == null) return;

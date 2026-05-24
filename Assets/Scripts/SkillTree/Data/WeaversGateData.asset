@@ -16,9 +16,27 @@ MonoBehaviour:
   baseDuration: 4
   baseRange: 5
   baseCooldown: 9
+  baseEmpowerDuration: 6
+  baseEmpowerCooldown: 12
+  baseEmpowerKnockbackInterval: 1.5
+  baseEmpowerKnockbackForce: 8
+  baseEmpowerKnockbackRadius: 5
+  baseAccordDuration: 12
+  baseAccordBarCap: 35
+  baseAccordShockwaveForce: 15
+  baseAccordMeleeSlowDuration: 1.25
+  baseAccordMeleeAggroLossDuration: 0.75
+  basePulseInterval: 3.5
+  basePulseRadius: 4
+  basePulseFearDuration: 1.5
+  basePulseSlowMultiplier: 0.6
+  basePulseSlowDuration: 1.5
+  baseBurnDps: 0.35
+  baseBurnDuration: 1.8
   nodes:
   - label: Weavers Gate I
     pointCost: 3
+    previewClip: {fileID: 32900000, guid: 11b827fe60d51db428759a6cdb7cbc85, type: 3}
     durationBonus: 0.72
     cooldownReduction: 1
     targetCountBonus: 0
@@ -30,10 +48,23 @@ MonoBehaviour:
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
     description: "Gate stays open longer. Cooldown reduced.\r\nDuration 4.0\u21924.7s 
       |  Cooldown 9.0\u21928.0s"
   - label: Weavers Gate II
     pointCost: 6
+    previewClip: {fileID: 32900000, guid: 11b827fe60d51db428759a6cdb7cbc85, type: 3}
     durationBonus: 0.43
     cooldownReduction: 0.6
     targetCountBonus: 0
@@ -45,10 +76,23 @@ MonoBehaviour:
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
     description: "Duration and cooldown improved further.\rDuration 4.7\u21925.1s 
       |  Cooldown 8.0\u21927.4s"
   - label: Weavers Gate III
     pointCost: 10
+    previewClip: {fileID: 32900000, guid: 11b827fe60d51db428759a6cdb7cbc85, type: 3}
     durationBonus: 0.26
     cooldownReduction: 0.36
     targetCountBonus: 0
@@ -60,6 +104,18 @@ MonoBehaviour:
     coalesceDpsBonus: 0
     soulThresholdReduction: 0
     soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
     description: "Maximum duration. Cooldown minimised.\rDuration 5.1\u21925.3s 
       |  Cooldown 7.4\u21927.1s"
   currentNodeIndex: 0

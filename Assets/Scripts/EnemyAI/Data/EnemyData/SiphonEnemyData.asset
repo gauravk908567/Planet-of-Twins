@@ -21,7 +21,7 @@ MonoBehaviour:
   knockbackForceMultiplier: 1
   detectionRange: 20
   possessedDetectionMultiplier: 15
-  attackRange: 8
+  attackRange: 10
   attackDamage: 2
   attackCooldown: 1.5
   attackWindup: 0.3
@@ -35,8 +35,13 @@ MonoBehaviour:
   mashWindowDuration: 3
   mashCooldown: 0.75
   partialHealAmount: 20
+  minEngageRange: 3
+  desiredRange: 8
+  useProjectile: 1
+  projectilePrefab: {fileID: 5217584787843976422, guid: a5f19ad17a52a884b99557454aa3f318, type: 3}
+  projectileSpeed: 14
   preferredRange: 8
-  panicRange: 4.5
+  panicRange: 5
   retreatSpeedMultiplier: 1.35
   panicBombWindUpDuration: 0.25
   panicBombTravelDuration: 1
