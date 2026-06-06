@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2367927902454393307}
   - component: {fileID: 6221199281201440446}
   - component: {fileID: 3781531493720460542}
-  - component: {fileID: 5297977609240802696}
+  - component: {fileID: 3340632342654949291}
   m_Layer: 0
   m_Name: ParkWallMid
   m_TagString: Untagged
@@ -542,7 +542,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -574,8 +574,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3405722977057758389}
   m_Mesh: {fileID: 0}
---- !u!64 &5297977609240802696
-MeshCollider:
+--- !u!65 &3340632342654949291
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -592,7 +592,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 10.010046, y: 4.714571, z: 1.97}
+  m_Center: {x: 0, y: 0.35728538, z: 0}

@@ -390,7 +390,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2226,95 +2226,9 @@ MonoBehaviour:
   m_Mesh: {fileID: 0}
   m_VersionIndex: 33416
   m_IsSelectable: 1
-  m_SelectedFaces: 30000000
-  m_SelectedEdges:
-  - a: 275
-    b: 276
-  - a: 276
-    b: 277
-  - a: 274
-    b: 275
-  - a: 277
-    b: 278
-  - a: 280
-    b: 281
-  - a: 281
-    b: 282
-  - a: 282
-    b: 283
-  - a: 241
-    b: 242
-  - a: 242
-    b: 243
-  - a: 283
-    b: 241
-  - a: 243
-    b: 244
-  - a: 244
-    b: 245
-  - a: 246
-    b: 247
-  - a: 245
-    b: 246
-  - a: 278
-    b: 279
-  - a: 279
-    b: 280
-  - a: 247
-    b: 248
-  - a: 248
-    b: 249
-  - a: 273
-    b: 274
-  - a: 251
-    b: 252
-  - a: 250
-    b: 251
-  - a: 249
-    b: 250
-  - a: 254
-    b: 255
-  - a: 253
-    b: 254
-  - a: 252
-    b: 253
-  - a: 256
-    b: 257
-  - a: 255
-    b: 256
-  - a: 258
-    b: 259
-  - a: 259
-    b: 260
-  - a: 257
-    b: 258
-  - a: 272
-    b: 273
-  - a: 260
-    b: 261
-  - a: 262
-    b: 263
-  - a: 261
-    b: 262
-  - a: 267
-    b: 268
-  - a: 266
-    b: 267
-  - a: 265
-    b: 266
-  - a: 268
-    b: 269
-  - a: 264
-    b: 265
-  - a: 263
-    b: 264
-  - a: 271
-    b: 272
-  - a: 269
-    b: 270
-  - a: 270
-    b: 271
-  m_SelectedVertices: 150100001301000014010000120100001601000018010000190100001a0100001b010000f1000000f2000000f3000000f4000000f5000000f6000000f700000017010000f8000000f900000011010000fb000000fc000000fa000000fe000000ff000000fd0000000001000001010000020100000301000004010000100100000501000006010000070100000b0100000c0100000a010000090100000d010000080100000f0100000e010000
+  m_SelectedFaces: 
+  m_SelectedEdges: []
+  m_SelectedVertices: 
 --- !u!33 &4912184073769808889
 MeshFilter:
   m_ObjectHideFlags: 0

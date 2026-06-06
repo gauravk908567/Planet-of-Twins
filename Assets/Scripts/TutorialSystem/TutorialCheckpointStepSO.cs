@@ -7,8 +7,14 @@ using UnityEngine.Localization;
 /// Single — one checkpoint, optional twin requirement.
 /// Dual   — two checkpoints simultaneously, each waits for its required twin.
 ///
-/// Wrong twin reset — swaps reset positions so each twin lands at their own
-/// correct reset point regardless of which checkpoint was entered incorrectly.
+/// Wrong twin reset in Dual mode:
+///   Uses fixed per-checkpoint reset positions rather than swapping.
+///   cpA always resets the left twin to cpA's left reset point.
+///   cpB always resets the right twin to cpB's right reset point.
+///   This ensures correct positioning regardless of which checkpoint fired.
+///
+/// Shared resetting guard prevents simultaneous wrong-twin events
+/// from racing each other.
 ///
 /// CREATE: Right-click → PlanetOfTwins/Tutorial/Steps/Checkpoint
 /// </summary>
@@ -66,7 +72,6 @@ public class TutorialCheckpointStepSO : TutorialStepBase
                     : failureMessageA.GetLocalizedString();
                 ctx.failureNotice?.Show(msg);
 
-                // Swap reset positions so each twin lands at their correct spot
                 GetSwappedResets(checkpoint, player,
                     out Vector3 leftReset, out Vector3 rightReset);
 
@@ -96,25 +101,31 @@ public class TutorialCheckpointStepSO : TutorialStepBase
         bool doneA = false;
         bool doneB = false;
         bool stepComplete = false;
+        bool resetting = false;
 
         cpA.OnCorrectTwinReached += _ => doneA = true;
         cpB.OnCorrectTwinReached += _ => doneB = true;
 
         cpA.OnWrongTwinReached += (cp, player) =>
         {
-            if (stepComplete) return;
+            if (stepComplete || resetting) return;
+            resetting = true;
 
             string msg = failureMessageA.IsEmpty
                 ? "Wrong twin — switch and try again"
                 : failureMessageA.GetLocalizedString();
             ctx.failureNotice?.Show(msg);
 
-            GetSwappedResets(cp, player, out Vector3 leftReset, out Vector3 rightReset);
+            // Always use fixed positions:
+            // Left twin (Lyra) → cpA's left reset
+            // Right twin (Kai) → cpB's right reset
+            GetDualResets(cpA, cpB, out Vector3 leftReset, out Vector3 rightReset);
 
             ctx.resetSequencer?.TriggerReset(leftReset, rightReset, () =>
             {
                 doneA = false;
                 doneB = false;
+                resetting = false;
                 cpA.FullReset();
                 cpB.FullReset();
             });
@@ -122,19 +133,24 @@ public class TutorialCheckpointStepSO : TutorialStepBase
 
         cpB.OnWrongTwinReached += (cp, player) =>
         {
-            if (stepComplete) return;
+            if (stepComplete || resetting) return;
+            resetting = true;
 
             string msg = failureMessageB.IsEmpty
                 ? "Wrong twin — switch and try again"
                 : failureMessageB.GetLocalizedString();
             ctx.failureNotice?.Show(msg);
 
-            GetSwappedResets(cp, player, out Vector3 leftReset, out Vector3 rightReset);
+            // Always use fixed positions:
+            // Left twin (Lyra) → cpA's left reset
+            // Right twin (Kai) → cpB's right reset
+            GetDualResets(cpA, cpB, out Vector3 leftReset, out Vector3 rightReset);
 
             ctx.resetSequencer?.TriggerReset(leftReset, rightReset, () =>
             {
                 doneA = false;
                 doneB = false;
+                resetting = false;
                 cpA.FullReset();
                 cpB.FullReset();
             });
@@ -150,16 +166,7 @@ public class TutorialCheckpointStepSO : TutorialStepBase
     // ── Helpers ───────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Determines correct reset positions for both twins based on which twin
-    /// entered the wrong checkpoint.
-    ///
-    /// If the wrong twin is the LEFT twin:
-    ///   Left twin should go to the RIGHT reset point (where they should be)
-    ///   Right twin should go to the LEFT reset point (where they should be)
-    /// And vice versa.
-    ///
-    /// This ensures each twin is placed at the reset point that belongs to them,
-    /// not both twins at the wrong checkpoint's default positions.
+    /// Single mode reset — swaps positions based on which twin entered wrong.
     /// </summary>
     private static void GetSwappedResets(TutorialCheckpoint checkpoint, Player wrongPlayer,
         out Vector3 leftReset, out Vector3 rightReset)
@@ -168,15 +175,26 @@ public class TutorialCheckpointStepSO : TutorialStepBase
 
         if (wrongIsLeft)
         {
-            // Left twin entered wrong — swap so left goes to right reset position
             leftReset = checkpoint.RightResetPosition;
             rightReset = checkpoint.LeftResetPosition;
         }
         else
         {
-            // Right twin entered wrong — swap so right goes to left reset position
             leftReset = checkpoint.LeftResetPosition;
             rightReset = checkpoint.RightResetPosition;
         }
+    }
+
+    /// <summary>
+    /// Dual mode reset — fixed positions regardless of which checkpoint fired.
+    /// Left twin always goes to cpA's left reset (Lyra's correct zone).
+    /// Right twin always goes to cpB's right reset (Kai's correct zone).
+    /// </summary>
+    private static void GetDualResets(
+        TutorialCheckpoint cpA, TutorialCheckpoint cpB,
+        out Vector3 leftReset, out Vector3 rightReset)
+    {
+        leftReset = cpA.LeftResetPosition;
+        rightReset = cpB.RightResetPosition;
     }
 }

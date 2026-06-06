@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 5133677685927202985}
   - component: {fileID: 925205792601790157}
   - component: {fileID: 19790845292496914}
-  - component: {fileID: 321210113586105112}
   m_Layer: 0
   m_Name: GateJoint
   m_TagString: Untagged
@@ -2075,26 +2074,4 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2788453781398302128}
-  m_Mesh: {fileID: 0}
---- !u!64 &321210113586105112
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2788453781398302128}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
   m_Mesh: {fileID: 0}

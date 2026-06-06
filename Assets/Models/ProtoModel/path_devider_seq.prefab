@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4402275165979255161}
   - component: {fileID: 2717867619397045441}
   - component: {fileID: 5618302806258017293}
-  - component: {fileID: 345483710243223366}
+  - component: {fileID: 3781479549040187285}
   m_Layer: 0
   m_Name: pathdevider (4)
   m_TagString: Untagged
@@ -994,7 +994,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1026,8 +1026,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 285707103066333709}
   m_Mesh: {fileID: 0}
---- !u!64 &345483710243223366
-MeshCollider:
+--- !u!65 &3781479549040187285
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1044,10 +1044,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: -0.0000009536743, y: -0.31285858, z: 0}
 --- !u!1 &604491727681532284
 GameObject:
   m_ObjectHideFlags: 0
@@ -1061,7 +1060,7 @@ GameObject:
   - component: {fileID: 4741337770157333097}
   - component: {fileID: 7946957382270594977}
   - component: {fileID: 4786551134294124883}
-  - component: {fileID: 6820738991006619818}
+  - component: {fileID: 1936087689374367981}
   m_Layer: 0
   m_Name: pathdevider (7)
   m_TagString: Untagged
@@ -2042,7 +2041,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2074,8 +2073,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 604491727681532284}
   m_Mesh: {fileID: 0}
---- !u!64 &6820738991006619818
-MeshCollider:
+--- !u!65 &1936087689374367981
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -2092,10 +2091,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: -0.0000009536743, y: -0.31285858, z: 0}
 --- !u!1 &1510179350681916763
 GameObject:
   m_ObjectHideFlags: 0
@@ -2109,7 +2107,7 @@ GameObject:
   - component: {fileID: 1945542900153624887}
   - component: {fileID: 7038266206312505261}
   - component: {fileID: 6942751518765821845}
-  - component: {fileID: 5905202993745857201}
+  - component: {fileID: 2949704074384944945}
   m_Layer: 0
   m_Name: pathdevider
   m_TagString: Untagged
@@ -3090,7 +3088,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3122,8 +3120,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1510179350681916763}
   m_Mesh: {fileID: 0}
---- !u!64 &5905202993745857201
-MeshCollider:
+--- !u!65 &2949704074384944945
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -3140,10 +3138,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: 0, y: -0.31285858, z: 0}
 --- !u!1 &1861173394377773673
 GameObject:
   m_ObjectHideFlags: 0
@@ -3157,7 +3154,7 @@ GameObject:
   - component: {fileID: 8175104914833240386}
   - component: {fileID: 9134164425995320452}
   - component: {fileID: 7214199701145461959}
-  - component: {fileID: 4302432377029793117}
+  - component: {fileID: 5191480136869002766}
   m_Layer: 0
   m_Name: pathdevider (1)
   m_TagString: Untagged
@@ -4138,7 +4135,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4170,8 +4167,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1861173394377773673}
   m_Mesh: {fileID: 0}
---- !u!64 &4302432377029793117
-MeshCollider:
+--- !u!65 &5191480136869002766
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -4188,10 +4185,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: -0.00000023841858, y: -0.31285858, z: 0}
 --- !u!1 &2576474389137892841
 GameObject:
   m_ObjectHideFlags: 0
@@ -4246,7 +4242,7 @@ GameObject:
   - component: {fileID: 4770741058081597927}
   - component: {fileID: 3832808989758754337}
   - component: {fileID: 8952188429521362307}
-  - component: {fileID: 1478109883054085676}
+  - component: {fileID: 647958361279892251}
   m_Layer: 0
   m_Name: pathdevider (5)
   m_TagString: Untagged
@@ -5227,7 +5223,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5259,8 +5255,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3173409201738484187}
   m_Mesh: {fileID: 0}
---- !u!64 &1478109883054085676
-MeshCollider:
+--- !u!65 &647958361279892251
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -5277,10 +5273,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: 0.00000023841858, y: -0.31285858, z: 0}
 --- !u!1 &5992773000192307917
 GameObject:
   m_ObjectHideFlags: 0
@@ -5294,7 +5289,7 @@ GameObject:
   - component: {fileID: 959044408647124486}
   - component: {fileID: 3714695430278454172}
   - component: {fileID: 8545086921042008869}
-  - component: {fileID: 4441195451821291752}
+  - component: {fileID: 5383522821935765930}
   m_Layer: 0
   m_Name: pathdevider (8)
   m_TagString: Untagged
@@ -6275,7 +6270,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6307,8 +6302,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5992773000192307917}
   m_Mesh: {fileID: 0}
---- !u!64 &4441195451821291752
-MeshCollider:
+--- !u!65 &5383522821935765930
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -6325,10 +6320,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: 0.0000009536743, y: -0.31285858, z: 0}
 --- !u!1 &6657247462675610837
 GameObject:
   m_ObjectHideFlags: 0
@@ -6342,7 +6336,7 @@ GameObject:
   - component: {fileID: 2771142024289736261}
   - component: {fileID: 1852037961513442790}
   - component: {fileID: 2909344257432697351}
-  - component: {fileID: 1601290186566508796}
+  - component: {fileID: 3214621686811002935}
   m_Layer: 0
   m_Name: pathdevider (2)
   m_TagString: Untagged
@@ -7323,7 +7317,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7355,8 +7349,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6657247462675610837}
   m_Mesh: {fileID: 0}
---- !u!64 &1601290186566508796
-MeshCollider:
+--- !u!65 &3214621686811002935
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -7373,10 +7367,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: -0.00000047683716, y: -0.31285858, z: 0}
 --- !u!1 &7262063007845448411
 GameObject:
   m_ObjectHideFlags: 0
@@ -7390,7 +7383,7 @@ GameObject:
   - component: {fileID: 4683080026676689017}
   - component: {fileID: 8528157124763592445}
   - component: {fileID: 2860785945568682134}
-  - component: {fileID: 3944147180662608658}
+  - component: {fileID: 2985069957776660839}
   m_Layer: 0
   m_Name: pathdevider (9)
   m_TagString: Untagged
@@ -8371,7 +8364,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8403,8 +8396,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7262063007845448411}
   m_Mesh: {fileID: 0}
---- !u!64 &3944147180662608658
-MeshCollider:
+--- !u!65 &2985069957776660839
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -8421,10 +8414,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: -0.0000019073486, y: -0.31285858, z: 0}
 --- !u!1 &7941398707526245324
 GameObject:
   m_ObjectHideFlags: 0
@@ -8438,7 +8430,7 @@ GameObject:
   - component: {fileID: 8941093087356984801}
   - component: {fileID: 84361051599346649}
   - component: {fileID: 2635523091252781359}
-  - component: {fileID: 8047491018827500430}
+  - component: {fileID: 3590227378431666199}
   m_Layer: 0
   m_Name: pathdevider (6)
   m_TagString: Untagged
@@ -9419,7 +9411,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -9451,8 +9443,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7941398707526245324}
   m_Mesh: {fileID: 0}
---- !u!64 &8047491018827500430
-MeshCollider:
+--- !u!65 &3590227378431666199
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -9469,10 +9461,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: 0.00000047683716, y: -0.31285858, z: 0}
 --- !u!1 &8709049422380369488
 GameObject:
   m_ObjectHideFlags: 0
@@ -9486,7 +9477,7 @@ GameObject:
   - component: {fileID: 8225302164101634501}
   - component: {fileID: 8052479892114890622}
   - component: {fileID: 665153133312466963}
-  - component: {fileID: 5099020988785883931}
+  - component: {fileID: 2503698606165625564}
   m_Layer: 0
   m_Name: pathdevider (3)
   m_TagString: Untagged
@@ -10467,7 +10458,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -10499,8 +10490,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8709049422380369488}
   m_Mesh: {fileID: 0}
---- !u!64 &5099020988785883931
-MeshCollider:
+--- !u!65 &2503698606165625564
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -10517,7 +10508,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
+  m_Center: {x: -0.0000009536743, y: -0.31285858, z: 0}

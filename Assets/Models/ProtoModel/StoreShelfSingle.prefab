@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 9171384228178237809}
   - component: {fileID: 1515062418944440509}
   - component: {fileID: 7517270781634927896}
-  - component: {fileID: 4236484529248316431}
+  - component: {fileID: 2156953122555974843}
   m_Layer: 0
   m_Name: StoreShelfSingle
   m_TagString: Untagged
@@ -2425,17 +2425,9 @@ MonoBehaviour:
   m_Mesh: {fileID: 0}
   m_VersionIndex: 10200
   m_IsSelectable: 1
-  m_SelectedFaces: 4a000000
-  m_SelectedEdges:
-  - a: 329
-    b: 326
-  - a: 326
-    b: 327
-  - a: 327
-    b: 328
-  - a: 328
-    b: 329
-  m_SelectedVertices: 49010000460100004701000048010000
+  m_SelectedFaces: 
+  m_SelectedEdges: []
+  m_SelectedVertices: 
 --- !u!114 &9171384228178237809
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2485,7 +2477,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 891d36702e97ed64d9c2f211de82880d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2517,8 +2509,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3798832217953993302}
   m_Mesh: {fileID: 0}
---- !u!64 &4236484529248316431
-MeshCollider:
+--- !u!65 &2156953122555974843
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -2535,7 +2527,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 6.0000114, y: 18.00001, z: 16}
+  m_Center: {x: 1.0000057, y: 1.0000048, z: 0}
