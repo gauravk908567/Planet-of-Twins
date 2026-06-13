@@ -3,22 +3,33 @@
 /// <summary>
 /// Raw input reader. All dispatchers wire to this permanently.
 ///
-/// Optional tutorialGateMono — wire to TutorialInputGate in tutorial scene.
-/// If null (all other scenes), every input is allowed unconditionally.
-/// This means multi-scene works without any tutorial manager present.
+/// The tutorial gate is registered at runtime by TutorialInputGate.OnEnable()
+/// (cross-scene — cannot be serialized in Inspector). Leave tutorialGateMono
+/// blank in Persistent. When null, every input is allowed unconditionally.
 /// </summary>
 public class TwinInputReader : MonoBehaviour, IInputProvider
 {
-    [Tooltip("Optional — wire to TutorialInputGate in tutorial scene only. " +
-             "Leave null in all other scenes.")]
-    [SerializeField] private MonoBehaviour tutorialGateMono;
+    public static TwinInputReader Instance { get; private set; }
 
+    // No serialized gate field — resolved at runtime by TutorialInputGate.
     private ITutorialGate _gate;
 
     private void Awake()
     {
-        _gate = tutorialGateMono as ITutorialGate;
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
     }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
+    /// <summary>
+    /// Called by TutorialInputGate.OnEnable() when the tutorial scene loads,
+    /// and with null by TutorialInputGate.OnDisable() when it unloads.
+    /// </summary>
+    public void SetGate(ITutorialGate gate) => _gate = gate;
 
     // ── Helpers ───────────────────────────────────────────────
     private bool AttackAllowed => _gate == null || _gate.IsAttackAllowed;
@@ -68,4 +79,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider
 
     // Soul break — C mash while chain-bound
     public bool GetSoulBreakMash() => Input.GetKeyDown(KeyCode.C);
+
+    // Convergence hold — F (Soul Convergence charge / Setsuna charge)
+    public bool GetConvergenceHeld() => AbilityAllowed && Input.GetKey(KeyCode.F);
 }

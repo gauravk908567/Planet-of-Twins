@@ -20,6 +20,7 @@ using UnityEngine;
 /// </summary>
 public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
 {
+    public static AccordStateSystem Instance { get; private set; }
     [Header("Twins")]
     [SerializeField] private Player _leftTwin;   // Lyra
     [SerializeField] private Player _rightTwin;  // Kai
@@ -35,6 +36,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
     [SerializeField] private MonoBehaviour _rescueActiveMono;
     [SerializeField] private MonoBehaviour _unlockStateMono;
     [SerializeField] private MonoBehaviour _dataStoreMono;
+    [SerializeField] private MonoBehaviour _inputProviderMono;
 
     [Tooltip("Drag SoulConvergenceSystem here — blocks Accord while SC power state is active.")]
     [SerializeField] private MonoBehaviour _scActiveStateMono;
@@ -103,6 +105,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
     private IAbilityDataStore _dataStore;
     private IAbilityActiveState _scActiveState;
     private IAbilityActiveState _empowerActiveState;
+    private IInputProvider _input;
     public IAbilityHUDSource VoidStrikeHUDSource => _voidStrike;
     public IAbilityHUDSource RadiantSeekerHUDSource => _radiantSeeker;
     public IAbilityActiveState VoidStrikeActiveState => _voidStrike;
@@ -175,12 +178,15 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
     // ── Lifecycle ─────────────────────────────────────────────
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _deathNotifier = _deathNotifierMono as IEnemyDeathNotifier;
         _rescueActive = _rescueActiveMono as IRescueActive;
         _unlockState = _unlockStateMono as ISkillUnlockState;
         _dataStore = _dataStoreMono as IAbilityDataStore;
         _scActiveState = _scActiveStateMono as IAbilityActiveState;
         _empowerActiveState = _empowerActiveStateMono as IAbilityActiveState;
+        _input = _inputProviderMono as IInputProvider;
 
         if (_deathNotifier == null)
             Debug.LogError("[AccordStateSystem] Missing IEnemyDeathNotifier", this);
@@ -195,6 +201,12 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         _lyraController = _leftTwin?.GetComponent<AbilityController>();
 
         BuildAbilities();
+    }
+
+    private void Start()
+    {
+        if (_input == null) _input = TwinInputReader.Instance;
+        if (_input == null) Debug.LogError("[AccordStateSystem] IInputProvider not resolved — wire _inputProviderMono.", this);
     }
 
     private void BuildAbilities()
@@ -239,6 +251,11 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         if (_isActive) DeactivateAccord();
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     // ── Update ────────────────────────────────────────────────
     private void Update()
     {
@@ -274,7 +291,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         // Block if teleport cancel window is open — X is claimed by teleport cancel
         if (IsTeleportCancelWindowOpen()) return;
 
-        if (!Input.GetKey(KeyCode.X)) return;
+        if (!(_input?.GetCancelHeld() ?? false)) return;
 
         _chargeProgress = 0f;
         _damageWindowClosed = false;
@@ -300,7 +317,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
             return;
         }
 
-        if (!Input.GetKey(KeyCode.X))
+        if (!(_input?.GetCancelHeld() ?? false))
         {
             _chargeProgress = 0f;
             _chargeState = ChargeState.RetryCooldown;
@@ -414,6 +431,8 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         OnAccordActivated?.Invoke();
         Debug.Log("[AccordStateSystem] Accord State ACTIVATED");
     }
+
+    public void ForceDeactivate() { if (_isActive) DeactivateAccord(); }
 
     // ── Deactivation ──────────────────────────────────────────
     private void DeactivateAccord()

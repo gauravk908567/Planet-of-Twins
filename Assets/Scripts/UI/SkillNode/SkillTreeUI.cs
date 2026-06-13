@@ -4,6 +4,8 @@ using TMPro;
 
 public class SkillTreeUI : MonoBehaviour
 {
+    public static SkillTreeUI Instance { get; private set; }
+
     [Header("Panel — starts inactive")]
     [SerializeField] private GameObject SkillTreePanel;
 
@@ -36,11 +38,47 @@ public class SkillTreeUI : MonoBehaviour
     private ISkillTreePurchaser _purchaser;
     private IPointBank _pointBank;
 
+    public bool IsOpen => SkillTreePanel != null && SkillTreePanel.activeSelf;
+
+    public void Close()
+    {
+        if (!IsOpen) return;
+        SkillTreePanel.SetActive(false);
+        TimeScaleService.Instance?.Release(this);
+    }
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     void Start()
     {
         _dataStore = _dataStoreMono as IAbilityDataStore;
         _purchaser = _purchaserMono as ISkillTreePurchaser;
         _pointBank = _pointBankMono as IPointBank;
+
+        _dataStore ??= SkillTreeManager.Instance;
+        _purchaser ??= SkillTreeManager.Instance;
+        _pointBank ??= SkillTreeManager.Instance;
+
+        if (_pointBank == null)
+            Debug.LogError("[SkillTreeUI] IPointBank unresolved — is Persistent loaded?", this);
+        if (_purchaser == null)
+            Debug.LogError("[SkillTreeUI] ISkillTreePurchaser unresolved — is Persistent loaded?", this);
+
+        // Re-subscribe in case OnEnable fired before _pointBank was resolved.
+        if (_pointBank != null)
+        {
+            _pointBank.OnPointsChanged -= RefreshPoints;
+            _pointBank.OnPointsChanged += RefreshPoints;
+        }
 
         InitialiseTab(KaiTabContent, GetKaiData());
         InitialiseTab(LyraTabContent, GetLyraData());
@@ -67,38 +105,21 @@ public class SkillTreeUI : MonoBehaviour
 
     void Update()
     {
-        bool escPressed = Input.GetKeyDown(KeyCode.Escape);
-        bool togglePressed = Input.GetKeyDown(ToggleKey) || escPressed;
-
-        if (!togglePressed) return;
-
-        // Escape priority order:
-        // 1. Modal open → close modal only, skill tree stays
-        // 2. Modal closed + skill tree open → close skill tree
-        // 3. Everything closed → do nothing
-        if (escPressed)
-        {
-            if (SkillPreviewModal.Instance != null && SkillPreviewModal.Instance.IsOpen)
-            {
-                SkillPreviewModal.Instance.Close();
-                return;
-            }
-
-            if (!SkillTreePanel.activeSelf) return;
-        }
+        // Tab toggles skill tree. ESC is handled by PauseMenuController (centralised arbiter).
+        if (!Input.GetKeyDown(ToggleKey)) return;
 
         bool opening = !SkillTreePanel.activeSelf;
         SkillTreePanel.SetActive(opening);
 
         if (opening)
         {
-            Time.timeScale = 0f;
-            RefreshPoints(_pointBank.CurrentPoints);
+            TimeScaleService.Instance?.Request(this, 0f);
+            RefreshPoints(_pointBank?.CurrentPoints ?? 0);
             ShowTab(0);
         }
         else
         {
-            Time.timeScale = 1f;
+            TimeScaleService.Instance?.Release(this);
         }
     }
 

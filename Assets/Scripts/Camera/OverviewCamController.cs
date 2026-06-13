@@ -11,6 +11,8 @@ using UnityEngine;
 /// </summary>
 public class OverviewCamController : MonoBehaviour, IOverviewBroadcaster
 {
+    public static OverviewCamController Instance { get; private set; }
+
     [SerializeField] private KeyCode overviewKey = KeyCode.B;
     [SerializeField] private float maxDuration = 5f;
     [SerializeField] private float cooldownDuration = 4f;
@@ -21,6 +23,17 @@ public class OverviewCamController : MonoBehaviour, IOverviewBroadcaster
 
     private float _activeTimer = 0f;
     private float _cooldownTimer = 0f;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
     private void Update()
     {
@@ -53,7 +66,7 @@ public class OverviewCamController : MonoBehaviour, IOverviewBroadcaster
     {
         IsOverviewActive = true;
         _activeTimer = 0f;
-        Time.timeScale = 0f;          // freeze game world
+        TimeScaleService.Instance?.Request(this, 0f);
         OnOverviewToggled?.Invoke(true);
     }
 
@@ -61,7 +74,7 @@ public class OverviewCamController : MonoBehaviour, IOverviewBroadcaster
     {
         IsOverviewActive = false;
         _cooldownTimer = cooldownDuration;
-        Time.timeScale = 1f;          // resume game world
+        TimeScaleService.Instance?.Release(this);
         OnOverviewToggled?.Invoke(false);
     }
 }

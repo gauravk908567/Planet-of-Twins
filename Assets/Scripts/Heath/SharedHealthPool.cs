@@ -3,6 +3,7 @@ using System;
 
 public class SharedHealthPool : MonoBehaviour, ISharedHealthPool
 {
+    public static SharedHealthPool Instance { get; private set; }
     [SerializeField] private PlayerHealthComponent leftPlayer;
     [SerializeField] private PlayerHealthComponent rightPlayer;
 
@@ -36,6 +37,8 @@ public class SharedHealthPool : MonoBehaviour, ISharedHealthPool
 
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         CombinedHealth = MaxCombinedHealth;
 
         // FIX: allocate once in Awake — references are valid by here
@@ -55,6 +58,11 @@ public class SharedHealthPool : MonoBehaviour, ISharedHealthPool
     {
         if (leftPlayer != null) leftPlayer.OnDisplayHealthChanged -= _onLeftChanged;
         if (rightPlayer != null) rightPlayer.OnDisplayHealthChanged -= _onRightChanged;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void RecalculateCombined()

@@ -31,6 +31,8 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
     // Exposed so SetsunaSystem can display SC timer on accord panel
     public float PowerTimeRemaining => _powerTimer;
 
+    public static SoulConvergenceSystem Instance { get; private set; }
+
     // Called by SetsunaSystem to force-end SC cleanly after rewind
     public void ForceDeactivate()
     {
@@ -43,12 +45,14 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
     [SerializeField] private MonoBehaviour _dataStoreMono;
     [SerializeField] private MonoBehaviour _deathNotifierMono;
     [SerializeField] private MonoBehaviour _rescueActiveMono;
+    [SerializeField] private MonoBehaviour _inputProviderMono;
     [SerializeField] private SharedHealthPool _healthPool;
 
     private ISkillUnlockState _unlockState;
     private IAbilityDataStore _dataStore;
     private IEnemyDeathNotifier _deathNotifier;
     private IRescueActive _rescueActive;
+    private IInputProvider _input;
 
     [Header("Base Settings")]
     [SerializeField] private int _soulCap = 10;
@@ -84,10 +88,13 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
     // ── Lifecycle ─────────────────────────────────────────────
     void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _unlockState = _unlockStateMono as ISkillUnlockState;
         _dataStore = _dataStoreMono as IAbilityDataStore;
         _deathNotifier = _deathNotifierMono as IEnemyDeathNotifier;
         _rescueActive = _rescueActiveMono as IRescueActive;
+        _input = _inputProviderMono as IInputProvider;
 
         if (_unlockState == null) Debug.LogError("[SoulConv] Missing ISkillUnlockState");
         if (_dataStore == null) Debug.LogError("[SoulConv] Missing IAbilityDataStore");
@@ -96,8 +103,13 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
         ResetMultipliers();
     }
 
+    void OnDestroy() { if (Instance == this) Instance = null; }
+
     void Start()
     {
+        if (_input == null) _input = TwinInputReader.Instance;
+        if (_input == null) Debug.LogError("[SoulConv] IInputProvider not resolved — wire _inputProviderMono or ensure TwinInputReader is loaded.", this);
+
         _chargeBar?.gameObject.SetActive(false);
         _powerStatePanel?.SetActive(false);
         RefreshCounter();
@@ -140,7 +152,7 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
         if (!IsActive() || !_charged || _abilityActive) return;
         if (_rescueActive != null && (_rescueActive.IsRescueActive || _rescueActive.HasActiveRescueTarget)) { CancelCharge(); return; }
 
-        if (Input.GetKey(_activateKey))
+        if (_input?.GetConvergenceHeld() ?? false)
         {
             if (_chargeProgress == 0f)
             {

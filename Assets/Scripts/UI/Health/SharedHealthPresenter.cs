@@ -9,8 +9,34 @@ public class SharedHealthPresenter : MonoBehaviour
     [Tooltip("Label or panel to show 'GAME OVER' warning. Optional.")]
     [SerializeField] private GameObject emergencyWarningPanel;
 
+    private void Start()
+    {
+        sharedHealthPool ??= SharedHealthPool.Instance;
+        if (sharedHealthPool == null)
+        {
+            Debug.LogError("[SharedHealthPresenter] SharedHealthPool unresolved â€” is Persistent loaded?", this);
+            enabled = false;
+            return;
+        }
+
+        // Re-subscribe in case OnEnable fired before sharedHealthPool was resolved.
+        sharedHealthPool.OnCombinedHealthChanged -= HandleCombinedHealthChanged;
+        sharedHealthPool.OnCombinedHealthChanged += HandleCombinedHealthChanged;
+        sharedHealthPool.OnSharedPoolEmpty -= HandleSharedPoolEmpty;
+        sharedHealthPool.OnSharedPoolEmpty += HandleSharedPoolEmpty;
+
+        if (emergencyMonitor != null)
+        {
+            emergencyMonitor.OnEmergencyStateChanged -= HandleEmergencyStateChanged;
+            emergencyMonitor.OnEmergencyStateChanged += HandleEmergencyStateChanged;
+        }
+
+        Refresh();
+    }
+
     private void OnEnable()
     {
+        if (sharedHealthPool == null) return;
         sharedHealthPool.OnCombinedHealthChanged += HandleCombinedHealthChanged;
         sharedHealthPool.OnSharedPoolEmpty += HandleSharedPoolEmpty;
 
@@ -22,6 +48,7 @@ public class SharedHealthPresenter : MonoBehaviour
 
     private void OnDisable()
     {
+        if (sharedHealthPool == null) return;
         sharedHealthPool.OnCombinedHealthChanged -= HandleCombinedHealthChanged;
         sharedHealthPool.OnSharedPoolEmpty -= HandleSharedPoolEmpty;
 
@@ -39,7 +66,7 @@ public class SharedHealthPresenter : MonoBehaviour
     {
         sharedHealthBarView.SetFill(0f);
         sharedHealthBarView.SetCriticalState(true);
-        // Game over logic lives in a separate GameOverManager — not here
+        // Game over logic lives in a separate GameOverManager ï¿½ not here
     }
 
     private void HandleEmergencyStateChanged(bool isEmergency)

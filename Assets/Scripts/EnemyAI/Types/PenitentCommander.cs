@@ -27,6 +27,7 @@ public class PenitentCommander : Enemy, ICommander
     [SerializeField] private float _deathRageDuration = 4.5f;
 
     private readonly List<Enemy> _soldiers = new();
+    private readonly Dictionary<Enemy, System.Action> _soldierHandlers = new();
     private float _lastShield = -99f;
     private bool _shieldActive = false;
     private bool _dead = false;
@@ -42,8 +43,18 @@ public class PenitentCommander : Enemy, ICommander
     {
         if (soldier == null || _soldiers.Contains(soldier)) return;
         _soldiers.Add(soldier);
-        soldier.Health.OnDeath += () => _soldiers.Remove(soldier);
+        void Handler() { _soldiers.Remove(soldier); _soldierHandlers.Remove(soldier); }
+        _soldierHandlers[soldier] = Handler;
+        soldier.Health.OnDeath += Handler;
         soldier.GetComponent<GOAPGoalHoldFormation>()?.SetCommander(this);
+    }
+
+    public void ClearSoldiers()
+    {
+        foreach (var kvp in _soldierHandlers)
+            if (kvp.Key?.Health != null) kvp.Key.Health.OnDeath -= kvp.Value;
+        _soldierHandlers.Clear();
+        _soldiers.Clear();
     }
 
     public IReadOnlyList<Enemy> Soldiers => _soldiers;

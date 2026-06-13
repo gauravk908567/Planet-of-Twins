@@ -24,7 +24,7 @@ public class TutorialDirector : MonoBehaviour
 
     private bool _started = false;
 
-    private void Awake()
+    private void Start()
     {
         context.Resolve();
         context.inputGate?.LockAll();
@@ -46,7 +46,7 @@ public class TutorialDirector : MonoBehaviour
 
     private IEnumerator RunSequence()
     {
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSecondsRealtime(0.3f);
 
         foreach (var step in steps)
         {

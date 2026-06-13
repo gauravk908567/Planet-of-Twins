@@ -6,56 +6,52 @@ using UnityEngine;
 ///
 /// When either twin exits this boundary, it asks TutorialContext for the
 /// current stage, finds the matching TutorialBoundary zone in its list,
-/// and calls TriggerReset() on it — placing the player back inside the
+/// and calls TriggerReset() on it - placing the player back inside the
 /// correct zone for the current tutorial step.
-///
-/// This means the player is never lost in a "completed zone with no boundary"
-/// gap — they always get sent back to wherever they need to be right now.
 ///
 /// SETUP:
 ///   Add to a GO with a large Box Collider (Is Trigger ON).
 ///   Size the collider to cover the ENTIRE tutorial area (park + gate + all zones).
-///   Wire leftTwin and rightTwin.
-///   Wire failureNotice — shown when outer boundary fires.
 ///   In zoneBoundaries[] drag every TutorialBoundary zone in the scene.
-///   Order does not matter — lookup is by stage value.
-///
-/// NOTE:
-///   Each TutorialBoundary in zoneBoundaries must have its activeStage set
-///   to a unique stage. If two boundaries share the same stage, the first
-///   match in the array wins.
+///   Order does not matter - lookup is by stage value.
 /// </summary>
 public class TutorialOuterBoundary : MonoBehaviour
 {
-    [Header("Twins")]
-    [SerializeField] private Player leftTwin;
-    [SerializeField] private Player rightTwin;
-
-    [Header("Failure notice — shown when outer boundary fires")]
-    [SerializeField] private FailureNotice failureNotice;
-
     [Header("Message shown on outer boundary exit")]
     [SerializeField] private string boundaryMessage = "Head to the next area";
 
-    [Header("All zone boundaries — one per tutorial stage")]
+    [Header("All zone boundaries - one per tutorial stage")]
     [SerializeField] private TutorialBoundary[] zoneBoundaries;
 
-    private bool _resetting = false;
+    // Runtime resolved (Persistent singletons - R4)
+    private Player _leftTwin;
+    private Player _rightTwin;
+    private FailureNotice _failureNotice;
 
-    private void OnEnable() => _resetting = false;
-    private void OnDisable() => _resetting = false;
+    private void Start()
+    {
+        _failureNotice = FailureNotice.Instance;
+        var selector = TwinSelector.Instance;
+        if (selector != null)
+        {
+            _leftTwin = selector.LeftTwin;
+            _rightTwin = selector.RightTwin;
+        }
+        if (_failureNotice == null)
+            Debug.LogError("[TutorialOuterBoundary] FailureNotice.Instance is null â€” is Persistent loaded?", this);
+        if (_leftTwin == null || _rightTwin == null)
+            Debug.LogError("[TutorialOuterBoundary] Twins unresolved via TwinSelector.Instance â€” is Persistent loaded?", this);
+    }
 
     private void OnTriggerExit(Collider other)
     {
-        if (_resetting) return;
-
         // Stop firing once tutorial is complete
         if (TutorialContext.Instance?.CurrentStage == TutorialStage.Complete) return;
         if (TutorialContext.Instance?.CurrentStage == TutorialStage.None) return;
 
         var player = other.GetComponent<Player>();
         if (player == null || player is SoulPlayer) return;
-        if (player != leftTwin && player != rightTwin) return;
+        if (player != _leftTwin && player != _rightTwin) return;
 
         // Find the zone boundary matching the current stage
         var currentStage = TutorialContext.Instance.CurrentStage;
@@ -79,19 +75,15 @@ public class TutorialOuterBoundary : MonoBehaviour
             return;
         }
 
-        // Show the outer message first, then delegate reset to the zone boundary
-        // The zone boundary will show its own message too via TriggerReset()
-        _resetting = true;
-        failureNotice?.Show(boundaryMessage);
-
-        // Small delay so the outer message is readable before the reset fires
-        StartCoroutine(DelegateResetNextFrame(activeBoundary));
+        // Show the outer message first, then delegate reset to the zone boundary.
+        // Guard lives in TutorialBoundary.TriggerReset() and the re-entry-rejecting sequencer.
+        _failureNotice?.Show(boundaryMessage);
+        StartCoroutine(DelegateResetAfterDelay(activeBoundary));
     }
 
-    private System.Collections.IEnumerator DelegateResetNextFrame(TutorialBoundary boundary)
+    private System.Collections.IEnumerator DelegateResetAfterDelay(TutorialBoundary boundary)
     {
-        yield return new UnityEngine.WaitForSeconds(0.1f);
+        yield return new WaitForSecondsRealtime(0.1f);
         boundary.TriggerReset();
-        _resetting = false;
     }
 }

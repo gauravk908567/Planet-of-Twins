@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class TwinSelector : MonoBehaviour, ITwinSelector, ISelectionLock, ISelectionBroadcaster
 {
+    public static TwinSelector Instance { get; private set; }
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
     [SerializeField] private MonoBehaviour inputProviderObject;
@@ -16,6 +17,11 @@ public class TwinSelector : MonoBehaviour, ITwinSelector, ISelectionLock, ISelec
     // ── ITwinSelector ──────────────────────────────────────────
     public Transform SelectedTransform { get; private set; }
     public event Action<Transform> OnTwinSelected;
+
+    // Read-only access used by cross-scene components (CheckpointTrigger, TutorialCheckpoint)
+    // that can't serialize a Player ref from a different scene.
+    public Player LeftTwin  => leftTwin;
+    public Player RightTwin => rightTwin;
 
     // ── ISelectionLock ─────────────────────────────────────────
     public bool IsSelectionLocked => _lockCounter > 0;
@@ -32,7 +38,14 @@ public class TwinSelector : MonoBehaviour, ITwinSelector, ISelectionLock, ISelec
 
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _input = inputProviderObject as IInputProvider;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void Start()

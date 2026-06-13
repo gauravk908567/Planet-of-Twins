@@ -37,9 +37,6 @@ public class AccordHUDController : MonoBehaviour
     private void Awake()
     {
         _unlockState = skillUnlockStateMono as ISkillUnlockState;
-
-        if (_unlockState == null)
-            Debug.LogError("[AccordHUDController] skillUnlockStateMono missing ISkillUnlockState.", this);
     }
 
     private void OnEnable()
@@ -76,6 +73,32 @@ public class AccordHUDController : MonoBehaviour
 
     private void Start()
     {
+        _unlockState ??= SkillTreeManager.Instance;
+        if (accordSystem == null) accordSystem = AccordStateSystem.Instance;
+
+        if (_unlockState == null)
+        {
+            Debug.LogError("[AccordHUDController] ISkillUnlockState unresolved — is Persistent loaded?", this);
+            enabled = false;
+            return;
+        }
+
+        // OnEnable fires before Start, so re-subscribe events in case _unlockState was null then.
+        _unlockState.OnCoalesceUnlocked -= OnCoalesceUnlocked;
+        _unlockState.OnCoalesceUnlocked += OnCoalesceUnlocked;
+        _unlockState.OnSoulConvergenceUnlocked -= OnSCUnlocked;
+        _unlockState.OnSoulConvergenceUnlocked += OnSCUnlocked;
+        _unlockState.OnEmpowerUnlocked -= OnEmpowerUnlocked;
+        _unlockState.OnEmpowerUnlocked += OnEmpowerUnlocked;
+
+        if (accordSystem != null)
+        {
+            accordSystem.OnAccordActivated -= HandleAccordActivated;
+            accordSystem.OnAccordActivated += HandleAccordActivated;
+            accordSystem.OnAccordDeactivated -= HandleAccordDeactivated;
+            accordSystem.OnAccordDeactivated += HandleAccordDeactivated;
+        }
+
         BindNormalSources();
         BindAccordSources();
     }

@@ -55,10 +55,8 @@ public class AccordBarView : MonoBehaviour
     private void Start()
     {
         _unlockState = unlockStateMono as ISkillUnlockState;
-
-        //Debug.Log($"[AccordBarView] accordSystem={accordSystem != null} " +
-        //          $"_unlockState={_unlockState != null} " +
-        //          $"panel={panel != null}");
+        _unlockState ??= SkillTreeManager.Instance;
+        if (accordSystem == null) accordSystem = AccordStateSystem.Instance;
 
         if (_unlockState != null)
             _unlockState.OnAccordStateUnlocked += HandleUnlocked;

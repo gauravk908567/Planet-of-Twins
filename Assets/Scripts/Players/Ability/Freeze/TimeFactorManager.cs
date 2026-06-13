@@ -30,7 +30,7 @@ public class TimeFactorManager : MonoBehaviour, ITimeFactorRegistry, ITimeFactor
     {
         if (isEffectActive) return;
         isEffectActive = true;
-
+        PurgeDestroyed(); // 3.8: remove stale entries from unloaded scenes
         foreach (var item in affectedEntities) item.OnEffectStarted();
     }
 
@@ -38,7 +38,12 @@ public class TimeFactorManager : MonoBehaviour, ITimeFactorRegistry, ITimeFactor
     {
         if (!isEffectActive) return;
         isEffectActive = false;
-
+        PurgeDestroyed(); // 3.8: remove stale entries from unloaded scenes
         foreach (var item in affectedEntities) item.OnEffectEnded();
     }
+
+    // Destroyed MonoBehaviours fail Unity's overloaded == but pass C# null check.
+    // Cast to Object to use Unity's destruction-aware equality.
+    private void PurgeDestroyed()
+        => affectedEntities.RemoveAll(e => e == null || (e is Object uo && uo == null));
 }

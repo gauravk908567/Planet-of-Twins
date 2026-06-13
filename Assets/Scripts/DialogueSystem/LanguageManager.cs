@@ -37,7 +37,7 @@ public class LanguageManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        // Persistent.unity residency = persistence (R3). DontDestroyOnLoad is banned.
     }
 
     private IEnumerator Start()

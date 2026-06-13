@@ -8,6 +8,11 @@ public class SkillTreeManager : MonoBehaviour,
     IAbilityDataStore,
     ISkillTreePurchaser
 {
+    public static SkillTreeManager Instance { get; private set; }
+
+    // Runtime upgrade levels — the single source of truth (R7).
+    private readonly SkillTreeRuntimeState _runtimeState = new();
+
     [Header("Kai")]
     [SerializeField] private AbilityUpgradeData _stunData;
 
@@ -72,6 +77,31 @@ public class SkillTreeManager : MonoBehaviour,
     public AbilityUpgradeData EmpowerData => _empowerData;
     public AbilityUpgradeData AccordData => _accordData;
 
+    // ── Runtime state queries (used by AbilityUpgradeData delegation + external restore) ──
+    public int GetLevel(AbilityUpgradeData data) => _runtimeState.GetLevel(data);
+    public SkillTreeRuntimeState.Snapshot TakeSkillSnapshot() => _runtimeState.TakeSnapshot();
+
+    /// <summary>
+    /// All 9 upgrade trees in canonical order.
+    /// Use this instead of hand-listing trees anywhere else — future trees are included automatically.
+    /// </summary>
+    public IReadOnlyList<AbilityUpgradeData> AllTrees => _allTrees ??= BuildTreeList();
+    private IReadOnlyList<AbilityUpgradeData> _allTrees;
+
+    private List<AbilityUpgradeData> BuildTreeList()
+    {
+        var list = new List<AbilityUpgradeData>(9);
+        foreach (var d in AllData())
+            if (d != null) list.Add(d);
+        return list;
+    }
+
+    public void RestoreSkillSnapshot(SkillTreeRuntimeState.Snapshot snap)
+    {
+        _runtimeState.RestoreSnapshot(snap);
+        RebuildUnlockFlags();
+    }
+
     // ── ISkillTreePurchaser ───────────────────────────────────
     public event Action<AbilityUpgradeData> OnNodePurchased;
 
@@ -83,7 +113,7 @@ public class SkillTreeManager : MonoBehaviour,
         if (data == null || !data.HasNextNode) return false;
         if (!TrySpendPoints(data.NextNodeCost)) return false;
 
-        data.UnlockNextNode();
+        _runtimeState.SetLevel(data, _runtimeState.GetLevel(data) + 1);
         RaiseUnlockFlags(data);
         OnNodePurchased?.Invoke(data);
         return true;
@@ -92,14 +122,21 @@ public class SkillTreeManager : MonoBehaviour,
     // ── Lifecycle ─────────────────────────────────────────────
     void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _points = _startingPoints;
-        ResetAllSOs();
+        InitRuntime();
     }
 
-    void ResetAllSOs()
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
+    void InitRuntime()
     {
         foreach (var d in AllData())
-            d?.ResetToBase();
+            if (d != null) _runtimeState.SetLevel(d, 0);
 
         IsAccordSpiritsUnlocked = false;
         IsCoalesceUnlocked = false;
@@ -166,7 +203,7 @@ public class SkillTreeManager : MonoBehaviour,
     [ContextMenu("DEBUG — Reset All Upgrades")]
     public void Debug_ResetAll()
     {
-        ResetAllSOs();
+        InitRuntime();
         _points = _startingPoints;
         OnPointsChanged?.Invoke(_points);
         Debug.Log("[SkillTreeManager] All upgrades reset.");
@@ -181,12 +218,7 @@ public class SkillTreeManager : MonoBehaviour,
     [ContextMenu("DEBUG — Reset All")]
     void Debug_Reset()
     {
-        foreach (var d in AllData()) d?.ResetToBase();
-
-        IsAccordSpiritsUnlocked = IsCoalesceUnlocked =
-        IsSoulConvergenceUnlocked = IsEmpowerUnlocked =
-        IsAccordStateUnlocked = false;
-
+        InitRuntime();
         _points = _startingPoints;
         OnPointsChanged?.Invoke(_points);
     }

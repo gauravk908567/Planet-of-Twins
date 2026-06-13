@@ -17,7 +17,8 @@ public class TwinAbilitySetup : MonoBehaviour
     [SerializeField] private LayerMask possessTargetLayer;
     [SerializeField] private LayerMask enemyLayer;
 
-    [SerializeField] private Transform barrierTransform;
+    [Tooltip("How close to the barrier a player must be to cast Gate. " +
+             "Barrier Transform is resolved at runtime via BarrierPOI/POIManager.")]
     [SerializeField] private float minCastDistanceFromBarrier = 8f;
 
     [SerializeField] private MonoBehaviour timeFactorControllerObject;
@@ -101,7 +102,7 @@ public class TwinAbilitySetup : MonoBehaviour
         _lyraOriginalQ = possess; // store for restore after Accord
         ability.SetPrimaryAbility(possess);
         ability.SetTeleportAbility(BuildTeleportAbility(leftTwin, rightTwin));
-        ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
+        ability.SetMinCastDistance(minCastDistanceFromBarrier);
     }
 
     private void SetupRightTwin()
@@ -113,7 +114,7 @@ public class TwinAbilitySetup : MonoBehaviour
         _kaiOriginalQ = stun; // store for restore after Accord
         ability.SetPrimaryAbility(stun);
         ability.SetTeleportAbility(BuildTeleportAbility(rightTwin, leftTwin));
-        ability.SetBarrierReference(barrierTransform, minCastDistanceFromBarrier);
+        ability.SetMinCastDistance(minCastDistanceFromBarrier);
     }
 
     private void RestoreOriginalAbilities()

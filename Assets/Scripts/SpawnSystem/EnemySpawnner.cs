@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class EnemySpawner : MonoBehaviour
 {
-    [Header("Zones")]
-    [SerializeField] private SpawnZone[] allZones;
+    // allZones removed — SpawnZones now self-register via SpawnZoneRegistry (multi-scene safe).
 
     [Header("References")]
     [SerializeField] private MonoBehaviour poolProviderObject;
     [SerializeField] private TimeFactorBootstrapper timeFactorBootstrapper;
-    [SerializeField] private Transform barrierTransform;
     [SerializeField] private EnemyDeathNotifier deathNotifier;
     [SerializeField] private MonoBehaviour rescueControllerObject;
     [SerializeField] private Player _leftPlayer;
@@ -47,13 +46,24 @@ public class EnemySpawner : MonoBehaviour
     private readonly Dictionary<GameObject, GameObject> _pendingSeveredRight = new();
 
     private readonly Dictionary<GameObject, Action> _spawnDeathHandlers = new();
+    // Tracks which prefab each active enemy instance came from (pool return in DespawnAll/DespawnZone)
+    private readonly Dictionary<GameObject, GameObject> _activePrefabMap = new();
+    // Tracks which zone spawned each instance (needed for zone-scoped despawn on area unload)
+    private readonly Dictionary<GameObject, SpawnZone> _instanceZoneMap = new();
 
     private int _activeGroupCount = 0;
     private Coroutine _zoneExitCoroutine;
+    // True after Start() runs — guards OnEnable from subscribing before SpawnZoneRegistry is initialized
+    private bool _started;
+
+    // ── Singleton ──────────────────────────────────────────────
+    public static EnemySpawner Instance { get; private set; }
 
     // ── Lifecycle ──────────────────────────────────────────────
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _pool = poolProviderObject as IEnemyPoolProvider;
         _rescueRegistry = rescueControllerObject as IRescueTrapRegistry;
 
@@ -62,22 +72,90 @@ public class EnemySpawner : MonoBehaviour
             var rescue = rescueControllerObject as RescueEventController;
             ep.SetSiphonReferences(_leftPlayer, _rightPlayer, _soulPlayer, rescue);
         }
+    }
 
-        foreach (var zone in allZones)
+    private void Start()
+    {
+        // Resolved in Start() (not OnEnable) so SpawnZoneRegistry.Awake() is guaranteed to
+        // have run first — same-scene Awake ordering is arbitrary (R4 / 3.1 ordering fix).
+        if (SpawnZoneRegistry.Instance == null)
         {
-            if (zone == null) continue;
-            zone.OnZoneEntered += HandleZoneEntered;
-            zone.OnZoneExited += HandleZoneExited;
+            Debug.LogError("[EnemySpawner] SpawnZoneRegistry.Instance is null — is Persistent loaded?", this);
+            enabled = false;
+            return;
         }
+        _started = true;
+        SubscribeRegistry();
+
+        if (SceneFlowManager.Instance != null)
+            SceneFlowManager.Instance.OnLocationWillUnload += HandleLocationWillUnload;
+        else
+            Debug.LogError("[EnemySpawner] SceneFlowManager.Instance is null — area unload despawn disabled.", this);
+    }
+
+    private void OnEnable()
+    {
+        // OnEnable may fire before Start() (e.g. when first enabled). Skip until Start() runs.
+        if (!_started) return;
+        SubscribeRegistry();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeRegistry();
     }
 
     private void OnDestroy()
     {
-        foreach (var zone in allZones)
+        if (Instance == this) Instance = null;
+        UnsubscribeRegistry();
+        if (SceneFlowManager.Instance != null)
+            SceneFlowManager.Instance.OnLocationWillUnload -= HandleLocationWillUnload;
+    }
+
+    private void SubscribeRegistry()
+    {
+        if (SpawnZoneRegistry.Instance == null) return;
+        SpawnZoneRegistry.Instance.OnZoneRegistered   += HandleZoneRegistered;
+        SpawnZoneRegistry.Instance.OnZoneUnregistered += HandleZoneUnregistered;
+        foreach (var zone in SpawnZoneRegistry.Instance.RegisteredZones)
+            HandleZoneRegistered(zone);
+    }
+
+    private void UnsubscribeRegistry()
+    {
+        if (SpawnZoneRegistry.Instance == null) return;
+        SpawnZoneRegistry.Instance.OnZoneRegistered   -= HandleZoneRegistered;
+        SpawnZoneRegistry.Instance.OnZoneUnregistered -= HandleZoneUnregistered;
+    }
+
+    private void HandleZoneRegistered(SpawnZone zone)
+    {
+        if (zone == null) return;
+        zone.OnZoneEntered += HandleZoneEntered;
+        zone.OnZoneExited  += HandleZoneExited;
+    }
+
+    private void HandleZoneUnregistered(SpawnZone zone)
+    {
+        if (zone == null) return;
+        zone.OnZoneEntered -= HandleZoneEntered;
+        zone.OnZoneExited  -= HandleZoneExited;
+        if (_activeZone == zone) { StopAllCoroutines(); _activeZone = null; _activeConfig = null; }
+        DespawnZone(zone); // belt-and-braces: primary despawn is via OnLocationWillUnload
+    }
+
+    private void HandleLocationWillUnload(WorldLocationSO location)
+    {
+        // Despawn all enemies belonging to zones in the scene that is about to unload.
+        // OnLocationWillUnload fires before UnloadSceneAsync so pool return is safe here.
+        var zones = SpawnZoneRegistry.Instance?.RegisteredZones;
+        if (zones == null) return;
+        foreach (var zone in zones.ToList())
         {
             if (zone == null) continue;
-            zone.OnZoneEntered -= HandleZoneEntered;
-            zone.OnZoneExited -= HandleZoneExited;
+            if (zone.gameObject.scene.name == location.scene.Name)
+                DespawnZone(zone);
         }
     }
 
@@ -209,6 +287,8 @@ public class EnemySpawner : MonoBehaviour
             TrySpawnPartner(entry, enemy, side);
 
         _allActive.Add(instance);
+        _activePrefabMap[instance]  = entry.prefab;
+        _instanceZoneMap[instance]  = _activeZone;
         deathNotifier?.Register(enemy.Health);
         RegisterDeathHandler(instance, enemy, entry, side, fromSummoner);
 
@@ -259,12 +339,16 @@ public class EnemySpawner : MonoBehaviour
         WireBond(primaryEnemy, partnerEnemy, partnerEntry.bondType);
 
         _allActive.Add(instance);
+        _activePrefabMap[instance] = partnerEntry.partnerPrefab;
+        _instanceZoneMap[instance] = _activeZone;
         deathNotifier?.Register(partnerEnemy.Health);
 
         Action death = () =>
         {
             _allActive.Remove(instance);
             _spawnDeathHandlers.Remove(instance);
+            _activePrefabMap.Remove(instance);
+            _instanceZoneMap.Remove(instance);
             deathNotifier?.Unregister(partnerEnemy.Health);
             if (partnerEnemy is ITimeAffected t) timeFactorBootstrapper?.UnregisterEntity(t);
             instance.GetComponent<EnemySocialBond>()?.ClearBond();
@@ -356,14 +440,24 @@ public class EnemySpawner : MonoBehaviour
         if (cTracker != null) { cTracker.ResetForPool(); cTracker.HomeZone = _activeZone; }
 
         _allActive.Add(commanderInstance);
+        _instanceZoneMap[commanderInstance] = _activeZone;
         deathNotifier?.Register(commanderEnemy.Health);
 
-        commanderEnemy.Health.OnDeath += () =>
+        void CommanderDeathHandler()
         {
+            if (_spawnDeathHandlers.TryGetValue(commanderInstance, out var h))
+            {
+                commanderEnemy.Health.OnDeath -= h;
+                _spawnDeathHandlers.Remove(commanderInstance);
+            }
             _allActive.Remove(commanderInstance);
+            _instanceZoneMap.Remove(commanderInstance);
+            _activePrefabMap.Remove(commanderInstance);
             deathNotifier?.Unregister(commanderEnemy.Health);
             StartCoroutine(GroupRespawnDelay(groupDef));
-        };
+        }
+        _spawnDeathHandlers[commanderInstance] = CommanderDeathHandler;
+        commanderEnemy.Health.OnDeath += CommanderDeathHandler;
 
         yield return new WaitForSeconds(0.5f); // brief delay before soldiers
 
@@ -404,13 +498,23 @@ public class EnemySpawner : MonoBehaviour
                 ?.WireSoldierDamage(soldierEnemy);
 
             _allActive.Add(soldierInstance);
+            _instanceZoneMap[soldierInstance] = _activeZone;
             deathNotifier?.Register(soldierEnemy.Health);
 
-            soldierEnemy.Health.OnDeath += () =>
+            void SoldierDeathHandler()
             {
+                if (_spawnDeathHandlers.TryGetValue(soldierInstance, out var h))
+                {
+                    soldierEnemy.Health.OnDeath -= h;
+                    _spawnDeathHandlers.Remove(soldierInstance);
+                }
                 _allActive.Remove(soldierInstance);
+                _instanceZoneMap.Remove(soldierInstance);
+                _activePrefabMap.Remove(soldierInstance);
                 deathNotifier?.Unregister(soldierEnemy.Health);
-            };
+            }
+            _spawnDeathHandlers[soldierInstance] = SoldierDeathHandler;
+            soldierEnemy.Health.OnDeath += SoldierDeathHandler;
 
             yield return new WaitForSeconds(0.2f);
         }
@@ -439,6 +543,8 @@ public class EnemySpawner : MonoBehaviour
         {
             _allActive.Remove(instance);
             _spawnDeathHandlers.Remove(instance);
+            _activePrefabMap.Remove(instance);
+            _instanceZoneMap.Remove(instance);
             if (enemy is ITimeAffected ta) timeFactorBootstrapper?.UnregisterEntity(ta);
             deathNotifier?.Unregister(enemy.Health);
             instance.GetComponent<EnemySocialBond>()?.ClearBond();
@@ -485,17 +591,97 @@ public class EnemySpawner : MonoBehaviour
         if (enemy is IRescueTarget rt) _rescueRegistry?.RegisterTrap(rt);
 
         _allActive.Add(instance);
+        _activePrefabMap[instance] = entry.prefab;
+        _instanceZoneMap[instance] = _activeZone;
         deathNotifier?.Register(enemy.Health);
 
         Action death = () =>
         {
             _allActive.Remove(instance);
             _spawnDeathHandlers.Remove(instance);
+            _activePrefabMap.Remove(instance);
+            _instanceZoneMap.Remove(instance);
             deathNotifier?.Unregister(enemy.Health);
             if (enemy is ITimeAffected t) timeFactorBootstrapper?.UnregisterEntity(t);
         };
         _spawnDeathHandlers[instance] = death;
         enemy.Health.OnDeath += death;
+    }
+
+    // ── Soft-reset API ─────────────────────────────────────────
+    /// <summary>
+    /// Returns every active enemy to the pool. Called by SoftResetController on respawn.
+    /// Spawning restarts naturally when the twins re-enter a zone trigger.
+    /// </summary>
+    public void DespawnAll()
+    {
+        StopAllCoroutines();
+        _zoneExitCoroutine = null;
+
+        foreach (var instance in new System.Collections.Generic.List<GameObject>(_allActive))
+        {
+            if (instance == null) continue;
+            var enemy = instance.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                if (_spawnDeathHandlers.TryGetValue(instance, out var dh))
+                    enemy.Health.OnDeath -= dh;
+                deathNotifier?.Unregister(enemy.Health);
+                if (enemy is ITimeAffected ta) timeFactorBootstrapper?.UnregisterEntity(ta);
+                instance.GetComponent<EnemySocialBond>()?.ClearBond();
+            }
+            if (_pool != null && _activePrefabMap.TryGetValue(instance, out var prefab))
+                _pool.Return(prefab, instance);
+        }
+
+        _allActive.Clear();
+        _activePrefabMap.Clear();
+        _instanceZoneMap.Clear();
+        _spawnDeathHandlers.Clear();
+        _pendingBondLeft.Clear(); _pendingBondRight.Clear();
+        _pendingSeveredLeft.Clear(); _pendingSeveredRight.Clear();
+        _activeCountsLeft.Clear(); _activeCountsRight.Clear();
+        _activeLeft = _activeRight = 0;
+        _activeGroupCount = 0;
+        _activeZone = null;
+        _activeConfig = null;
+
+        Debug.Log("[EnemySpawner] DespawnAll complete.");
+    }
+
+    /// <summary>
+    /// Returns all enemies belonging to the given zone back to the pool.
+    /// Called from HandleLocationWillUnload (primary) and HandleZoneUnregistered (belt-and-braces).
+    /// </summary>
+    public void DespawnZone(SpawnZone zone)
+    {
+        if (zone == null) return;
+        var toReturn = (from kv in _instanceZoneMap where kv.Value == zone select kv.Key).ToList();
+        if (toReturn.Count == 0) return;
+
+        foreach (var instance in toReturn)
+        {
+            if (instance == null) { _instanceZoneMap.Remove(instance); continue; }
+            var enemy = instance.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                if (_spawnDeathHandlers.TryGetValue(instance, out var dh))
+                    enemy.Health.OnDeath -= dh;
+                deathNotifier?.Unregister(enemy.Health);
+                if (enemy is ITimeAffected ta) timeFactorBootstrapper?.UnregisterEntity(ta);
+                instance.GetComponent<EnemySocialBond>()?.ClearBond();
+            }
+            if (_pool != null && _activePrefabMap.TryGetValue(instance, out var prefab))
+                _pool.Return(prefab, instance);
+
+            _allActive.Remove(instance);
+            _activePrefabMap.Remove(instance);
+            _instanceZoneMap.Remove(instance);
+            _spawnDeathHandlers.Remove(instance);
+        }
+        // Side/type counters are intentionally not decremented — the zone's config and
+        // counts are irrelevant once the zone unloads; they'll be reset on ActivateZone.
+        Debug.Log($"[EnemySpawner] DespawnZone: returned {toReturn.Count} enemies from '{zone.name}'.");
     }
 
     // ── Helpers ────────────────────────────────────────────────
@@ -510,8 +696,9 @@ public class EnemySpawner : MonoBehaviour
 
     public SpawnSide GetSideForPosition(Vector3 pos)
     {
-        if (barrierTransform == null) return SpawnSide.Left;
-        return pos.x < barrierTransform.position.x ? SpawnSide.Left : SpawnSide.Right;
+        var bp = POIManager.Instance?.GetNearest(pos, POIType.Barrier);
+        if (bp == null) return SpawnSide.Left;
+        return pos.x < bp.transform.position.x ? SpawnSide.Left : SpawnSide.Right;
     }
 
     private Transform[] Shuffle(Transform[] source)

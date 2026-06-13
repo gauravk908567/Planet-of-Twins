@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2449949464546587598}
   - component: {fileID: 1194020421875918861}
   - component: {fileID: 150962964015709386}
-  - component: {fileID: 1472130079835596162}
+  - component: {fileID: 6573727431681173244}
   m_Layer: 0
   m_Name: Dumpster
   m_TagString: Untagged
@@ -5123,7 +5123,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 5243
+  m_VersionIndex: 5258
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -5209,8 +5209,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5130819782227289429}
   m_Mesh: {fileID: 0}
---- !u!64 &1472130079835596162
-MeshCollider:
+--- !u!65 &6573727431681173244
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -5227,7 +5227,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 4.1258698, y: 5.000019, z: 6.774044}
+  m_Center: {x: 0.062934875, y: 0.50000954, z: 0}

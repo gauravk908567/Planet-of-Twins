@@ -48,7 +48,6 @@ GameObject:
   - component: {fileID: 1056270021105374860}
   - component: {fileID: 4955974630159474741}
   - component: {fileID: 6385482938827448911}
-  - component: {fileID: 5611281248644994646}
   m_Layer: 0
   m_Name: HangingPole2 (1)
   m_TagString: Untagged
@@ -2174,28 +2173,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5354529629417231062}
   m_Mesh: {fileID: 0}
---- !u!64 &5611281248644994646
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5354529629417231062}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
 --- !u!1 &7942024567037384720
 GameObject:
   m_ObjectHideFlags: 0
@@ -2209,7 +2186,6 @@ GameObject:
   - component: {fileID: 7900590393362102183}
   - component: {fileID: 5594984874713156697}
   - component: {fileID: 6148445404177446022}
-  - component: {fileID: 768476895226526818}
   m_Layer: 0
   m_Name: LightgHolder1 (1)
   m_TagString: Untagged
@@ -4335,28 +4311,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7942024567037384720}
   m_Mesh: {fileID: 0}
---- !u!64 &768476895226526818
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7942024567037384720}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
 --- !u!1 &7952782647027939815
 GameObject:
   m_ObjectHideFlags: 0
@@ -4370,7 +4324,6 @@ GameObject:
   - component: {fileID: 6497509311217775550}
   - component: {fileID: 5808658347494563827}
   - component: {fileID: 6086806394662979416}
-  - component: {fileID: 1848277383663474812}
   m_Layer: 0
   m_Name: HangingPole4 (1)
   m_TagString: Untagged
@@ -5742,28 +5695,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7952782647027939815}
   m_Mesh: {fileID: 0}
---- !u!64 &1848277383663474812
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7952782647027939815}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
 --- !u!1 &8268243727347918484
 GameObject:
   m_ObjectHideFlags: 0
@@ -5777,7 +5708,6 @@ GameObject:
   - component: {fileID: 4818561286973088470}
   - component: {fileID: 9101414189549279702}
   - component: {fileID: 6673483925971132242}
-  - component: {fileID: 7976822168285232918}
   m_Layer: 0
   m_Name: LightgHolder4 (1)
   m_TagString: Untagged
@@ -7902,26 +7832,4 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8268243727347918484}
-  m_Mesh: {fileID: 0}
---- !u!64 &7976822168285232918
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8268243727347918484}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
   m_Mesh: {fileID: 0}

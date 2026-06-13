@@ -9,8 +9,8 @@ using UnityEngine;
 /// </summary>
 public class QTEZoneTrigger : MonoBehaviour
 {
-    [SerializeField] private QTEController qteController;
-    [Header("Tutorial — only fire during this stage (None = always)")]
+    [SerializeField] private QTESceneAnchor qteAnchor;
+    [Header("Tutorial ï¿½ only fire during this stage (None = always)")]
     [SerializeField] private TutorialStage requiredStage = TutorialStage.None;
 
     [Tooltip("If true, waits for both players to enter before starting.")]
@@ -23,14 +23,14 @@ public class QTEZoneTrigger : MonoBehaviour
     {
         if (_triggered) return;
 
-        // Stage guard — won't fire if player wanders in during wrong tutorial step
+        // Stage guard ï¿½ won't fire if player wanders in during wrong tutorial step
         if (requiredStage != TutorialStage.None &&
             TutorialContext.Instance?.CurrentStage != requiredStage) return;
 
         var player = other.GetComponent<Player>();
         if (player == null) return;
 
-        // FIX: SoulPlayer extends Player — exclude it so a soul flying through
+        // FIX: SoulPlayer extends Player ï¿½ exclude it so a soul flying through
         // the zone does not start the QTE. Only the two physical twins count.
         if (player is SoulPlayer) return;
 
@@ -40,7 +40,7 @@ public class QTEZoneTrigger : MonoBehaviour
         if (shouldStart)
         {
             _triggered = true;
-            qteController?.BeginQTE();
+            qteAnchor?.BeginQTE();
             Debug.Log($"[QTEZoneTrigger] QTE triggered by players entering zone.");
         }
     }

@@ -11,9 +11,10 @@ public class TutorialStepContext
 {
     [Header("Systems")]
     public TutorialInputGate inputGate;
-    public FailureResetSequencer resetSequencer;
-    public FailureNotice failureNotice;
     public TutorialOverlayController overlay;
+    // resetSequencer and failureNotice live in Persistent — resolved by Resolve(), never serialized (R2).
+    [System.NonSerialized] public FailureResetSequencer resetSequencer;
+    [System.NonSerialized] public FailureNotice failureNotice;
 
     [Header("Twin control")]
     public MonoBehaviour twinSelectorMono;   // ISelectionLock
@@ -34,7 +35,7 @@ public class TutorialStepContext
     public Transform rescueFailRight;
 
     [Header("QTE")]
-    public QTEController qteController;
+    public QTESceneAnchor qteAnchor;
     public TutorialHintDisplay hintDisplay;
 
     // ── Runtime resolved ──────────────────────────────────────
@@ -51,6 +52,22 @@ public class TutorialStepContext
     {
         SelectionLock = twinSelectorMono as ISelectionLock;
         RescueProvider = rescueProviderMono as ITutorialRescueProvider;
+        if (overlay == null) overlay = TutorialOverlayController.Instance;
+        if (hintDisplay == null) hintDisplay = TutorialHintDisplay.Instance;
+        if (SelectionLock == null)
+        {
+            twinSelectorMono = TwinSelector.Instance;
+            SelectionLock = twinSelectorMono as ISelectionLock;
+        }
+        if (RescueProvider == null)
+            RescueProvider = RescueEventController.Instance;
+
+        resetSequencer = FailureResetSequencer.Instance;
+        failureNotice = FailureNotice.Instance;
+        if (resetSequencer == null)
+            Debug.LogError("[TutorialStepContext] FailureResetSequencer.Instance is null — is Persistent loaded?");
+        if (failureNotice == null)
+            Debug.LogError("[TutorialStepContext] FailureNotice.Instance is null — is Persistent loaded?");
     }
 
     /// <summary>Get checkpoint by index. Returns null if out of range.</summary>

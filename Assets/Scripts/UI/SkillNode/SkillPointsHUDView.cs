@@ -12,16 +12,18 @@ public class SkillPointsHUDView : MonoBehaviour
     private void Awake()
     {
         _pointBank = pointBankMono as IPointBank;
-        if (_pointBank == null)
-            Debug.LogError("[SkillPointsHUDView] pointBankMono does not implement IPointBank.", this);
     }
 
     private void Start()
     {
-        // Force refresh on Start so initial points display correctly
-        // regardless of when OnEnable fired relative to SkillTreeManager.Awake
-        if (_pointBank != null)
-            Refresh(_pointBank.CurrentPoints);
+        _pointBank ??= SkillTreeManager.Instance;
+        if (_pointBank == null)
+        {
+            Debug.LogError("[SkillPointsHUDView] IPointBank unresolved — is Persistent loaded?", this);
+            enabled = false;
+            return;
+        }
+        Refresh(_pointBank.CurrentPoints);
     }
 
     private void OnEnable()

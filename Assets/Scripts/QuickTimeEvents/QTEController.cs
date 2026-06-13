@@ -4,6 +4,12 @@ using UnityEngine.UI;
 using TMPro;
 using Unity.Cinemachine;
 
+/// <summary>
+/// DEPRECATED. Replaced by QTEManager (persistent) + QTESceneAnchor (per-area).
+/// Keep this file only while existing Prefab/Scene Inspector slots still reference it.
+/// Once all anchors are wired to QTEManager, delete this class.
+/// </summary>
+[System.Obsolete("Use QTEManager + QTESceneAnchor. See QTEManager.cs.")]
 public class QTEController : MonoBehaviour
 {
     [Header("Trigger points (exactly 2)")]
@@ -13,10 +19,12 @@ public class QTEController : MonoBehaviour
     [Header("Activatables — fired on success")]
     [SerializeField] private MonoBehaviour[] activatableMono;
 
-    [Header("Services")]
-    [SerializeField] private MonoBehaviour enemyFreezeServiceMono;
-    [SerializeField] private MonoBehaviour cameraControllerMono;
-    [SerializeField] private CameraSwitcher cameraSwitcher;
+    [Header("Services — auto-found at runtime from Persistent scene")]
+    // These live in Persistent.unity — do NOT wire in Inspector across scenes.
+    // QTEController finds them at Start() once Persistent is loaded.
+    private MonoBehaviour enemyFreezeServiceMono;
+    private MonoBehaviour cameraControllerMono;
+    private CameraSwitcher cameraSwitcher;
 
     [Header("QTE Camera")]
     [SerializeField] private CinemachineCamera qteCamera;
@@ -57,19 +65,38 @@ public class QTEController : MonoBehaviour
 
     private void Awake()
     {
-        _freezeService = enemyFreezeServiceMono as IEnemyFreezeService;
-        _cameraController = cameraControllerMono as ICameraController;
-
         _activatables = new IActivatable[activatableMono?.Length ?? 0];
         for (int i = 0; i < _activatables.Length; i++)
             _activatables[i] = activatableMono[i] as IActivatable;
 
-        if (_freezeService == null)
-            Debug.LogWarning("[QTEController] EnemyFreezeService not assigned.", this);
-        if (_cameraController == null)
-            Debug.LogWarning("[QTEController] CameraController not assigned.", this);
-
         SetPanelVisible(false);
+    }
+
+    private void Start()
+    {
+        // Persistent services load before area scenes — safe to find here.
+        enemyFreezeServiceMono = FindService<IEnemyFreezeService>();
+        cameraControllerMono   = FindService<ICameraController>();
+        cameraSwitcher         = FindAnyObjectByType<CameraSwitcher>(FindObjectsInactive.Include);
+
+        _freezeService   = enemyFreezeServiceMono as IEnemyFreezeService;
+        _cameraController = cameraControllerMono as ICameraController;
+
+        if (_freezeService == null)
+            Debug.LogWarning("[QTEController] IEnemyFreezeService not found.", this);
+        if (_cameraController == null)
+            Debug.LogWarning("[QTEController] ICameraController not found.", this);
+        if (cameraSwitcher == null)
+            Debug.LogWarning("[QTEController] CameraSwitcher not found.", this);
+    }
+
+    // Returns the first MonoBehaviour in any loaded scene that implements T.
+    private static MonoBehaviour FindService<T>() where T : class
+    {
+        foreach (var mb in FindObjectsByType<MonoBehaviour>(
+                     FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (mb is T) return mb;
+        return null;
     }
 
     private void OnEnable()
@@ -222,7 +249,7 @@ public class QTEController : MonoBehaviour
 
     private IEnumerator UnfreezeAfterDelay(float delay)
     {
-        yield return new WaitForSeconds(delay);
+        yield return new WaitForSecondsRealtime(delay); // unscaled — must not stretch during Setsuna
         _freezeService?.UnfreezeAll();
     }
 

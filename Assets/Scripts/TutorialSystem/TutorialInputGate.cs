@@ -14,7 +14,7 @@
 /// </summary>
 public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
 {
-    [SerializeField] private MonoBehaviour _realInputMono;
+    private TwinInputReader _reader;
     private IInputProvider _real;
 
     // ── Per-action locks ──────────────────────────────────────
@@ -25,11 +25,24 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
     private bool _switchAllowed = false;
     private bool _interactAllowed = false;
 
-    private void Awake()
+    private void Start()
     {
-        _real = _realInputMono as IInputProvider;
-        if (_real == null)
-            Debug.LogError("[TutorialInputGate] _realInputMono missing IInputProvider.", this);
+        _reader = TwinInputReader.Instance;
+        _real = _reader;
+        if (_reader == null)
+            Debug.LogError("[TutorialInputGate] TwinInputReader.Instance is null — is Persistent loaded?", this);
+        // OnEnable fires before Start, so register the gate here once the reader is resolved.
+        _reader?.SetGate(this);
+    }
+
+    private void OnEnable()
+    {
+        if (_reader != null) _reader.SetGate(this);
+    }
+
+    private void OnDisable()
+    {
+        if (_reader != null) _reader.SetGate(null);
     }
 
     // ── ITutorialGate — read by TwinInputReader ───────────────
@@ -74,4 +87,5 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
     public bool GetEmpowerHeld() => _abilityAllowed && (_real?.GetEmpowerHeld() ?? false);
     public bool GetStruggleMash() => _real?.GetStruggleMash() ?? false;
     public bool GetSoulBreakMash() => _real?.GetSoulBreakMash() ?? false;
+    public bool GetConvergenceHeld() => _abilityAllowed && (_real?.GetConvergenceHeld() ?? false);
 }

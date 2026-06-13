@@ -5,12 +5,51 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Bootstrap.unity
+    guid: 4e98b6042f1c3a04d8a023ca21c3967b
+  - enabled: 1
+    path: Assets/Scenes/Persistent.unity
+    guid: e56d62ae214c70a46822111c67a4ce3d
+  - enabled: 1
+    path: Assets/Scenes/Intro.unity
+    guid: e2194e0c0e6505a41a84612d2dfdbb32
+  - enabled: 1
+    path: Assets/Scenes/L0/L0_CityWater.unity
+    guid: 353028d97cb16f248b2f9cb506354340
+  - enabled: 1
+    path: Assets/Scenes/L1_Park/L1_Park.unity
+    guid: 54ac79893c721314d999204f016d9d7e
+  - enabled: 1
+    path: Assets/Scenes/L1_Park/L1_Side.unity
+    guid: 97b54576ee74589478d3f3c96e059672
+  - enabled: 1
+    path: Assets/Scenes/L2_Streets/L2_Streets.unity
+    guid: a22f0e751ae45d547b588eb0079f4849
+  - enabled: 1
+    path: Assets/Scenes/L2_Streets/L2_Side.unity
+    guid: bbf035de6db21874d89992ad6fa4a3d4
+  - enabled: 1
+    path: Assets/Scenes/L3_Alley/L3_Alley.unity
+    guid: 8a925c2914fd3ca4da1c9f82ccaa4b8e
+  - enabled: 1
+    path: Assets/Scenes/L3_Alley/L3_Side.unity
+    guid: ff77176fe9a8b9a45917e8cbd9eff5b8
+  - enabled: 1
+    path: Assets/Scenes/L4_Museum/L4_Museum.unity
+    guid: 447acc17349f595458695de91deaf52c
+  - enabled: 1
+    path: Assets/Scenes/L4_Museum/L4_Side.unity
+    guid: 3fdf05538b36f4a458c212fef69e8ce1
+  - enabled: 1
+    path: Assets/Scenes/L5_Fields/L5_Fields.unity
+    guid: e38848f0437f0fd4a9f4dfe2f9bb74d2
+  - enabled: 1
+    path: Assets/Scenes/L5_Fields/L5_Side.unity
+    guid: 237ff9851eea9474da5cf4d624c7e9ee
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/Scenes/L1Park.unity
-    guid: 54ac79893c721314d999204f016d9d7e
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 02d6e886eff691342acebbec416f653c, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

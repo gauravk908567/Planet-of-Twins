@@ -30,9 +30,6 @@ public class SummonerEnemy : RangedEnemy
     protected override void Awake()
     {
         base.Awake();
-        _spawner = FindAnyObjectByType<EnemySpawner>();
-        if (_spawner == null)
-            Debug.LogWarning("[SummonerEnemy] No EnemySpawner found in scene.", this);
     }
 
     public override void ApplyData(EnemyData data)
@@ -75,6 +72,7 @@ public class SummonerEnemy : RangedEnemy
     {
         yield return new WaitForSeconds(_summonSpawnDelay);
 
+        _spawner ??= EnemySpawner.Instance;
         if (_spawner != null && _summonEntry != null)
         {
             Vector3 spawnPos = transform.position + transform.forward * 1.5f;
