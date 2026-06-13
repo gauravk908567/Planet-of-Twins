@@ -8,6 +8,19 @@ using UnityEngine;
 /// </summary>
 public class EnemyDeathNotifier : MonoBehaviour, IEnemyDeathNotifier
 {
+    public static EnemyDeathNotifier Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     /// <summary>
     /// Fires only for COMBAT kills. Arg = world position of the dead enemy.
     /// </summary>

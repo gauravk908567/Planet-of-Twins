@@ -1,5 +1,6 @@
 ﻿using CommonCore;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Listens to existing Planet of Twins game events and writes
@@ -49,9 +50,27 @@ public class PoTWorldStateWriter : MonoBehaviour
         InitialiseBlackboard();
         FindMissingReferences();
         SubscribeToEvents();
+
+        // Refresh barrier cache whenever a chunk loads or unloads
+        SceneManager.sceneLoaded += OnSceneLoadedRefresh;
+        SceneManager.sceneUnloaded += OnSceneUnloadedRefresh;
     }
 
-    private void OnDestroy() => UnsubscribeFromEvents();
+    private void OnDestroy()
+    {
+        UnsubscribeFromEvents();
+        SceneManager.sceneLoaded -= OnSceneLoadedRefresh;
+        SceneManager.sceneUnloaded -= OnSceneUnloadedRefresh;
+    }
+
+    private void OnSceneLoadedRefresh(Scene scene, LoadSceneMode mode) => RefreshBarrierCache();
+    private void OnSceneUnloadedRefresh(Scene scene) => RefreshBarrierCache();
+
+    private void RefreshBarrierCache()
+    {
+        _barrierPOIs = FindObjectsByType<BarrierPOI>(FindObjectsSortMode.None);
+        Debug.Log($"[PoTWorldStateWriter] Barrier cache refreshed: {_barrierPOIs.Length} barriers.");
+    }
 
     private void InitialiseBlackboard()
     {

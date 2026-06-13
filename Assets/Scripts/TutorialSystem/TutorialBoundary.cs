@@ -20,14 +20,6 @@
 /// </summary>
 public class TutorialBoundary : MonoBehaviour
 {
-    [Header("Twins")]
-    [SerializeField] private Player leftTwin;
-    [SerializeField] private Player rightTwin;
-
-    [Header("Reset")]
-    [SerializeField] private FailureResetSequencer resetSequencer;
-    [SerializeField] private FailureNotice failureNotice;
-
     [Tooltip("Empty GO placed at Lyra's reset position in scene.")]
     [SerializeField] private Transform leftResetPoint;
 
@@ -51,6 +43,28 @@ public class TutorialBoundary : MonoBehaviour
 
     public Vector3 RightResetPosition => rightResetPoint != null
         ? rightResetPoint.position : transform.position;
+
+    // ── Runtime resolved (Persistent singletons — R4) ────────────
+    private Player _leftTwin;
+    private Player _rightTwin;
+    private FailureResetSequencer _resetSequencer;
+    private FailureNotice _failureNotice;
+
+    private void Start()
+    {
+        _resetSequencer = FailureResetSequencer.Instance;
+        _failureNotice = FailureNotice.Instance;
+        var selector = TwinSelector.Instance;
+        if (selector != null)
+        {
+            _leftTwin = selector.LeftTwin;
+            _rightTwin = selector.RightTwin;
+        }
+        if (_resetSequencer == null)
+            Debug.LogError("[TutorialBoundary] FailureResetSequencer.Instance is null — is Persistent loaded?", this);
+        if (_leftTwin == null || _rightTwin == null)
+            Debug.LogError("[TutorialBoundary] Twins unresolved via TwinSelector.Instance — is Persistent loaded?", this);
+    }
 
     // ── Internal ──────────────────────────────────────────────────
     private bool _resetting = false;
@@ -80,7 +94,7 @@ public class TutorialBoundary : MonoBehaviour
 
         var player = other.GetComponent<Player>();
         if (player == null || player is SoulPlayer) return;
-        if (player != leftTwin && player != rightTwin) return;
+        if (player != _leftTwin && player != _rightTwin) return;
 
         if (leftResetPoint == null || rightResetPoint == null)
         {
@@ -100,8 +114,8 @@ public class TutorialBoundary : MonoBehaviour
     {
         if (_resetting) return;
         _resetting = true;
-        failureNotice?.Show(boundaryMessage);
-        resetSequencer?.TriggerReset(
+        _failureNotice?.Show(boundaryMessage);
+        _resetSequencer?.TriggerReset(
             LeftResetPosition,
             RightResetPosition,
             () => _resetting = false);

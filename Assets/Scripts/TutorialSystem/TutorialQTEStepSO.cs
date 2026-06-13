@@ -16,20 +16,20 @@ public class TutorialQTEStepSO : TutorialStepBase
     {
         ApplyCommonSetup(ctx);
 
-        // Show overlay prompt first — time pauses, player watches the video
+        // Show overlay prompt first â€” time pauses, player watches the video
         bool promptDone = false;
         string t = promptTitle.IsEmpty ? "" : promptTitle.GetLocalizedString();
         string b = promptBody.IsEmpty ? "" : promptBody.GetLocalizedString();
         ctx.overlay?.Show(t, b, promptClip, () => promptDone = true);
         yield return new WaitUntil(() => promptDone);
 
-        // Start the QTE — camera switches here, trigger points activate
-        ctx.qteController?.BeginQTE();
+        // Start the QTE â€” camera switches here, trigger points activate
+        ctx.qteAnchor?.BeginQTE();
 
-        // Poll for success via watcher
+        // Listen for success via watcher (filtered by this QTE's eventId)
         bool gateOpened = false;
         var watcher = executor.gameObject.AddComponent<QTESuccessWatcher>();
-        watcher.Watch(ctx.qteController, () => gateOpened = true);
+        watcher.Watch(ctx.qteAnchor?.Definition?.eventId, () => gateOpened = true);
 
         yield return new WaitUntil(() => gateOpened);
 

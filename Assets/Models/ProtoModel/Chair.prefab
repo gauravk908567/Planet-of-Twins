@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1385719751916614217}
   - component: {fileID: 4135342814652390068}
   - component: {fileID: 623562952386467156}
-  - component: {fileID: 3806280073642506203}
+  - component: {fileID: 4465822806533458870}
   m_Layer: 0
   m_Name: Chair
   m_TagString: Untagged
@@ -335,8 +335,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2028720074758032555}
   m_Mesh: {fileID: 0}
---- !u!64 &3806280073642506203
-MeshCollider:
+--- !u!65 &4465822806533458870
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -353,10 +353,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 2, y: 3, z: 0.5}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &5455874574718466387
 GameObject:
   m_ObjectHideFlags: 0
@@ -370,7 +369,7 @@ GameObject:
   - component: {fileID: 5715984482313130096}
   - component: {fileID: 5915664578956013236}
   - component: {fileID: 6521899859489964718}
-  - component: {fileID: 3914335175926212202}
+  - component: {fileID: 5820491681749667577}
   m_Layer: 0
   m_Name: Cube (3)
   m_TagString: Untagged
@@ -2023,8 +2022,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5455874574718466387}
   m_Mesh: {fileID: 0}
---- !u!64 &3914335175926212202
-MeshCollider:
+--- !u!65 &5820491681749667577
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -2041,7 +2040,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 3, y: 3, z: 3.5}
+  m_Center: {x: 0, y: 0, z: -1.5}

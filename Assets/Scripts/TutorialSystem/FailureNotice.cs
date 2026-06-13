@@ -22,6 +22,8 @@ using UnityEngine.UI;
 /// </summary>
 public class FailureNotice : MonoBehaviour
 {
+    public static FailureNotice Instance { get; private set; }
+
     [SerializeField] private GameObject _noticePanel;
     [SerializeField] private TMP_Text _noticeText;
     [SerializeField] private CanvasGroup _canvasGroup;
@@ -32,7 +34,14 @@ public class FailureNotice : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _noticePanel?.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     public void Show(string message)

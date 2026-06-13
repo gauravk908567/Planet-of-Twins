@@ -2,30 +2,43 @@ using UnityEngine;
 
 /// <summary>
 /// Lightweight one-shot watcher added at runtime by TutorialQTEStepSO.
-/// Polls QTEController.IsSuccess every frame.
-/// Fires onSuccess callback and stops watching on first success.
-/// Destroyed by TutorialQTEStepSO after callback fires.
+/// Subscribes to QTEManager.OnQTESucceeded and fires onSuccess when the
+/// expected event ID succeeds. Filtered by eventId so it only responds to
+/// the QTE that was just started.
 /// </summary>
 public class QTESuccessWatcher : MonoBehaviour
 {
-    private QTEController _controller;
+    private string _expectedEventId;
     private System.Action _onSuccess;
     private bool _watching;
 
-    public void Watch(QTEController controller, System.Action onSuccess)
+    public void Watch(string expectedEventId, System.Action onSuccess)
     {
-        _controller = controller;
+        _expectedEventId = expectedEventId;
         _onSuccess = onSuccess;
         _watching = true;
+
+        if (QTEManager.Instance != null)
+            QTEManager.Instance.OnQTESucceeded += HandleSucceeded;
+        else
+            Debug.LogWarning("[QTESuccessWatcher] QTEManager not found. " +
+                             "Is it in Persistent.unity?", this);
     }
 
-    private void Update()
+    private void HandleSucceeded(string eventId)
     {
-        if (!_watching || _controller == null) return;
-        if (_controller.IsSuccess)
-        {
-            _watching = false;
-            _onSuccess?.Invoke();
-        }
+        if (!_watching) return;
+        if (eventId != _expectedEventId) return;
+
+        _watching = false;
+        if (QTEManager.Instance != null)
+            QTEManager.Instance.OnQTESucceeded -= HandleSucceeded;
+        _onSuccess?.Invoke();
+    }
+
+    private void OnDestroy()
+    {
+        if (QTEManager.Instance != null)
+            QTEManager.Instance.OnQTESucceeded -= HandleSucceeded;
     }
 }

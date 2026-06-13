@@ -114,6 +114,27 @@ public class SpawnZone : MonoBehaviour
         return safest ?? fallback; // fallback if no safe site found
     }
 
+    // ── Self-registration (multi-scene) ────────────────────
+    // Registers with SpawnZoneRegistry (in Persistent) when this area scene
+    // loads, and unregisters when the area scene unloads. This allows
+    // EnemySpawner (persistent) to discover zones without a cross-scene
+    // [SerializeField] link.
+    private void OnEnable()
+    {
+        SpawnZoneRegistry.Instance?.Register(this);
+        if (SoftResetController.Instance != null)
+            SoftResetController.Instance.OnSoftReset += ClearOccupants;
+    }
+
+    private void OnDisable()
+    {
+        SpawnZoneRegistry.Instance?.Unregister(this);
+        if (SoftResetController.Instance != null)
+            SoftResetController.Instance.OnSoftReset -= ClearOccupants;
+    }
+
+    public void ClearOccupants() => _playersInZone.Clear();
+
     // ── Zone detection ─────────────────────────────────────
     private void OnTriggerEnter(Collider other)
     {

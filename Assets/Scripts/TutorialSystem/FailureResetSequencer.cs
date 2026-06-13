@@ -18,6 +18,8 @@ using UnityEngine.UI;
 /// </summary>
 public class FailureResetSequencer : MonoBehaviour
 {
+    public static FailureResetSequencer Instance { get; private set; }
+
     [Header("Post Process")]
     [Tooltip("Main post-process Volume that has a ColorAdjustments override.")]
     [SerializeField] private Volume _postProcessVolume;
@@ -46,6 +48,9 @@ public class FailureResetSequencer : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+
         if (_postProcessVolume != null &&
             _postProcessVolume.profile.TryGet(out _colourAdj))
         {
@@ -61,14 +66,24 @@ public class FailureResetSequencer : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     /// <summary>
     /// Play the reset sequence. Teleports both twins to the given positions.
-    /// onComplete fires after colour is restored — use to re-enable input, show Valorant notice etc.
+    /// onComplete fires after colour is restored — use to re-enable input, show notice etc.
+    /// Re-entry-rejecting: a new call while a reset is running is silently ignored (callers guard).
     /// </summary>
     public void TriggerReset(Vector3 leftResetPos, Vector3 rightResetPos,
                              System.Action onComplete = null)
     {
-        if (_activeReset != null) StopCoroutine(_activeReset);
+        if (_activeReset != null)
+        {
+            Debug.LogWarning("[FailureResetSequencer] reset already running — ignored", this);
+            return;
+        }
         _activeReset = StartCoroutine(ResetSequence(leftResetPos, rightResetPos, onComplete));
     }
 

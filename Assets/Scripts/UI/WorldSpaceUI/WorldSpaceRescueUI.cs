@@ -80,6 +80,8 @@ public class WorldSpaceRescueUI : MonoBehaviour
     {
         _ttkRect = ttkRing?.GetComponent<RectTransform>();
         _fKeyRect = fKeyRing?.GetComponent<RectTransform>();
+        if (ownerPlayer == null)
+            ownerPlayer = GetComponentInParent<Player>(true);
     }
 
     private void OnEnable()
@@ -113,6 +115,24 @@ public class WorldSpaceRescueUI : MonoBehaviour
 
     private void Start()
     {
+        rescueEventController ??= RescueEventController.Instance;
+        if (rescueEventController == null) { Debug.LogError("[WorldSpaceRescueUI] RescueEventController not found.", this); enabled = false; return; }
+        rescueEventController.OnRescueStateChanged -= HandleStateChanged;
+        rescueEventController.OnRescueStateChanged += HandleStateChanged;
+        rescueEventController.OnMashProgressUpdated -= HandleMashProgress;
+        rescueEventController.OnMashProgressUpdated += HandleMashProgress;
+        rescueEventController.OnMashTimeUpdated -= HandleMashTime;
+        rescueEventController.OnMashTimeUpdated += HandleMashTime;
+        rescueEventController.OnCooldownTimeUpdated -= HandleCooldownTime;
+        rescueEventController.OnCooldownTimeUpdated += HandleCooldownTime;
+        rescueEventController.OnPlayerInDanger -= HandlePlayerInDanger;
+        rescueEventController.OnPlayerInDanger += HandlePlayerInDanger;
+        rescueEventController.OnActiveTargetChanged -= HandleActiveTargetChanged;
+        rescueEventController.OnActiveTargetChanged += HandleActiveTargetChanged;
+        rescueEventController.OnStruggleActivated -= HandleStruggleActivated;
+        rescueEventController.OnStruggleActivated += HandleStruggleActivated;
+        rescueEventController.OnStruggleCapReached -= HandleStruggleCapReached;
+        rescueEventController.OnStruggleCapReached += HandleStruggleCapReached;
         HideAll();
         RefreshChainSubscriptions();
     }

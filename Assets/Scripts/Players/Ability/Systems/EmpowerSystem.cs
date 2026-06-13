@@ -135,11 +135,15 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     public bool DashReady => _dashCooldownTimer <= 0f;
 
     public event Action OnEmpowerStarted;
+    public static EmpowerSystem Instance { get; private set; }
+
     public event Action OnEmpowerEnded;
 
     // ── Lifecycle ─────────────────────────────────────────────
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _input = _inputProviderObject as IInputProvider;
         _selectionLock = _twinSelectorObject as ISelectionLock;
         _twinSelector = _twinSelectorObject as ITwinSelector;
@@ -196,6 +200,11 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
             return;
         }
         EndAbility();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     // ── State: Idle ───────────────────────────────────────────
@@ -311,6 +320,8 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
 
         OnEmpowerStarted?.Invoke();
     }
+
+    public void ForceEnd() => EndAbility();
 
     // ── End ───────────────────────────────────────────────────
     private void EndAbility()

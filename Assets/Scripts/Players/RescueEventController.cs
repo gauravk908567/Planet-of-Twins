@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialRescueProvider
+public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialRescueProvider, IRescueTrapRegistry
 {
+    public static RescueEventController Instance { get; private set; }
     [Header("Twin References")]
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
@@ -88,6 +89,34 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
 
     public void ResetSuccessFlag() => WasSuccessful = false;
 
+    /// <summary>
+    /// Hard-resets rescue state to Idle. Called by SoftResetController on respawn.
+    /// Unfreezes any grabbed twin, clears all internal state, fires state-change events.
+    /// </summary>
+    public void ForceReset()
+    {
+        if (_state == RescueState.Idle && _activeTarget == null) return;
+
+        // Unfreeze grabbed player if mid-rescue
+        if (_activeTarget?.GrabbedPlayer != null)
+        {
+            var isLeft = _activeTarget.GrabbedPlayer == leftTwin;
+            emergencyTeleportMonitor?.SetEmergencyOverride(isLeft, false);
+            var moveable = _activeTarget.GrabbedPlayer.Movement as IMovementFreezable;
+            moveable?.SetFrozen(false);
+        }
+
+        // Unlock twin selection if it was locked for the rescue
+        if (_state != RescueState.Idle && _state != RescueState.SoulDied)
+            _selectionLock?.UnlockSelection();
+
+        CleanupRescueEvent();
+        _state = RescueState.Idle;
+        CurrentRescueState = RescueState.Idle;
+        OnRescueStateChanged?.Invoke(RescueState.Idle);
+        OnActiveTargetChanged?.Invoke(null);
+    }
+
     /// <summary>Exposed so SiphonGhost can read soul break-mash input without raw Input calls.</summary>
     public IInputProvider InputProvider => _input;
 
@@ -125,6 +154,8 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     // ââ Unity lifecycle
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _selector = twinSelectorObject as ITwinSelector;
         _selectionLock = twinSelectorObject as ISelectionLock;
         _input = inputProviderObject as IInputProvider;
@@ -137,15 +168,11 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
 
     private void Start()
     {
-        var traps = FindObjectsByType<SkeletonTrap>(FindObjectsSortMode.None);
-        foreach (var trap in traps)
-            RegisterTrap(trap);
-
-
+        // Traps now self-register via OnEnable/OnDisable — scan removed.
         RegisterDeathProxies();
 
-        if (leftTwin?.Health != null) leftTwin.Health.OnDeath += () => HandleTwinDeath(leftTwin);
-        if (rightTwin?.Health != null) rightTwin.Health.OnDeath += () => HandleTwinDeath(rightTwin);
+        if (leftTwin?.Health != null)  leftTwin.Health.OnDeath  += HandleLeftTwinDeath;
+        if (rightTwin?.Health != null) rightTwin.Health.OnDeath += HandleRightTwinDeath;
     }
 
     private void RegisterDeathProxies()
@@ -224,6 +251,9 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
 
     private void OnDestroy()
     {
+        if (Instance == this) Instance = null;
+        if (leftTwin?.Health  != null) leftTwin.Health.OnDeath  -= HandleLeftTwinDeath;
+        if (rightTwin?.Health != null) rightTwin.Health.OnDeath -= HandleRightTwinDeath;
         foreach (var kvp in _trapDelegates)
         {
             kvp.Key.OnPlayerGrabbed -= kvp.Value.OnGrabbed;
@@ -353,6 +383,9 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         _selectionLock?.UnlockSelection();
         TransitionTo(RescueState.Failed);
     }
+
+    private void HandleLeftTwinDeath()  => HandleTwinDeath(leftTwin);
+    private void HandleRightTwinDeath() => HandleTwinDeath(rightTwin);
 
     private void HandleTwinDeath(Player deadTwin)
     {

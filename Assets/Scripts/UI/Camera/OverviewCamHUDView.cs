@@ -57,6 +57,17 @@ public class OverviewCamHUDView : MonoBehaviour
 
     private System.Collections.IEnumerator Start()
     {
+        overviewController ??= OverviewCamController.Instance;
+        if (overviewController == null)
+            Debug.LogError("[OverviewCamHUDView] OverviewCamController unresolved — is Persistent loaded?", this);
+        else
+        {
+            _cooldownDuration = GetCooldownDuration();
+            // Re-subscribe in case OnEnable fired before overviewController was resolved.
+            overviewController.OnOverviewToggled -= HandleOverviewToggled;
+            overviewController.OnOverviewToggled += HandleOverviewToggled;
+        }
+
         // Wait one frame so Unity layout has calculated RectTransform sizes.
         // Capturing rect.width in Awake returns 0 before layout runs.
         yield return null;

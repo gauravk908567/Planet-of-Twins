@@ -60,6 +60,21 @@ public class CameraManager : MonoBehaviour, ICameraController
         UpdatePriorities(_currentCam);
     }
 
+    /// <summary>
+    /// Demotes a QTE/external camera back to inactive priority without switching to any
+    /// specific gameplay camera. Call this after a QTE ends — CameraSwitcher.Update() will
+    /// pick the correct camera (tutorial or gameplay mode) on the very next frame.
+    /// </summary>
+    public void DemoteExternalCamera()
+    {
+        if (_previousExternalCam != null)
+        {
+            _previousExternalCam.Priority = 0;
+            _previousExternalCam = null;
+        }
+        _currentCam = null; // lets the next SwitchToCamera call bypass the early-return guard
+    }
+
     private void UpdatePriorities(CinemachineCamera active)
     {
         // Demote previous external cam

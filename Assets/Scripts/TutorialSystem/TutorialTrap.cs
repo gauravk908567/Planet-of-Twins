@@ -82,9 +82,22 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
     // ── Unity ─────────────────────────────────────────────────────────────
     private void Awake()
     {
+        // Optional same-scene override; cross-scene slot is R2 violation — null is expected in builds.
         _registry = rescueControllerMono as IRescueTrapRegistry;
+    }
+
+    private void Start()
+    {
+        // Resolve via Instance (R4) — covers the case where OnEnable fired before Start with null registry.
+        if (_registry == null) _registry = RescueEventController.Instance;
         if (_registry == null)
-            Debug.LogError("[TutorialTrap] rescueControllerMono missing IRescueTrapRegistry.", this);
+            Debug.LogError("[TutorialTrap] RescueEventController.Instance is null.", this);
+        else { _registry.UnregisterTrap(this); _registry.RegisterTrap(this); }
+
+        if (leftTwin == null)  leftTwin  = TwinSelector.Instance?.LeftTwin;
+        if (rightTwin == null) rightTwin = TwinSelector.Instance?.RightTwin;
+        if (leftTwin == null || rightTwin == null)
+            Debug.LogError("[TutorialTrap] Twin refs null — wire in Inspector or TwinSelector must be loaded.", this);
     }
 
     private void OnEnable()
@@ -92,6 +105,11 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
         _registry?.RegisterTrap(this);
         ResetState();
         Debug.Log("[TutorialTrap] Enabled and registered.");
+    }
+
+    private void OnDisable()
+    {
+        _registry?.UnregisterTrap(this);
     }
 
     private void Update()
@@ -193,7 +211,7 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
     // ── Reset ─────────────────────────────────────────────────────────────
     private IEnumerator ResetAfterDelay()
     {
-        yield return new WaitForSeconds(resetDelay);
+        yield return new WaitForSecondsRealtime(resetDelay); // unscaled — pacing under rescue-tutorial slow
         ResetState();
         Debug.Log("[TutorialTrap] Reset complete — ready to grab again.");
     }

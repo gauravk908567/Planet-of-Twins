@@ -23,4 +23,6 @@ public interface IInputProvider
     bool GetSoulBreakMash();
     /// <summary>Press E while grabbed � mash to trigger struggle pause (tier-1 traps only).</summary>
     bool GetStruggleMash();
+    /// <summary>Hold F to charge Soul Convergence or Setsuna. Gated by IsAbilityAllowed.</summary>
+    bool GetConvergenceHeld();
 }

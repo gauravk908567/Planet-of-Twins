@@ -23,7 +23,9 @@ public class TutorialCheckpoint : MonoBehaviour
     public enum RequiredTwin { Either, Left, Right }
 
     [Header("Setup")]
+    [Tooltip("Leave null — resolved at Start from TwinSelector (Persistent).")]
     [SerializeField] private Player leftTwin;
+    [Tooltip("Leave null — resolved at Start from TwinSelector (Persistent).")]
     [SerializeField] private Player rightTwin;
     [SerializeField] private RequiredTwin requiredTwin = RequiredTwin.Either;
 
@@ -48,7 +50,26 @@ public class TutorialCheckpoint : MonoBehaviour
     public Vector3 RightResetPosition => rightResetPoint != null
         ? rightResetPoint.position : transform.position;
 
-    private void Awake() => SetMarkerVisible(false);
+    private Collider _triggerCollider;
+
+    private void Awake()
+    {
+        _triggerCollider = GetComponent<Collider>();
+        SetMarkerVisible(false);
+    }
+
+    /// <summary>Disables the trigger collider only — preserves marker and particle state.</summary>
+    public void Suspend() { if (_triggerCollider != null) _triggerCollider.enabled = false; }
+    /// <summary>Re-enables the trigger collider.</summary>
+    public void Resume()  { if (_triggerCollider != null) _triggerCollider.enabled = true;  }
+
+    private void Start()
+    {
+        if (leftTwin != null && rightTwin != null) return;
+        if (TwinSelector.Instance == null) { Debug.LogWarning("[TutorialCheckpoint] TwinSelector not found.", this); return; }
+        if (leftTwin == null)  leftTwin  = TwinSelector.Instance.LeftTwin;
+        if (rightTwin == null) rightTwin = TwinSelector.Instance.RightTwin;
+    }
 
     /// <summary>
     /// Activates checkpoint — shows marker.
@@ -56,10 +77,25 @@ public class TutorialCheckpoint : MonoBehaviour
     /// </summary>
     public void Activate()
     {
-        Debug.Log($"[Activate] {gameObject.name} activeInHierarchy={gameObject.activeInHierarchy} parent active={transform.parent?.gameObject.activeInHierarchy}");
         if (IsCompleted) return;
         gameObject.SetActive(true);
         SetMarkerVisible(true);
+        // R11 / Phase 7.6b: SetActive is a no-op when any ancestor is inactive.
+        // Walk the chain and log the first culprit so it's immediately visible in console.
+        if (!gameObject.activeInHierarchy)
+        {
+            var t = transform.parent;
+            while (t != null)
+            {
+                if (!t.gameObject.activeSelf)
+                {
+                    Debug.LogError($"[TutorialCheckpoint] Activate() no-op — ancestor '{t.name}' is inactive. " +
+                                   $"Move this GO out of any Activation Track hierarchy (R11).", this);
+                    break;
+                }
+                t = t.parent;
+            }
+        }
     }
 
     /// <summary>
@@ -79,6 +115,7 @@ public class TutorialCheckpoint : MonoBehaviour
         IsCompleted = false;
         SetMarkerVisible(true);
         gameObject.SetActive(true);
+        Resume(); // re-arm trigger if it was Suspended before the reset sequence
     }
 
     private void OnTriggerEnter(Collider other)

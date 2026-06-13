@@ -227,7 +227,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
 
                     // Slow world to 85% so enemies move during soul travel
                     // Soul movement uses unscaled deltaTime — unaffected by timeScale
-                    Time.timeScale = _soulTravelTimeFactor;
+                    TimeScaleService.Instance?.Request(this, _soulTravelTimeFactor);
 
                     // Open cancel window after arrival
                     _cancelWindowOpen = true;
@@ -269,7 +269,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         _soulPulse?.StopPulsing();
 
         // Restore world speed
-        Time.timeScale = 1f;
+        TimeScaleService.Instance?.Release(this);
 
         _soul?.Movement?.SetMovementLocked(true);
 
@@ -322,7 +322,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         }
 
         if (requireMinDistance && _distanceTravelled < minTravelDistance)
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSecondsRealtime(0.3f);
 
         onArrival?.Invoke();
         UnityEngine.Debug.Log($"[TeleportAbility] Soul arrived — firing OnSoulArrived, subscribers={OnSoulArrived?.GetInvocationList()?.Length ?? 0}");

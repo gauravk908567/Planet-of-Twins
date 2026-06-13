@@ -39,6 +39,22 @@ public class TutorialZoneTrigger : MonoBehaviour
     private bool _leftInside = false;
     private bool _rightInside = false;
 
+    // R4: cross-scene twins can't be serialized — resolve from Persistent singleton in Start().
+    private void Start()
+    {
+        if (leftTwin == null || rightTwin == null)
+        {
+            var selector = TwinSelector.Instance;
+            if (selector == null)
+            {
+                Debug.LogError("[TutorialZoneTrigger] TwinSelector.Instance is null — is Persistent loaded?", this);
+                return;
+            }
+            if (leftTwin == null)  leftTwin  = selector.LeftTwin;
+            if (rightTwin == null) rightTwin = selector.RightTwin;
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (fireOnce && _fired) return;

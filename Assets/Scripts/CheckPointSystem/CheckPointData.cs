@@ -1,8 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// Snapshot of game state at a checkpoint.
-/// Intentionally minimal for prototype � extend fields as the game grows.
+/// Intentionally minimal for prototype ï¿½ extend fields as the game grows.
 /// </summary>
 [System.Serializable]
 public class CheckpointData
@@ -14,15 +14,19 @@ public class CheckpointData
     // Economy
     public int skillPoints;
 
-    // Upgrade node states � stored as parallel arrays matching
-    // the order in SkillTreeManager.AllData(). Brittle if SO order changes,
-    // but sufficient for prototype. Replace with a Dictionary<string,int>
-    // keyed by SO asset GUID for a production system.
-    public int[] nodeUnlockLevels;
+    // Skill-tree progress at save time. Dictionary keyed by SO reference (in-memory only).
+    // Captures all 9 trees regardless of list order â€” replaces the brittle int[] parallel array.
+    public SkillTreeRuntimeState.Snapshot skillTreeSnapshot;
 
     // HP is always restored to full on respawn (by design).
 
-    // Sword pickup state � did each twin have the sword when checkpoint was saved?
+    // Sword pickup state ï¿½ did each twin have the sword when checkpoint was saved?
     public bool leftHasSword;
     public bool rightHasSword;
+
+    // The area where this checkpoint lives — SoftResetController streams it in before teleporting.
+    public WorldLocationSO checkpointLocation;
+
+    // Which world-chunk scenes were loaded when this checkpoint was saved.
+    public WorldLocationSO[] activeLocations;
 }

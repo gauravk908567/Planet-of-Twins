@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Spawns a "soul absorbed" particle at each combat kill position.
-/// The particle prefab is responsible for flying to a target — assign a
+/// The particle prefab is responsible for flying to a target ï¿½ assign a
 /// ParticleAttractorTarget component on the prefab and this script sets it.
 ///
 /// HOW TO SET UP THE PARTICLE PREFAB:
@@ -32,6 +32,19 @@ public class KillParticleSpawner : MonoBehaviour
 
     [Header("Death notifier")]
     [SerializeField] private EnemyDeathNotifier deathNotifier;
+
+    private void Start()
+    {
+        deathNotifier ??= EnemyDeathNotifier.Instance;
+        if (deathNotifier == null)
+        {
+            Debug.LogError("[KillParticleSpawner] EnemyDeathNotifier unresolved â€” is Persistent loaded?", this);
+            return;
+        }
+        // Re-subscribe in case OnEnable fired before deathNotifier was resolved.
+        deathNotifier.OnEnemyCombatKill -= HandleCombatKill;
+        deathNotifier.OnEnemyCombatKill += HandleCombatKill;
+    }
 
     private void OnEnable()
     {

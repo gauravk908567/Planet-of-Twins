@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 3826790825519471800}
   - component: {fileID: 3631250729800050835}
   - component: {fileID: 6775225620656444074}
-  - component: {fileID: 3331984837572262024}
   m_Layer: 0
   m_Name: pathdevider (3)
   m_TagString: Untagged
@@ -1026,27 +1025,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2794004264896228535}
   m_Mesh: {fileID: 0}
---- !u!65 &3331984837572262024
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2794004264896228535}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
-  m_Center: {x: -0.0000009536743, y: -0.31285858, z: 0}
 --- !u!1 &3252962531337087206
 GameObject:
   m_ObjectHideFlags: 0
@@ -1060,7 +1038,6 @@ GameObject:
   - component: {fileID: 1416590867509052031}
   - component: {fileID: 7642613701181361143}
   - component: {fileID: 7521906928142629494}
-  - component: {fileID: 1880700346221812060}
   m_Layer: 0
   m_Name: pathdevider (2)
   m_TagString: Untagged
@@ -2073,27 +2050,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3252962531337087206}
   m_Mesh: {fileID: 0}
---- !u!65 &1880700346221812060
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3252962531337087206}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
-  m_Center: {x: -0.00000047683716, y: -0.31285858, z: 0}
 --- !u!1 &4453370363868094241
 GameObject:
   m_ObjectHideFlags: 0
@@ -2107,7 +2063,6 @@ GameObject:
   - component: {fileID: 516079823804137570}
   - component: {fileID: 549498191031571245}
   - component: {fileID: 5589925117073717766}
-  - component: {fileID: 2985420081323112161}
   m_Layer: 0
   m_Name: pathdevider (1)
   m_TagString: Untagged
@@ -3120,27 +3075,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4453370363868094241}
   m_Mesh: {fileID: 0}
---- !u!65 &2985420081323112161
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4453370363868094241}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
-  m_Center: {x: -0.00000023841858, y: -0.31285858, z: 0}
 --- !u!1 &7446146388962787231
 GameObject:
   m_ObjectHideFlags: 0
@@ -3189,7 +3123,6 @@ GameObject:
   - component: {fileID: 2791130375701773210}
   - component: {fileID: 7348781378852605514}
   - component: {fileID: 4921183207220490357}
-  - component: {fileID: 3672589403769926434}
   m_Layer: 0
   m_Name: pathdevider
   m_TagString: Untagged
@@ -4202,24 +4135,3 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7868626263640590351}
   m_Mesh: {fileID: 0}
---- !u!65 &3672589403769926434
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7868626263640590351}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.0000002, y: 1.6257172, z: 1.0000002}
-  m_Center: {x: 0, y: -0.31285858, z: 0}

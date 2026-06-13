@@ -97,9 +97,13 @@ public class SetsunaSystem : MonoBehaviour
     public bool IsCharging => _state == State.Charging;
     public float ChargeProgress => _chargeProgress;
 
+    public static SetsunaSystem Instance { get; private set; }
+
     // ── Lifecycle ─────────────────────────────────────────────
     private void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         _accordMode = _accordModeMono as IAccordModeProvider;
         _input = _inputProviderMono as IInputProvider;
         _unlockState = _unlockStateMono as ISkillUnlockState;
@@ -109,6 +113,8 @@ public class SetsunaSystem : MonoBehaviour
         if (_accordMode == null) Debug.LogError("[SetsunaSystem] Missing IAccordModeProvider.", this);
         if (_input == null) Debug.LogError("[SetsunaSystem] Missing IInputProvider.", this);
     }
+
+    private void OnDestroy() { if (Instance == this) Instance = null; }
 
     private void Start()
     {
@@ -166,20 +172,16 @@ public class SetsunaSystem : MonoBehaviour
         if (!_accordMode.IsAccordActive) return;
         if (_scSystem == null || !_scSystem.IsCharged && !_scSystem.IsAbilityRunning) return;
         if (_rescueActive != null && _rescueActive.IsRescueActive) return;
-        if (!_input.GetAbilityDown() && !Input.GetKey(KeyCode.F)) return;
+        if (!_input.GetConvergenceHeld()) return;
 
-        // Start charging — use F key directly as SC does
-        if (Input.GetKey(KeyCode.F))
-        {
-            _chargeProgress = 0f;
-            _state = State.Charging;
-            if (_chargeBar != null) _chargeBar.gameObject.SetActive(true);
-        }
+        _chargeProgress = 0f;
+        _state = State.Charging;
+        if (_chargeBar != null) _chargeBar.gameObject.SetActive(true);
     }
 
     private void HandleCharging()
     {
-        if (!Input.GetKey(KeyCode.F))
+        if (!_input.GetConvergenceHeld())
         {
             CancelCharge();
             return;
@@ -244,7 +246,7 @@ public class SetsunaSystem : MonoBehaviour
         _rightPath.Add(_rightCastPos);
 
         // Slow the world
-        Time.timeScale = _timeScaleFactor;
+        TimeScaleService.Instance?.Request(this, _timeScaleFactor);
 
         // Twins move using unscaled time — speed is designer-controlled
         float speedBoost = (1f / _timeScaleFactor) * _twinSpeedMultiplier;
@@ -264,7 +266,7 @@ public class SetsunaSystem : MonoBehaviour
         _state = State.Rewinding;
 
         // Restore timeScale immediately
-        Time.timeScale = 1f;
+        TimeScaleService.Instance?.Release(this);
 
         // Restore twin movement settings
         _leftTwin.Movement.SetUseUnscaledTime(false);
@@ -345,10 +347,10 @@ public class SetsunaSystem : MonoBehaviour
         }
     }
 
-    private void ForceEnd()
+    public void ForceEnd()
     {
         StopAllCoroutines();
-        Time.timeScale = 1f;
+        TimeScaleService.Instance?.Release(this);
 
         _leftTwin.Movement.SetUseUnscaledTime(false);
         _rightTwin.Movement.SetUseUnscaledTime(false);
@@ -369,16 +371,16 @@ public class SetsunaSystem : MonoBehaviour
 
     private void SetInvulnerable(bool value)
     {
-        // Lock movement during rewind so player input doesn't fight the lerp
+        // Lock movement AND set true invincibility during rewind — enemy hits would otherwise
+        // empty the shared pool mid-coroutine before the snapshot health is restored.
         _leftTwin.Movement.SetMovementLocked(value);
         _rightTwin.Movement.SetMovementLocked(value);
+        _leftTwin.Health?.SetInvincible(value);
+        _rightTwin.Health?.SetInvincible(value);
     }
 
     private bool IsUnlocked() =>
         _unlockState != null
         && _unlockState.IsAccordStateUnlocked
         && _unlockState.IsSoulConvergenceUnlocked;
-
-    private float EaseInOutCubic(float t) =>
-        t < 0.5f ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) / 2f;
 }

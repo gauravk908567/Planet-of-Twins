@@ -55,7 +55,6 @@ public class TutorialRescueWatchStepSO : TutorialStepBase
         while (true)
         {
             yield return null; // poll every frame, not every 0.1s
-            Debug.Log($"[RescueWatch] WasSuccessful={rescue.WasSuccessful} State={rescue.CurrentRescueState}");
 
             // WasSuccessful latches true and stays true even after
             // RescueEventController resets CurrentRescueState to Idle
@@ -73,8 +72,8 @@ public class TutorialRescueWatchStepSO : TutorialStepBase
                 // Reset latch for retry
                 rescue.ResetSuccessFlag();
 
-                // Wait for trap to grab again
-                yield return new WaitForSeconds(0.5f);
+                // Wait for trap to grab again — unscaled so it holds under rescue-tutorial timeScale
+                yield return new WaitForSecondsRealtime(0.5f);
                 yield return new WaitUntil(() => rescue.HasActiveRescueTarget);
             }
         }

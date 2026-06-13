@@ -30,6 +30,22 @@ public class RescueButtonUI : MonoBehaviour
     [SerializeField] private Color dangerColour = new Color(0.9f, 0.2f, 0.2f, 1f);
     [SerializeField] private Color cooldownColour = new Color(0.5f, 0.5f, 0.5f, 1f);
 
+    private void Start()
+    {
+        rescueEventController ??= RescueEventController.Instance;
+        if (rescueEventController == null) { Debug.LogError("[RescueButtonUI] RescueEventController not found.", this); enabled = false; return; }
+        rescueEventController.OnRescueStateChanged -= HandleStateChanged;
+        rescueEventController.OnRescueStateChanged += HandleStateChanged;
+        rescueEventController.OnMashProgressUpdated -= HandleMashProgress;
+        rescueEventController.OnMashProgressUpdated += HandleMashProgress;
+        rescueEventController.OnMashTimeUpdated -= HandleMashTime;
+        rescueEventController.OnMashTimeUpdated += HandleMashTime;
+        rescueEventController.OnCooldownTimeUpdated -= HandleCooldownTime;
+        rescueEventController.OnCooldownTimeUpdated += HandleCooldownTime;
+        rescueEventController.OnActiveTargetChanged -= HandleActiveTargetChanged;
+        rescueEventController.OnActiveTargetChanged += HandleActiveTargetChanged;
+    }
+
     private void OnEnable()
     {
         if (rescueEventController == null) return;

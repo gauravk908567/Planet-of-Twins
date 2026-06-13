@@ -100,7 +100,42 @@ public class SkeletonTrap : MonoBehaviour, IRescueTarget, IDamageable, IStunnabl
     // Hit buffer for grab detection
     private readonly Collider[] _hitBuffer = new Collider[4];
 
-    // ── Unity lifecycle ────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────
+    private void OnEnable()
+    {
+        RescueEventController.Instance?.RegisterTrap(this);
+        if (SoftResetController.Instance != null)
+            SoftResetController.Instance.OnSoftReset += HandleSoftReset;
+    }
+
+    private void OnDisable()
+    {
+        RescueEventController.Instance?.UnregisterTrap(this);
+        if (SoftResetController.Instance != null)
+            SoftResetController.Instance.OnSoftReset -= HandleSoftReset;
+    }
+
+    private void HandleSoftReset() => ForceReset();
+
+    public void ForceReset()
+    {
+        if (_rearmCoroutine != null) { StopCoroutine(_rearmCoroutine); _rearmCoroutine = null; }
+        if (_state == TrapState.Dragging || _state == TrapState.Arming || _state == TrapState.Active)
+        {
+            if (_grabbedPlayer != null)
+            {
+                (_grabbedPlayer.Movement as IMovementFreezable)?.SetFrozen(false);
+                _grabbedPlayer.SetGrabbed(false);
+            }
+        }
+        _state = TrapState.Dormant;
+        _grabbedPlayer = null;
+        _damageTaken = 0f;
+        _ttkPaused = false;
+        SetMaterial(TrapState.Dormant);
+    }
+
+    // ── Update ─────────────────────────────────────────────────
     private void Update()
     {
         _stateTimer -= Time.deltaTime;
@@ -223,7 +258,7 @@ public class SkeletonTrap : MonoBehaviour, IRescueTarget, IDamageable, IStunnabl
 
     private IEnumerator RearmRoutine()
     {
-        yield return new WaitForSeconds(rearmDelay);
+        yield return new WaitForSecondsRealtime(rearmDelay); // unscaled — pacing, not gameplay
         TransitionTo(TrapState.Dormant);
         _rearmCoroutine = null;
     }

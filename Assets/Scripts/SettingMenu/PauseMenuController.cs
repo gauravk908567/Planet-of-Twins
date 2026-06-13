@@ -58,7 +58,13 @@ public class PauseMenuController : MonoBehaviour
     {
         if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
-        // Priority chain — each ESC press closes one layer
+        // Centralised ESC arbiter — each press closes exactly one layer (priority: highest first)
+        if (TutorialOverlayController.Instance != null && TutorialOverlayController.Instance.IsOpen)
+        {
+            TutorialOverlayController.Instance.TriggerContinue();
+            return;
+        }
+
         if (SkillPreviewModal.Instance != null && SkillPreviewModal.Instance.IsOpen)
         {
             SkillPreviewModal.Instance.Close();
@@ -77,9 +83,12 @@ public class PauseMenuController : MonoBehaviour
             return;
         }
 
-        // Skill tree open — let SkillTreeUI handle it
-        // (SkillTreeUI.Update runs before this and handles its own ESC)
-        // We only open pause if skill tree is also closed
+        if (SkillTreeUI.Instance != null && SkillTreeUI.Instance.IsOpen)
+        {
+            SkillTreeUI.Instance.Close();
+            return;
+        }
+
         OpenPause();
     }
 
@@ -87,7 +96,7 @@ public class PauseMenuController : MonoBehaviour
     public void OpenPause()
     {
         _pauseRoot.SetActive(true);
-        Time.timeScale = 0f;
+        TimeScaleService.Instance?.Request(this, 0f);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
@@ -96,7 +105,7 @@ public class PauseMenuController : MonoBehaviour
     {
         _settingsPanel?.SetActive(false);
         _pauseRoot.SetActive(false);
-        Time.timeScale = 1f;
+        TimeScaleService.Instance?.Release(this);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -113,7 +122,7 @@ public class PauseMenuController : MonoBehaviour
 
     public void ExitGame()
     {
-        Time.timeScale = 1f;
+        TimeScaleService.Instance?.ReleaseAll();
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

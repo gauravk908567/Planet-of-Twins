@@ -1,17 +1,14 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using UnityEngine;
 
 /// <summary>
-/// Saves checkpoint state. On respawn, reloads the scene entirely
-/// (fresh enemies, traps released, AI reset) then repositions twins
-/// and restores skill state via a persistent loader object.
-///
-/// "Fresh game from a new spawn point" — enemies, traps, AI all reset
-/// as if the game just started, but players appear at the checkpoint.
+/// Saves checkpoint state. On respawn, triggers a soft reset via
+/// SoftResetController — enemies despawn to pool, twins reposition,
+/// HP and skills restore. No scene reload.
 /// </summary>
 public class CheckpointManager : MonoBehaviour
 {
+    public static CheckpointManager Instance { get; private set; }
+
     [Header("Twins")]
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
@@ -22,15 +19,21 @@ public class CheckpointManager : MonoBehaviour
     [Header("HUD flash")]
     [SerializeField] private CheckpointFlashUI flashUI;
 
+    // ── Lifecycle ─────────────────────────────────────────────
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    private void OnDestroy() { if (Instance == this) Instance = null; }
+
     // ── State ─────────────────────────────────────────────────
     public bool HasCheckpoint { get; private set; } = false;
     private CheckpointData _saved;
 
-    // ── Persistent loader ─────────────────────────────────────
-    private static CheckpointLoader _pendingLoader;
-
     // ── Public API ────────────────────────────────────────────
-    public void SaveCheckpoint(Vector3 leftPos, Vector3 rightPos)
+    public void SaveCheckpoint(Vector3 leftPos, Vector3 rightPos, WorldLocationSO location = null)
     {
         // Read sword state from each twin's PlayerAttackController
         var leftAttack = leftTwin?.GetComponent<PlayerAttackController>();
@@ -41,9 +44,11 @@ public class CheckpointManager : MonoBehaviour
             leftTwinPosition = leftPos,
             rightTwinPosition = rightPos,
             skillPoints = skillTreeManager?.CurrentPoints ?? 0,
-            nodeUnlockLevels = CaptureNodeLevels(),
+            skillTreeSnapshot = skillTreeManager?.TakeSkillSnapshot()
+                                ?? SkillTreeRuntimeState.Snapshot.Empty,
             leftHasSword = leftAttack?.HasWeapon ?? false,
-            rightHasSword = rightAttack?.HasWeapon ?? false
+            rightHasSword = rightAttack?.HasWeapon ?? false,
+            checkpointLocation = location
         };
 
         HasCheckpoint = true;
@@ -54,8 +59,8 @@ public class CheckpointManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Reloads the scene fresh (enemies/traps reset) then repositions
-    /// twins and restores skill state via a persistent CheckpointLoader.
+    /// Soft reset — no scene reload. Despawns enemies, repositions twins,
+    /// restores HP and skill state in place via SoftResetController.
     /// </summary>
     public bool TryRespawnAtCheckpoint()
     {
@@ -65,38 +70,15 @@ public class CheckpointManager : MonoBehaviour
             return false;
         }
 
-        if (_pendingLoader != null)
-            Destroy(_pendingLoader.gameObject);
+        if (SoftResetController.Instance == null)
+        {
+            Debug.LogError("[CheckpointManager] SoftResetController not found. " +
+                           "Make sure it is in Persistent.unity.");
+            return false;
+        }
 
-        var go = new GameObject("CheckpointLoader");
-        DontDestroyOnLoad(go);
-        _pendingLoader = go.AddComponent<CheckpointLoader>();
-        _pendingLoader.Initialise(_saved);
-
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        SoftResetController.Instance.BeginSoftReset(_saved);
         return true;
     }
 
-    // ── Helpers ────────────────────────────────────────────────
-    private int[] CaptureNodeLevels()
-    {
-        if (skillTreeManager == null) return new int[0];
-
-        var allData = new List<AbilityUpgradeData>
-        {
-            skillTreeManager.StunData,
-            skillTreeManager.PossessData,
-            skillTreeManager.GateData,
-            skillTreeManager.HealthRegenData,
-            skillTreeManager.AccordSpiritsData,
-            skillTreeManager.CoalesceData,
-            skillTreeManager.SoulConvData
-        };
-
-        int[] levels = new int[allData.Count];
-        for (int i = 0; i < allData.Count; i++)
-            levels[i] = allData[i]?.CurrentUnlockedLevel ?? 0;
-        return levels;
-    }
 }

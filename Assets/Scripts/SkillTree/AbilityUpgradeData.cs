@@ -49,7 +49,9 @@ public class AbilityUpgradeData : ScriptableObject
     [Header("Upgrade nodes — filled manually by designer")]
     public List<AbilityUpgradeNode> nodes = new List<AbilityUpgradeNode>();
 
-    public int currentNodeIndex = 0;
+    // Delegates to SkillTreeManager runtime state (R7 — SO is config only, no runtime mutation).
+    // All existing readers (CoalesceSystem, SkillNodeButton, etc.) continue to work unchanged.
+    public int currentNodeIndex => SkillTreeManager.Instance?.GetLevel(this) ?? 0;
     public bool IsMaxed => currentNodeIndex >= nodes.Count;
 
     // ── Checkpoint support ────────────────────────────────────
@@ -240,13 +242,6 @@ public class AbilityUpgradeData : ScriptableObject
     public int TotalNodes => nodes.Count;
     public int NextNodeCost => HasNextNode ? nodes[currentNodeIndex].pointCost : 0;
 
-    public void UnlockNextNode()
-    {
-        if (HasNextNode) currentNodeIndex++;
-    }
-
-    public void ResetToBase()
-    {
-        currentNodeIndex = 0;
-    }
+    // UnlockNextNode() and ResetToBase() removed — SkillTreeManager mutates
+    // _runtimeState directly. Call SkillTreeManager.TryPurchaseNode(data) to purchase.
 }

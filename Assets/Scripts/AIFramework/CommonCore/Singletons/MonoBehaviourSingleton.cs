@@ -10,6 +10,9 @@ namespace CommonCore
     {
         static T _Instance = null;
         static bool _bInitialising = false;
+        // True when _Instance was auto-fabricated (not found in any scene). A scene-resident
+        // instance arriving later via ConstructIfNeeded should replace the fabricated one.
+        static bool _bWasAutoCreated = false;
         static readonly object _InstanceLock = new object();
 
         public static T Instance
@@ -35,10 +38,14 @@ namespace CommonCore
                     if (AllInstances.Length == 1)
                     {
                         _Instance = AllInstances[0];
-                    } // found none?
+                    } // found none — fabricate with a warning (genuinely lazy AI-framework services
+                      // only; gameplay managers placed in Persistent.unity must never reach here)
                     else if (AllInstances.Length == 0)
                     {
+                        Debug.LogWarning($"[MonoBehaviourSingleton] No scene instance of {typeof(T)} found — " +
+                                         "auto-creating. If this is a gameplay manager, check Persistent.unity setup.");
                         _Instance = new GameObject($"Singleton<{typeof(T)}>").AddComponent<T>();
+                        _bWasAutoCreated = true;
                     } // multiple found?
                     else
                     {
@@ -62,15 +69,25 @@ namespace CommonCore
         {
             lock (_InstanceLock)
             {
-                // only construct if the instance is null and is not being initialised
                 if (_Instance == null && !_bInitialising)
                 {
                     _Instance = InInstance as T;
                 }
                 else if (_Instance != null && !_bInitialising)
                 {
-                    Debug.LogError($"Destroying duplicate {typeof(T)} on {InInstance.gameObject.name}");
-                    Destroy(InInstance.gameObject);
+                    // If the current instance was auto-fabricated and a real scene-resident
+                    // instance is now registering, prefer the scene-resident one.
+                    if (_bWasAutoCreated)
+                    {
+                        Destroy(_Instance.gameObject);
+                        _Instance = InInstance as T;
+                        _bWasAutoCreated = false;
+                    }
+                    else
+                    {
+                        Debug.LogError($"Destroying duplicate {typeof(T)} on {InInstance.gameObject.name}");
+                        Destroy(InInstance.gameObject);
+                    }
                 }
             }
         }
@@ -82,8 +99,15 @@ namespace CommonCore
             OnAwake();
         }
 
+        // Override to true only for AI-framework singletons that are auto-created outside of any
+        // scene and must survive Bootstrap reloads. Persistent.unity residents must NOT override
+        // this — Persistent is never unloaded, and DDOL causes duplicate managers on Restart.
+        protected virtual bool ApplyDontDestroyOnLoad => false;
+
         protected virtual void OnAwake()
         {
+            if (!ApplyDontDestroyOnLoad) return;
+
             if (transform.parent != null)
             {
 #if UNITY_EDITOR

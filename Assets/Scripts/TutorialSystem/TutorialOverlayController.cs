@@ -55,6 +55,11 @@ public class TutorialOverlayController : MonoBehaviour
     private VideoClip _pendingClip;
     private bool _isOpen;
 
+    public bool IsOpen => _isOpen;
+
+    /// <summary>ESC arbiter in PauseMenuController calls this — do not add a second consumer.</summary>
+    public void TriggerContinue() => OnContinueClicked();
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -95,7 +100,7 @@ public class TutorialOverlayController : MonoBehaviour
 
         // Activate before Prepare so VP fires callback
         _root.SetActive(true);
-        Time.timeScale = 0f;
+        TimeScaleService.Instance?.Request(this, 0f);
 
         PlayVideo(clip);
 
@@ -105,20 +110,15 @@ public class TutorialOverlayController : MonoBehaviour
             _animCoroutine = StartCoroutine(PopOut());
         }
     }
-    private void Update()
-    {
-        if (_isOpen && Input.GetKeyDown(KeyCode.Escape))
-            OnContinueClicked();
-    }
     private void OnContinueClicked()
     {
         if (!_isOpen) return;
         _isOpen = false;
 
         _videoPlayer?.Stop();
-        _videoPlayer.prepareCompleted -= OnPrepared;
+        if (_videoPlayer != null) _videoPlayer.prepareCompleted -= OnPrepared;
 
-        Time.timeScale = 1f;
+        TimeScaleService.Instance?.Release(this);
 
         if (_card != null)
         {

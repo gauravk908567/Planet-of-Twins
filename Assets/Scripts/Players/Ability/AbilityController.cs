@@ -96,6 +96,14 @@ public class AbilityController : MonoBehaviour, IAbilityLock
     // Reserved for future non-emergency gate usage.
     public void ActivateTeleport()
     {
+        // Lazy-resolve barrier from BarrierPOI so TwinAbilitySetup
+        // doesn't need a cross-scene serialized Transform reference.
+        if (_barrierTransform == null)
+        {
+            var bp = POIManager.Instance?.GetNearest(transform.position, POIType.Barrier);
+            if (bp != null) _barrierTransform = bp.transform;
+        }
+
         if (_barrierTransform != null)
         {
             float dist = Vector3.Distance(transform.position, _barrierTransform.position);

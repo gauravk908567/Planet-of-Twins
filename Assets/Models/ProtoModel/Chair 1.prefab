@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 383171312457382689}
   - component: {fileID: 3783189889025342444}
   - component: {fileID: 7063932821497820010}
-  - component: {fileID: 4508187094559337315}
   m_Layer: 0
   m_Name: Chair 1
   m_TagString: Untagged
@@ -249,7 +248,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 3877
+  m_VersionIndex: 3898
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -335,28 +334,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2942978054782641994}
   m_Mesh: {fileID: 0}
---- !u!64 &4508187094559337315
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2942978054782641994}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
 --- !u!1 &6022825582831907854
 GameObject:
   m_ObjectHideFlags: 0
@@ -370,7 +347,7 @@ GameObject:
   - component: {fileID: 4637940496349101104}
   - component: {fileID: 2680451020022018507}
   - component: {fileID: 7817018001955682615}
-  - component: {fileID: 7738926865794413813}
+  - component: {fileID: 159335689639510374}
   m_Layer: 0
   m_Name: Cube (3)
   m_TagString: Untagged
@@ -2248,7 +2225,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 6475
+  m_VersionIndex: 6496
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -2334,8 +2311,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6022825582831907854}
   m_Mesh: {fileID: 0}
---- !u!64 &7738926865794413813
-MeshCollider:
+--- !u!65 &159335689639510374
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -2352,7 +2329,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 0}
+  serializedVersion: 3
+  m_Size: {x: 3.0000002, y: 3, z: 3.5}
+  m_Center: {x: 0, y: 0.000000059604645, z: -1.5}

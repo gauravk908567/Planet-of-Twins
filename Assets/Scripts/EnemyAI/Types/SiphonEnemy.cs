@@ -21,6 +21,7 @@ public class SiphonEnemy : RangedEnemy
     private SoulPlayer _soulPlayer;
 
     private SiphonEnemyData _siphonData;
+    private SiphonGhost _ghost;
     private bool _ghostSpawned;
 
     /// <summary>Debug only — simulates soul arrived event for ghost spawn testing.</summary>
@@ -96,11 +97,19 @@ public class SiphonEnemy : RangedEnemy
             return;
         }
 
+        _ghost = ghost;
         ghost.Initialise(_soulPlayer, _rescueController, _siphonData);
-        Health.OnDeath += () => ghost?.KillOnSiphonDeath();
+        Health.OnDeath += HandleSiphonDeath;
     }
 
+    private void HandleSiphonDeath() => _ghost?.KillOnSiphonDeath();
     private void HandleRescueResolved() => _ghostSpawned = false;
+
+    private void OnDisable()
+    {
+        Health.OnDeath -= HandleSiphonDeath;
+        _ghost = null;
+    }
 
     public void SpawnPanicBomb()
     {
