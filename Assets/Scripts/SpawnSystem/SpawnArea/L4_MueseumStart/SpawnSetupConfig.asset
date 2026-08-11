@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0337b476c214abc41a2a9498abe004c9, type: 3}
+  m_Name: SpawnSetupConfig
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnSetupConfig
+  spawnInterval: 3
+  leftSide:
+    maxTotalActive: 5
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 4155436460569791448, guid: 2ab2e70fee5c65d4488cab50a32e6cba, type: 3}
+      data: {fileID: 11400000, guid: f65ce8ecf9e1b944f907afa361fbe772, type: 2}
+      maxActiveOfType: 2
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0.03
+      bondBreakThreshold: 0.8
+      comboThreshold: 0.75
+    - prefab: {fileID: 8269902123343416501, guid: 769a9170c3a2cb74fa4709599636a745, type: 3}
+      data: {fileID: 11400000, guid: d65a658d6f248e649927f8d4c9c37d03, type: 2}
+      maxActiveOfType: 2
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0.03
+      bondBreakThreshold: 0.8
+      comboThreshold: 0.75
+    - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 2
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0.03
+      bondBreakThreshold: 0.8
+      comboThreshold: 0.75
+  rightSide:
+    maxTotalActive: 5
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 4155436460569791448, guid: 2ab2e70fee5c65d4488cab50a32e6cba, type: 3}
+      data: {fileID: 11400000, guid: f65ce8ecf9e1b944f907afa361fbe772, type: 2}
+      maxActiveOfType: 2
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0.04
+      bondBreakThreshold: 0.8
+      comboThreshold: 0.7
+    - prefab: {fileID: 8269902123343416501, guid: 769a9170c3a2cb74fa4709599636a745, type: 3}
+      data: {fileID: 11400000, guid: d65a658d6f248e649927f8d4c9c37d03, type: 2}
+      maxActiveOfType: 2
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0.04
+      bondBreakThreshold: 0.8
+      comboThreshold: 0.7
+    - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 2
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0.04
+      bondBreakThreshold: 0.8
+      comboThreshold: 0.7

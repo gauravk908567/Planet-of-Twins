@@ -1,0 +1,347 @@
+using System.Collections;
+using UnityEngine;
+
+/// <summary>
+/// Penitent — slow approach enemy with escalating crush phases.
+/// All crush/reflection/rage logic is self-contained in coroutines.
+/// GOAP+BT drives the approach. Update() triggers grab by proximity.
+/// </summary>
+public class PenitentEnemy : Enemy, IRescueTarget
+{
+    [Header("Penitent")]
+    [SerializeField] private PenitentEnemyData _penitentData;
+
+    private static readonly Color ReflectionColor = new Color(1f, 0.1f, 0.1f);
+    private static readonly Color CrushColor = new Color(0.6f, 0f, 0.8f);
+    private static readonly Color RageColor = new Color(1f, 0.4f, 0f);
+
+    private bool _reflectionActive;
+    private bool[] _thresholdTriggered;
+
+    private bool _windingUp;
+    private bool _crushing;
+    private bool _inCooldown;
+    private bool _inRage;
+    private Player _crushTarget;
+    private bool _crushResolved;
+    private int _crushMashCount;
+    private bool _ttkPaused;
+    private bool _isFrozen;
+
+    // ── Public accessors for GOAP brain ───────────────────────
+    public bool IsCrushing => _crushing;
+    public bool IsWindingUp => _windingUp;
+    public bool IsInCooldown => _inCooldown;
+    public bool ReflectionActive => _reflectionActive;
+    public bool IsInRage => _inRage;
+    public PenitentEnemyData PenitentData => _penitentData;
+
+    // ── IRescueTarget ──────────────────────────────────────────
+    public Transform GrabbedPlayerTransform => _crushTarget?.transform;
+    public Player GrabbedPlayer => _crushTarget;
+    public float NormalisedTTK => 1f;
+    public float MashFrequency => 4f;
+    public float MashWindowDuration => _penitentData?.crushDuration ?? 2f;
+    public float MashCooldown => 0.75f;
+    public float PartialHealAmount => 0f;
+    public bool CanGrabbedPlayerStruggle => true;
+    public float StrugglePauseDuration => 0.4f;
+    public float RescueProximityRadius => 1.5f;
+
+    public event System.Action<Player> OnPlayerGrabbed;
+    public event System.Action OnPlayerReleased;
+    public event System.Action OnPlayerKilled;
+
+    protected override void Awake()
+    {
+        base.Awake();
+        Health.OnDamageTaken += HandleDamageTaken;
+    }
+
+    private void OnDestroy()
+    {
+        if (Health != null) Health.OnDamageTaken -= HandleDamageTaken;
+    }
+
+    public override void OnEffectStarted() { base.OnEffectStarted(); _isFrozen = true; }
+    public override void OnEffectEnded() { base.OnEffectEnded(); _isFrozen = false; }
+
+    public override void ApplyData(EnemyData data)
+    {
+        base.ApplyData(data);
+        if (data is PenitentEnemyData pd)
+        {
+            _penitentData = pd;
+            _thresholdTriggered = new bool[pd.reflectionThresholds.Length];
+        }
+    }
+
+    // ── Update — proximity grab trigger only ───────────────────
+    private void Update()
+    {
+        if (_isFrozen) return;
+        if (_windingUp || _crushing || _inCooldown || Target == null) return;
+
+        var targetPlayer = Target.GetComponent<Player>();
+        if (targetPlayer == null || targetPlayer.IsGrabbed) return;
+
+        float dist = Vector3.Distance(transform.position, Target.position);
+        if (dist <= (_penitentData?.crushRange ?? 1.5f))
+            StartCoroutine(GrabCycle());
+    }
+
+    // ── Grab cycle ─────────────────────────────────────────────
+    private IEnumerator GrabCycle()
+    {
+        _windingUp = true;
+        Movement.Stop();
+
+        if (Target != null)
+        {
+            Vector3 dir = (Target.position - transform.position);
+            dir.y = 0f;
+            if (dir != Vector3.zero)
+                transform.rotation = Quaternion.LookRotation(dir);
+        }
+
+        while (_isFrozen) yield return null;
+        yield return new WaitForSeconds(_penitentData?.grabWindUpDuration ?? 1.25f);
+        _windingUp = false;
+
+        if (Target == null || Health.IsDead) yield break;
+
+        float dist = Vector3.Distance(transform.position, Target.position);
+        if (dist > (_penitentData?.crushRange ?? 1.5f) * 1.5f) yield break;
+
+        var player = Target.GetComponent<Player>();
+        if (player == null || player.IsGrabbed) yield break;
+
+        StartCrush(player);
+
+        float crushDuration = _penitentData?.crushDuration ?? 2f;
+        yield return new WaitForSeconds(crushDuration);
+
+        if (_crushing) ReleasePlayer(0f);
+
+        _inCooldown = true;
+        yield return new WaitForSeconds(_penitentData?.postGrabCooldown ?? 1.25f);
+        _inCooldown = false;
+    }
+
+    private IEnumerator CrushTickRoutine()
+    {
+        while (_crushing)
+        {
+            while (_isFrozen || _ttkPaused) { yield return null; continue; }
+
+            float interval = _inRage
+                ? (_penitentData?.rageTickInterval ?? 0.15f)
+                : (_penitentData?.crushTickInterval ?? 0.25f);
+
+            yield return new WaitForSeconds(interval);
+
+            if (!_crushing || _crushTarget == null) yield break;
+
+            float dps = _inRage
+                ? (_penitentData?.rageCrushDps ?? 25f)
+                : (_penitentData?.crushDps ?? 15f);
+
+            float tickDamage = dps * interval;
+
+            if (_crushTarget.Health != null)
+            {
+                float safe = Mathf.Min(tickDamage, _crushTarget.Health.CombatHealth - 1f);
+                if (safe > 0f)
+                    _crushTarget.Health.TakeDamage(
+                        new DamageData(safe, DamageType.Environmental));
+
+                if (_crushTarget.Health.CombatHealth <= 1f)
+                {
+                    KillPlayer();
+                    yield break;
+                }
+            }
+        }
+    }
+
+    public void StartCrush(Player target)
+    {
+        if (_crushing || target == null || target.IsGrabbed) return;
+
+        _crushTarget = target;
+        _crushing = true;
+        _crushResolved = false;
+        _crushMashCount = 0;
+        _ttkPaused = false;
+
+        target.SetGrabbed(true);
+        (target.Movement as IMovementFreezable)?.SetFrozen(true);
+
+        if (_renderer != null) MaterialTint.SetColor(_renderer.material, CrushColor);
+        OnPlayerGrabbed?.Invoke(target);
+        StartCoroutine(CrushTickRoutine());
+    }
+
+    public void PauseTTK() => _ttkPaused = true;
+    public void ResumeTTK() => _ttkPaused = false;
+
+    public void OnStruggle()
+    {
+        if (!_crushing) return;
+        _crushMashCount++;
+        if (_crushMashCount >= (_penitentData?.crushMashThreshold ?? 8))
+            ReleasePlayer(0f);
+    }
+
+    public void ReleasePlayer(float healAmount)
+    {
+        if (!_crushing || _crushResolved) return;
+        _crushResolved = true;
+        _crushing = false;
+
+        (_crushTarget?.Movement as IMovementFreezable)?.SetFrozen(false);
+        if (healAmount > 0f) _crushTarget?.Health?.Heal(healAmount);
+        _crushTarget?.SetGrabbed(false);
+        _crushTarget = null;
+
+        if (_renderer != null) MaterialTint.SetColor(_renderer.material, _originalColor);
+        OnPlayerReleased?.Invoke();
+    }
+
+    public void KillPlayer()
+    {
+        if (!_crushing || _crushResolved) return;
+        _crushResolved = true;
+
+        (_crushTarget?.Movement as IMovementFreezable)?.SetFrozen(false);
+        _crushTarget?.SetGrabbed(false);
+
+        var proxy = _crushTarget?.GetComponent<PlayerDeathRescueProxy>();
+        _crushing = false;
+
+        if (proxy != null && proxy.IsActive)
+            proxy.KillPlayer();
+        else
+        {
+            _crushTarget?.Health?.TakeDamage(
+                new DamageData(9999f, DamageType.Environmental));
+            OnPlayerKilled?.Invoke();
+        }
+
+        if (_renderer != null) MaterialTint.SetColor(_renderer.material, _originalColor);
+        _crushTarget = null;
+    }
+
+    private void HandleDamageTaken(EnemyHealthComponent comp, float amount, Vector3 pos)
+    {
+        CheckReflectionThreshold();
+        if (!_reflectionActive) return;
+
+        if (!IsPossessed)
+        {
+            Player hittingTwin = FindNearestTwin(pos);
+            if (hittingTwin?.Health != null)
+            {
+                float reflected = amount * (_penitentData?.reflectionFraction ?? 0.6f);
+                float safe = Mathf.Min(reflected, hittingTwin.Health.CombatHealth - 1f);
+                if (safe > 0f)
+                    hittingTwin.Health.TakeDamage(
+                        new DamageData(safe, DamageType.Environmental));
+            }
+        }
+        else
+        {
+            float reflected = amount * (_penitentData?.reflectionFraction ?? 0.6f);
+            var enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+            foreach (var e in enemies)
+            {
+                if (e == this) continue;
+                if (Vector3.Distance(transform.position, e.transform.position) < 4f)
+                    e.Health?.TakeDamage(new DamageData(reflected, DamageType.Ability));
+            }
+        }
+    }
+
+    private void CheckReflectionThreshold()
+    {
+        if (_penitentData == null || _thresholdTriggered == null) return;
+        float hpFraction = Health.CurrentHealth / Health.MaxHealth;
+
+        for (int i = 0; i < _penitentData.reflectionThresholds.Length; i++)
+        {
+            if (!_thresholdTriggered[i] &&
+                hpFraction <= _penitentData.reflectionThresholds[i])
+            {
+                _thresholdTriggered[i] = true;
+                if (_crushing) { ReleasePlayer(0f); StartCoroutine(RagePhase()); }
+                else StartCoroutine(ReflectionPhase());
+                break;
+            }
+        }
+    }
+
+    private IEnumerator ReflectionPhase()
+    {
+        _reflectionActive = true;
+        float originalSpeed = Data?.moveSpeed ?? 3.5f;
+        Movement.SetSpeed(originalSpeed * (_penitentData?.reflectionSpeedMultiplier ?? 1.4f));
+        if (_renderer != null) MaterialTint.SetColor(_renderer.material, ReflectionColor);
+
+        while (_isFrozen) yield return null;
+        yield return new WaitForSeconds(_penitentData?.reflectionDuration ?? 2.2f);
+
+        _reflectionActive = false;
+        Movement.SetSpeed(originalSpeed);
+        if (_renderer != null) MaterialTint.SetColor(_renderer.material, _originalColor);
+    }
+
+    private IEnumerator RagePhase()
+    {
+        _inRage = true;
+        _reflectionActive = true;
+        float originalSpeed = Data?.moveSpeed ?? 3.5f;
+        float rageDuration = _penitentData?.rageDuration ?? 4f;
+        Movement.SetSpeed(originalSpeed * (_penitentData?.reflectionSpeedMultiplier ?? 1.4f));
+        if (_renderer != null) MaterialTint.SetColor(_renderer.material, RageColor);
+
+        var stateUI = GetComponentInChildren<EnemyStateUIController>();
+        stateUI?.ShowRage(rageDuration);
+ // TODO: Penitent reflection-rage aura retired with EnemyVFXController. Penitent is dropped from
+        // the roster + flagged for rework — re-express as an Enraged mood transition (paired stop below) during
+        // that rework so the Manpu Enraged aura holds for the reflection window.
+
+        while (_isFrozen) yield return null;
+        yield return new WaitForSeconds(rageDuration);
+
+        _inRage = false;
+        _reflectionActive = false;
+        Movement.SetSpeed(originalSpeed);
+        if (_renderer != null) MaterialTint.SetColor(_renderer.material, _originalColor);
+        stateUI?.HideRage();
+ // TODO: paired stop for the retired reflection-rage aura — end the Enraged mood here during rework.
+
+        _inCooldown = true;
+        yield return new WaitForSeconds(_penitentData?.postGrabCooldown ?? 1.25f);
+        _inCooldown = false;
+    }
+
+    protected override void HandleDeath()
+    {
+        if (_crushing) ReleasePlayer(0f);
+        base.HandleDeath();
+    }
+
+    private Player FindNearestTwin(Vector3 hitPos)
+    {
+        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
+        Player nearest = null;
+        float best = float.MaxValue;
+        foreach (var p in players)
+        {
+            if (p is SoulPlayer) continue;
+            float d = Vector3.Distance(hitPos, p.transform.position);
+            if (d < best) { best = d; nearest = p; }
+        }
+        return nearest;
+    }
+}

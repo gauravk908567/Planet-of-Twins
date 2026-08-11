@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_UIRingTimer_Rescue
+  m_Shader: {fileID: 4800000, guid: 51c5fc7937a3195488f219c15ed9ccfe, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _CLOSINGRING_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ClosingMax: 1.8
+    - _ClosingRing: 1
+    - _ClosingWidth: 0.02
+    - _ColorMask: 15
+    - _DualClan: 0
+    - _EdgeSoft: 0.01
+    - _FillMode: 0
+    - _FlashBoost: 2.2
+    - _FlashT: 0
+    - _FlashWidth: 0.22
+    - _InnerRadius: 0.2
+    - _InvertFill: 0
+    - _OuterRadius: 0.27
+    - _Progress: 0.95526123
+    - _RimWidth: 0.06
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _TickStrength: 0.35
+    - _Ticks: 12
+    - _TipWidth: 0.03
+    - _UrgencyPulse: 9
+    - _UrgencyThreshold: 0.25
+    - _UseUIAlphaClip: 0
+    m_Colors:
+    - _BackColor: {r: 0.049999982, g: 0.054999977, b: 0.079999976, a: 0.55}
+    - _ClosingColor: {r: 1.5, g: 1.45, b: 1.3, a: 0.9}
+    - _Color: {r: 1, g: 0.80784315, b: 0.32156864, a: 1}
+    - _FillColorA: {r: 1.15, g: 1.1, b: 0.95, a: 0.95}
+    - _FillColorB: {r: 0.55, g: 0.35, b: 1, a: 0.85}
+    - _RimColor: {r: 5.656854, g: 4.569851, b: 1.8190669, a: 1}
+    - _TipGlow: {r: 2, g: 1.6, b: 0.7, a: 1}
+    - _UrgencyColor: {r: 1.8, g: 0.55, b: 0.35, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

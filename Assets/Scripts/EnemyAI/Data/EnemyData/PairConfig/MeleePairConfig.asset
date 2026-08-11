@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a76023bca72222488fa0f815d653ec5, type: 3}
+  m_Name: MeleePairConfig
+  m_EditorClassIdentifier: Assembly-CSharp::PairSpawnConfig
+  pairProbability: 0.8
+  partners:
+  - partnerPrefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+    partnerData: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+    weight: 3
+    bondType: 1
+    sameSide: 0
+    spawnProbability: 0.85
+  - partnerPrefab: {fileID: 5336009051642615727, guid: 2fcee9051e09e4944a33d6cc1d51b569, type: 3}
+    partnerData: {fileID: 11400000, guid: 17e5e092269d5fe4e9577c9de21bb0f4, type: 2}
+    weight: 2
+    bondType: 1
+    sameSide: 0
+    spawnProbability: 0.5

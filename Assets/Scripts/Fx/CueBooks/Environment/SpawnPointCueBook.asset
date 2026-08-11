@@ -1,0 +1,151 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a41fd07be52374f975b77fc63bb35a, type: 3}
+  m_Name: SpawnPointCueBook
+  m_EditorClassIdentifier: Assembly-CSharp::CueBookData
+  timeMode: 1
+  effects:
+  - id: spawn_rechargeparticle
+    elements:
+    - label: This will be played but what needs to be done is 1 - increase the spawnrate
+        (limit 400) 2 - incresa the converge speed (limit 5) 3 - increase the spawn
+        radius(limit 5)
+      kind: 1
+      particlePrefab: {fileID: 0}
+      vfxPrefab: {fileID: 251665934830225667, guid: 3dd66e46188cbf544879eddcadbcefac, type: 3}
+      attachMode: 2
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 1, y: 1, z: 1}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: spawn_hit
+    elements:
+    - label: Played when hit by the player
+      kind: 1
+      particlePrefab: {fileID: 0}
+      vfxPrefab: {fileID: 6749792950584756875, guid: 652b738a9fb3d5947994fbbdac8e7146, type: 3}
+      attachMode: 1
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 1, y: 1, z: 1}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0.6
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: spawn_disable
+    elements:
+    - label: 'plays when point is disable 1- the size value of this will start getting
+        small and small when the reachage cooldown has reached 30% of its time '
+      kind: 1
+      particlePrefab: {fileID: 0}
+      vfxPrefab: {fileID: 8513026119239524910, guid: 55ec2bb1ad71a8044bf30b662f4f5c62, type: 3}
+      attachMode: 2
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 1, y: 1, z: 1}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 1
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: spawn_portal
+    elements:
+    - label: plays when spawn point is active
+      kind: 1
+      particlePrefab: {fileID: 0}
+      vfxPrefab: {fileID: 8472150968369863572, guid: 5d9353ddaaae4b042964a6455e05f69b, type: 3}
+      attachMode: 2
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 1, y: 1, z: 1}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b99f1a80156fe7542bf98d75477f949c, type: 3}
+  m_Name: FactionPlayer
+  m_EditorClassIdentifier: Assembly-CSharp::CommonCore.FactionDefinition
+  <DisplayName>k__BackingField: PlayerFaction
+  <DefaultRelationships>k__BackingField:
+  - <OtherFaction>k__BackingField: {fileID: 11400000, guid: bd7f13171208b844ca64e14bc1d04764, type: 2}
+    <Relationship>k__BackingField: 2

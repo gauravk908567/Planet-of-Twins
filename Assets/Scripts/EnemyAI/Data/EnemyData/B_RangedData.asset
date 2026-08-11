@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3797f9cbe3ee474c90ed1941c94986c, type: 3}
+  m_Name: B_RangedData
+  m_EditorClassIdentifier: Assembly-CSharp::RangedEnemyData
+  enemyName: B_Ranged
+  maxHealth: 60
+  moveSpeed: 4.2
+  wanderRadius: 15
+  wanderTimerMin: 6
+  wanderTimerMax: 9
+  deathBondGraceDuration: 1.2
+  knockbackForceMultiplier: 2.5
+  detectionRange: 12
+  possessedDetectionMultiplier: 14
+  attackRange: 8
+  attackDamage: 9
+  attackCooldown: 2.2
+  attackWindup: 1.2
+  useProjectile: 1
+  projectilePrefab: {fileID: 55707352720500906, guid: 4021033132750cc4f84e1fda1ddd6b24, type: 3}
+  projectileSpeed: 14
+  returnAnimDuration: 1.5
+  canDamageSpirits: 0
+  spiritDamage: 25
+  canBePossessed: 1
+  possessionDuration: 7
+  timeToKill: 12
+  mashFrequency: 3
+  mashWindowDuration: 4
+  mashCooldown: 0.65
+  partialHealAmount: 35
+  twinThreatRange: 10
+  clanWarDamageMultiplier: 0.3
+  minEngageRange: 4
+  desiredRange: 6

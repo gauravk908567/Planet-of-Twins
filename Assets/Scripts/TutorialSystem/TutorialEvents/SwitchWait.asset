@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5c3f825fe925c4bb4d880e3b82c598, type: 3}
+  m_Name: SwitchWait
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialWaitStepSO
+  stage: 2
+  unlockSwitch: 0
+  unlockAttack: 0
+  unlockAbility: 0
+  unlockRescue: 0
+  waitSeconds: 1
