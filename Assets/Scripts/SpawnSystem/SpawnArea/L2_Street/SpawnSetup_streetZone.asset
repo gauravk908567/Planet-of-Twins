@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0337b476c214abc41a2a9498abe004c9, type: 3}
+  m_Name: SpawnSetup_streetZone
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnSetupConfig
+  spawnInterval: 4
+  leftSide:
+    maxTotalActive: 3
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 4
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0
+      bondBreakThreshold: 0.95
+      comboThreshold: 0.9
+    - prefab: {fileID: 5336009051642615727, guid: 2fcee9051e09e4944a33d6cc1d51b569, type: 3}
+      data: {fileID: 11400000, guid: 17e5e092269d5fe4e9577c9de21bb0f4, type: 2}
+      maxActiveOfType: 4
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0
+      bondBreakThreshold: 0.95
+      comboThreshold: 0.9
+  rightSide:
+    maxTotalActive: 3
+    respawnThresholdPct: 0.5
+    entries:
+    - prefab: {fileID: 3722567120170295159, guid: 0961540770a2c3a499319ed292dd5e48, type: 3}
+      data: {fileID: 11400000, guid: 99b474556966cfe4e9121f64321bc4d5, type: 2}
+      maxActiveOfType: 4
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0
+      bondBreakThreshold: 0.95
+      comboThreshold: 0.9
+    - prefab: {fileID: 5336009051642615727, guid: 2fcee9051e09e4944a33d6cc1d51b569, type: 3}
+      data: {fileID: 11400000, guid: 17e5e092269d5fe4e9577c9de21bb0f4, type: 2}
+      maxActiveOfType: 4
+      weight: 3
+      pairConfig: {fileID: 0}
+      darkEnergyBase: 0
+      bondBreakThreshold: 0.95
+      comboThreshold: 0.9

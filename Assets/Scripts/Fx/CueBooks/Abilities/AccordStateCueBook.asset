@@ -1,0 +1,394 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a41fd07be52374f975b77fc63bb35a, type: 3}
+  m_Name: AccordStateCueBook
+  m_EditorClassIdentifier: Assembly-CSharp::CueBookData
+  timeMode: 1
+  effects:
+  - id: accord_ChargeUpKai
+    elements:
+    - label: charging effect
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 8223147183776576763, guid: 03b0087e5e7b3f34e9ee27fe89c7ba08, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: -0.5, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 1
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: accord_ChargeUpLyra
+    elements:
+    - label: charging effect
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 6431068344452045558, guid: 95ae8124fc969a54294fd85fab1ab165, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: -0.5, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 1
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: accord_ActiveKai
+    elements:
+    - label: active effect
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 3702527658975510980, guid: 8f29205e5658e1c4db66667f5828c4f3, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: 0.8, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 1
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: accord_ActiveLyra
+    elements:
+    - label: active effect
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 4665658821199620354, guid: b969d0569e43b40459727a7c69f99b20, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: 0.8, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 1
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: accord_ActiveBuff
+    elements:
+    - label: active effect
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 7915797514596336578, guid: e90dec73bd7dc824eb34e6ae745ea978, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: -0.5, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 1
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 1
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: accord_Shockwave
+    elements:
+    - label: active effect
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 7081906522934321003, guid: fe8bc2f82728a434c9de794973d90de3, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 1
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 1
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 1
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []

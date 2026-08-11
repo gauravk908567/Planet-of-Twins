@@ -1,0 +1,329 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a41fd07be52374f975b77fc63bb35a, type: 3}
+  m_Name: WeaverGateCueBook
+  m_EditorClassIdentifier: Assembly-CSharp::CueBookData
+  timeMode: 1
+  effects:
+  - id: tele_castmark
+    elements:
+    - label: marker
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 168989538289984967, guid: 03cfe57895d1ea44a822cf3ebbe4a525, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: -0.5, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 1
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: tele_castout
+    elements:
+    - label: telecast_out
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 1012958363939449665, guid: 143aaba95bce1ae4f8064b990dcc9c1f, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 1
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: tele_castin
+    elements:
+    - label: telecast_in
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 4800270018685171506, guid: 06b5b4bf3dca12647ae3b3454f2af7d5, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 1
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: tele_casttravel
+    elements:
+    - label: 
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 1521596167553113091, guid: f1566053da631ac40b3bb8b64315c605, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 1
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 1
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+    - label: telecast_in
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 6795555540713689089, guid: 62964c7dc866218419b238b9b3f5a6f1, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 1
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 1
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []

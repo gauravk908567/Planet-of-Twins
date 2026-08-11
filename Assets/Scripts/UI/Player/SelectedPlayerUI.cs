@@ -7,7 +7,7 @@ public class SelectedPlayerUI : MonoBehaviour
 
     [SerializeField] private Renderer[] characterRenderers;
 
-    [SerializeField] private GameObject selectionManagerObject;
+    [SerializeField] private TwinSelector selectionManagerObject;
 
     private ISelectionBroadcaster selectionBroadcaster;
 

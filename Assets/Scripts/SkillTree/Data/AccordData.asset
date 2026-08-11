@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: AccordData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  baseTargetCount: 1
+  baseDuration: 3
+  baseRange: 5
+  baseCooldown: 8
+  baseEmpowerDuration: 6
+  baseEmpowerCooldown: 12
+  baseEmpowerKnockbackInterval: 1.5
+  baseEmpowerKnockbackForce: 8
+  baseEmpowerKnockbackRadius: 5
+  baseAccordDuration: 12
+  baseAccordBarCap: 1
+  baseAccordShockwaveForce: 15
+  baseAccordMeleeSlowDuration: 1.25
+  baseAccordMeleeAggroLossDuration: 0.35
+  basePulseInterval: 3.5
+  basePulseRadius: 4
+  basePulseFearDuration: 1.5
+  basePulseSlowMultiplier: 0.6
+  basePulseSlowDuration: 1.5
+  baseBurnDps: 0.35
+  baseBurnDuration: 1.8
+  cueBook: {fileID: 11400000, guid: 25aea54d186db634facf56736e1cb5ab, type: 2}
+  nodes:
+  - label: Unlock Accord
+    pointCost: 15
+    previewClip: {fileID: 32900000, guid: 77b0a87697e131e4b881acd0482bae76, type: 3}
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: Fill the X bar through kills and damage taken. All abilities transform
+      for 12 seconds
+  - label: Accord Call Strengthen
+    pointCost: 18
+    previewClip: {fileID: 32900000, guid: 77b0a87697e131e4b881acd0482bae76, type: 3}
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 1.5
+    accordBarCapReduction: 5
+    accordShockwaveForceBonus: 0.7
+    accordMeleeSlowBonus: 0.55
+    accordMeleeAggroLossBonus: 0.15
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: Accord Spirits deal more damage. Portal radius increased.
+  - label: Accord Power
+    pointCost: 25
+    previewClip: {fileID: 32900000, guid: 77b0a87697e131e4b881acd0482bae76, type: 3}
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 1
+    accordBarCapReduction: 3
+    accordShockwaveForceBonus: 0.25
+    accordMeleeSlowBonus: 0.25
+    accordMeleeAggroLossBonus: 0.25
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: Accord State lasts longer. Bar fills faster.

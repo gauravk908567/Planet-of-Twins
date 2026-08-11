@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a7d94fd37931e4459904f602239e427, type: 3}
+  m_Name: EnemyVfxLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyVfxLibrary
+  Melee: {fileID: 11400000, guid: c3201f5418685fd45b5a3ad7e190e71d, type: 2}
+  Ranged: {fileID: 11400000, guid: 1dd1caf5655356946a1d7c2e4aa3a0d0, type: 2}
+  Summoner: {fileID: 11400000, guid: 1bd4e990f31d7064084efc6d3822f581, type: 2}
+  TetherBreaker: {fileID: 11400000, guid: 9df062aac156f874bb1440161c5fc7ae, type: 2}
+  GroupGrab: {fileID: 11400000, guid: 31ccc18654f57ed4bbf218dba2fd0a9e, type: 2}
+  Severed: {fileID: 11400000, guid: 7f7dcb30d6fa5bc488b4760ce003f19e, type: 2}
+  Siphon: {fileID: 11400000, guid: 00f3ead7042519448aa59c8105351f50, type: 2}
+  SiphonGhost: {fileID: 11400000, guid: f26b0485b26885d49a232facf5c5cefc, type: 2}
+  Witness: {fileID: 11400000, guid: 6ac34f194a23c854dafd5f9b0b5cc24c, type: 2}
+  Arrow: {fileID: 11400000, guid: 48f4905a5d346ff43b5debc32613f0e6, type: 2}
+  WitnessBomb: {fileID: 11400000, guid: 7b28ede2f14e7af4a9c9b5f002ca1608, type: 2}
+  SiphonBomb: {fileID: 11400000, guid: 664e06052cd51b44e9a880c1817152c2, type: 2}

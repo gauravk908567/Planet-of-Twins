@@ -1,0 +1,269 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a41fd07be52374f975b77fc63bb35a, type: 3}
+  m_Name: EnemyGroupGrabCueBook
+  m_EditorClassIdentifier: Assembly-CSharp::CueBookData
+  timeMode: 1
+  effects:
+  - id: On_wardenAttack
+    elements:
+    - label: melee attack
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 103942546891551726, guid: 2d8e37e37a445534ea3ef4bfd2037ba4, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: On_wardenGrab
+    elements:
+    - label: played once when success grabbing player
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 5897370913899572611, guid: b483f1791e928404683ce7a60bea3f6d, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: On_wardenGrabSoulConsume
+    elements:
+    - label: 'plays when player is grabbed require the correct player facing to look
+        correct '
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 1109989634075916169, guid: c9e4bcff78488c442be1da6f821c22f9, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+  - id: On_wardenGrabStruggle
+    elements:
+    - label: plays on struggle
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 2016884205102342142, guid: fdaa0c6c1b77eef43989ec2f402640f2, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      drawOnTop: 0
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+        useHitStop: 0
+        hitStopScale: 0.05
+        hitStopDuration: 0.06
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []

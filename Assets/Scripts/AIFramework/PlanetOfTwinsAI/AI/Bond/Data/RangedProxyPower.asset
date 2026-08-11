@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b24f54ff9c878a04eba7e63116bb998d, type: 3}
+  m_Name: RangedProxyPower
+  m_EditorClassIdentifier: Assembly-CSharp::ProximityPowerProfile
+  preferredPartnerOrder: 00000000
+  comboPowers:
+  - requiredPartnerClan: 4
+    executionRange: 12
+    minDarkEnergyBoth: 0.85
+    powerID: Range_ExecutionShot
+    powerStrength: 1.5
+    maxTwinHPNorm: 0.4
+    minTwinHPNorm: 0
+    maxRangeToTwin: 24
+    minRangeToTwin: 12
+    requiresPartnerRaging: 0
+    isFallback: 0
+  - requiredPartnerClan: 7
+    executionRange: 12
+    minDarkEnergyBoth: 0.7
+    powerID: Range_SuppressiveFire
+    powerStrength: 1.2
+    maxTwinHPNorm: 1
+    minTwinHPNorm: 0
+    maxRangeToTwin: 24
+    minRangeToTwin: 12
+    requiresPartnerRaging: 0
+    isFallback: 0
+  - requiredPartnerClan: 0
+    executionRange: 10
+    minDarkEnergyBoth: 0.6
+    powerID: Range_Standard
+    powerStrength: 1.1
+    maxTwinHPNorm: 1
+    minTwinHPNorm: 0
+    maxRangeToTwin: 20
+    minRangeToTwin: 10
+    requiresPartnerRaging: 0
+    isFallback: 1

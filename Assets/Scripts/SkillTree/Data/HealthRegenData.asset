@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: HealthRegenData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  baseTargetCount: 1
+  baseDuration: 3
+  baseRange: 5
+  baseCooldown: 7
+  nodes:
+  - label: Regen I
+    pointCost: 3
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 1.333
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: Regen begins sooner. Rate increased.
+  - label: Regen II
+    pointCost: 6
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 1.333
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: Regen rate increased further.
+  - label: Regen III
+    pointCost: 10
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 1.333
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    description: Maximum regen rate. Recovery is near-continuous between fights.
+  currentNodeIndex: 0

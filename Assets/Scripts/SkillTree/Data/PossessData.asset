@@ -1,0 +1,121 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: PossessData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  baseTargetCount: 1
+  baseDuration: 3
+  baseRange: 5
+  baseCooldown: 7.5
+  baseEmpowerDuration: 6
+  baseEmpowerCooldown: 12
+  baseEmpowerKnockbackInterval: 1.5
+  baseEmpowerKnockbackForce: 8
+  baseEmpowerKnockbackRadius: 5
+  baseAccordDuration: 12
+  baseAccordBarCap: 35
+  baseAccordShockwaveForce: 15
+  baseAccordMeleeSlowDuration: 1.25
+  baseAccordMeleeAggroLossDuration: 0.75
+  basePulseInterval: 3.5
+  basePulseRadius: 4
+  basePulseFearDuration: 1.5
+  basePulseSlowMultiplier: 0.6
+  basePulseSlowDuration: 1.5
+  baseBurnDps: 0.35
+  baseBurnDuration: 1.8
+  cueBook: {fileID: 11400000, guid: 1e96cacc29f889e40a26876a89237ae7, type: 2}
+  nodes:
+  - label: Possession I
+    pointCost: 3
+    previewClip: {fileID: 32900000, guid: 90a567d4bc5527a439c2b956bf347206, type: 3}
+    durationBonus: 1.1
+    cooldownReduction: 0.85
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: "Enemy serves longer. Cooldown reduced.\r\nDuration 3.0\u21924.1s 
+      |  Cooldown 7.5\u21926.6s"
+  - label: Possession II
+    pointCost: 6
+    previewClip: {fileID: 32900000, guid: 90a567d4bc5527a439c2b956bf347206, type: 3}
+    durationBonus: 0.55
+    cooldownReduction: 0.43
+    targetCountBonus: 2
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: "Gains a second target. Duration and cooldown improved.\r\nDuration
+      4.1\u21924.6s  |  Cooldown 6.1\u21925.6s  |  Targets 1\u21922"
+  - label: Possession III
+    pointCost: 10
+    previewClip: {fileID: 32900000, guid: 90a567d4bc5527a439c2b956bf347206, type: 3}
+    durationBonus: 0.27
+    cooldownReduction: 0.21
+    targetCountBonus: 0
+    rangeBonus: 0.65
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 0
+    soulDurationBonus: 0
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: "Range extended. Duration and cooldown improved.\r\nDuration 4.6\u21924.4s 
+      |  Cooldown 5.6\u21925.4s  |  Range 5.0\u21925.6m"

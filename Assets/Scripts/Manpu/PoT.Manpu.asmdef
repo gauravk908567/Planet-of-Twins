@@ -1,0 +1,16 @@
+{
+    "name": "PoT.Manpu",
+    "rootNamespace": "",
+    "references": [
+        "PoT.Fx"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

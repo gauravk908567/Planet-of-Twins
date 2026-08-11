@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a940bc1dc5c304b8f096428796c6c4, type: 3}
+  m_Name: SolConvData
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUpgradeData
+  baseTargetCount: 1
+  baseDuration: 3
+  baseRange: 5
+  baseCooldown: 7
+  baseEmpowerDuration: 6
+  baseEmpowerCooldown: 12
+  baseEmpowerKnockbackInterval: 1.5
+  baseEmpowerKnockbackForce: 8
+  baseEmpowerKnockbackRadius: 5
+  baseAccordDuration: 12
+  baseAccordBarCap: 35
+  baseAccordShockwaveForce: 15
+  baseAccordMeleeSlowDuration: 1.25
+  baseAccordMeleeAggroLossDuration: 0.75
+  basePulseInterval: 3.5
+  basePulseRadius: 4
+  basePulseFearDuration: 1.5
+  basePulseSlowMultiplier: 0.6
+  basePulseSlowDuration: 1.5
+  baseBurnDps: 0.35
+  baseBurnDuration: 1.8
+  cueBook: {fileID: 11400000, guid: 0067cab5c2ef98e459b5ca0f4f834213, type: 2}
+  nodes:
+  - label: Unlock Soul Convergence
+    pointCost: 8
+    previewClip: {fileID: 32900000, guid: 950938f7eeb1a4b4aa91e35fbb402d71, type: 3}
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 2
+    soulDurationBonus: 7
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: 'Kill threshold: 10  |  Activation: hold F for 0.75s
+
+      Duration:
+      7s  |  DMG out: +35%  |  DMG in: -35%'
+  - label: Deeper Convergence
+    pointCost: 15
+    previewClip: {fileID: 32900000, guid: 950938f7eeb1a4b4aa91e35fbb402d71, type: 3}
+    durationBonus: 0
+    cooldownReduction: 0
+    targetCountBonus: 0
+    rangeBonus: 0
+    cooldownBonus: 0
+    regenRateMultiplier: 0
+    coalesceRadiusBonus: 0
+    coalesceDurationBonus: 0
+    coalesceDpsBonus: 0
+    soulThresholdReduction: 3
+    soulDurationBonus: 2
+    empowerDurationBonus: 0
+    empowerCooldownReduction: 0
+    empowerKnockbackIntervalReduction: 0
+    empowerKnockbackForceBonus: 0
+    empowerKnockbackRadiusBonus: 0
+    accordDurationBonus: 0
+    accordBarCapReduction: 0
+    accordShockwaveForceBonus: 0
+    accordMeleeSlowBonus: 0
+    accordMeleeAggroLossBonus: 0
+    pulseIntervalReduction: 0
+    pulseRadiusBonus: 0
+    description: 'Kill threshold reduced. Power duration extended.
+
+      Kill threshold:
+      17  | Duration: 9s'

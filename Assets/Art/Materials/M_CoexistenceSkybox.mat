@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_CoexistenceSkybox
+  m_Shader: {fileID: 4800000, guid: 457df70a98930b6469a1c1060110e19c, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _CloudTex:
+        m_Texture: {fileID: 2800000, guid: ca979e57d6791874cbcabee0ca8cf6c2, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _CloudCoverage: 0.5
+    - _CloudHeight: 2
+    - _CloudScale: 8
+    - _CloudSoft: 0.25
+    - _CloudSpeed: 0.1
+    - _CloudTexInfluence: 0.6
+    - _CloudTexScale: 1
+    - _CorrCloudAmount: 0.95
+    - _CorrDistribution: 1
+    - _CorrFeather: 0.25
+    - _CorrNoiseAmt: 0.45
+    - _CorrNoiseScale: 4
+    - _CorrReverse: 0
+    - _CorrSkyAmount: 0.8
+    - _CorrSpreadFeather: 0.9
+    - _CorrSunDim: 0.85
+    - _CorruptionBias: 0
+    - _HazeScale: 4
+    - _HazeSpeed: 0.04
+    - _HazeStrength: 0.35
+    - _HorizonSoft: 0.35
+    - _MoonDetail: 0.35
+    - _MoonHalo: 1.2
+    - _MoonHorizonVeil: 0.6
+    - _MoonIntensity: 0.15
+    - _MoonSize: 0.12
+    - _RimStrength: 0.55
+    - _SunHalo: 0.8
+    - _SunIntensity: 3
+    - _SunSize: 0.025
+    - _TrailBandWidth: 0.45
+    - _TrailCoverage: 0.45
+    - _TrailHeight: 0.35
+    - _TrailIntensity: 1
+    - _TrailScale: 3.5
+    - _TrailSpeed: 0.08
+    - _TrailStretch: 6
+    m_Colors:
+    - _ClanA: {r: 0.45, g: 0.19999996, b: 0.95, a: 1}
+    - _ClanB: {r: 1, g: 0.78, b: 0.27999997, a: 1}
+    - _CloudColor: {r: 1, g: 1, b: 1, a: 1}
+    - _CloudShadow: {r: 0.72, g: 0.74, b: 0.8, a: 1}
+    - _CorrCenterDir: {r: 0, g: 0.15, b: 1, a: 0}
+    - _CorruptGlow: {r: 0.76, g: 0.089999996, b: 0.5, a: 1}
+    - _CorruptHorizon: {r: 0.34999996, g: 0.089999996, b: 0.29999998, a: 1}
+    - _CorruptTop: {r: 0.059999965, g: 0.02, b: 0.089999996, a: 1}
+    - _CorruptionColor: {r: 0.26, g: 0.07, b: 0.19, a: 1}
+    - _MoonColor: {r: 0.93, g: 0.91, b: 0.85, a: 1}
+    - _MoonDir: {r: 0.35, g: 0.16, b: -1, a: 0}
+    - _MoonHaloColor: {r: 0.72, g: 0.78, b: 1, a: 1}
+    - _SkyBottom: {r: 0.5499999, g: 0.5, b: 0.47999996, a: 1}
+    - _SkyHorizon: {r: 0.95, g: 0.85, b: 0.72, a: 1}
+    - _SkyTop: {r: 0.34999993, g: 0.52, b: 0.85, a: 1}
+    - _SunColor: {r: 1, g: 0.96, b: 0.88, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
