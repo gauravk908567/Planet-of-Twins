@@ -1,0 +1,189 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a41fd07be52374f975b77fc63bb35a, type: 3}
+  m_Name: KillParticleBook
+  m_EditorClassIdentifier: Assembly-CSharp::CueBookData
+  timeMode: 1
+  effects:
+  - id: kill_seq
+    elements:
+    - label: helixorbs - soul orbs spiral up (OrbPathFollower self-drives)
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 5803203120422000257, guid: 7b9f69954242a5f42830768d4d9c9a76, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 1, y: 1, z: 1}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 1, g: 1, b: 1, a: 1}
+      glyphColorB: {r: 1, g: 1, b: 1, a: 1}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 1
+        shakeDuration: 0.2
+        shakeFrequency: 1
+        shakeDirection: {x: 1, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0.5
+        blendIn: 0.05
+        blendOut: 0.2
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0.9
+      timeMode: 0
+      canCut: 0
+      cuts: []
+    - label: disintegrate - body break VFX (visual length set in graph lifetime)
+      kind: 1
+      isVariant: 0
+      particlePrefab: {fileID: 0}
+      vfxPrefab: {fileID: 3148123749125142175, guid: a4451ea956f461e4babbc83fc7b3b598, type: 3}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 1, y: 1, z: 1}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 1, g: 1, b: 1, a: 1}
+      glyphColorB: {r: 1, g: 1, b: 1, a: 1}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 1
+        shakeDuration: 0.2
+        shakeFrequency: 1
+        shakeDirection: {x: 1, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0.5
+        blendIn: 0.05
+        blendOut: 0.2
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 1.1
+      timeMode: 0
+      canCut: 0
+      cuts: []
+    - label: collect - soul absorbed to nearest twin (SoulParticleAttractor self-resolves)
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 3627538373071263036, guid: 66a9f6e04ae71384fb4e8041af390f85, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 1, y: 1, z: 1}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 1, g: 1, b: 1, a: 1}
+      glyphColorB: {r: 1, g: 1, b: 1, a: 1}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 1
+        shakeDuration: 0.2
+        shakeFrequency: 1
+        shakeDirection: {x: 1, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0.5
+        blendIn: 0.05
+        blendOut: 0.2
+      startMode: 2
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0.25
+      timeMode: 0
+      canCut: 0
+      cuts: []

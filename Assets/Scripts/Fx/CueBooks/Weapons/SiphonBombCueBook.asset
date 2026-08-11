@@ -1,0 +1,178 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a41fd07be52374f975b77fc63bb35a, type: 3}
+  m_Name: SiphonBombCueBook
+  m_EditorClassIdentifier: PoT.Fx::CueBookData
+  timeMode: 1
+  effects:
+  - id: On_SiphonBombFuseOn
+    elements:
+    - label: plays on the bombfuse
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 3072762676808766350, guid: 90f1af35f9ba0e3438efe736e21444c6, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 0
+          m_PostInfinity: 0
+          m_RotationOrder: 0
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+    - label: 
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 6407510393280901786, guid: 4e5a50052c298aa41961949442397b64, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 2
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 0
+          m_PostInfinity: 0
+          m_RotationOrder: 0
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 1
+      startDelay: 0.2
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 1
+      cuts:
+      - targetIndex: 0
+        afterSeconds: 0.25
+  - id: On_SiphonBombExplode
+    elements:
+    - label: 
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 8918640304404116720, guid: 06e6ddd613c2c4143862cfdec007bd0e, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 0
+          m_PostInfinity: 0
+          m_RotationOrder: 0
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 0
+      timeMode: 0
+      canCut: 0
+      cuts: []
+    - label: 
+      kind: 0
+      isVariant: 0
+      particlePrefab: {fileID: 7581572333497485459, guid: 30815f9a2fc53e245bd1aa263ae01cbf, type: 3}
+      vfxPrefab: {fileID: 0}
+      attachMode: 0
+      localOffset: {x: 0, y: 0, z: 0}
+      localRotation: {x: 0, y: 0, z: 0}
+      localScale: {x: 0, y: 0, z: 0}
+      glyphSprite: {fileID: 0}
+      glyphColorA: {r: 0, g: 0, b: 0, a: 0}
+      glyphColorB: {r: 0, g: 0, b: 0, a: 0}
+      audio: []
+      camera:
+        useShake: 0
+        shakeShape: 0
+        shakeAmplitude: 0
+        shakeDuration: 0
+        shakeFrequency: 0
+        shakeDirection: {x: 0, y: 0, z: 0}
+        shakeCustomShape:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 0
+          m_PostInfinity: 0
+          m_RotationOrder: 0
+        shakeRange: 0
+        useDepth: 0
+        depthProfile: {fileID: 0}
+        depthWeight: 0
+        blendIn: 0
+        blendOut: 0
+      startMode: 0
+      startDelay: 0
+      useDefaultDuration: 0
+      duration: 1.2
+      timeMode: 0
+      canCut: 0
+      cuts: []

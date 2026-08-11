@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbb3919819496c64ea11bcf5a17cc15a, type: 3}
+  m_Name: WitnessEnemyData
+  m_EditorClassIdentifier: Assembly-CSharp::WitnessEnemyData
+  enemyName: WitnessEnemy
+  maxHealth: 100
+  moveSpeed: 3
+  wanderRadius: 20
+  wanderTimerMin: 5
+  wanderTimerMax: 12
+  deathBondGraceDuration: 1.2
+  knockbackForceMultiplier: 1
+  detectionRange: 15
+  possessedDetectionMultiplier: 15
+  attackRange: 6
+  attackDamage: 5
+  attackCooldown: 1.5
+  attackWindup: 0.3
+  useProjectile: 0
+  projectilePrefab: {fileID: 55707352720500906, guid: 4021033132750cc4f84e1fda1ddd6b24, type: 3}
+  projectileSpeed: 14
+  returnAnimDuration: 1.5
+  canDamageSpirits: 0
+  spiritDamage: 25
+  canBePossessed: 1
+  possessionDuration: 5
+  timeToKill: 8
+  mashFrequency: 4
+  mashWindowDuration: 3
+  mashCooldown: 0.75
+  partialHealAmount: 20
+  twinThreatRange: 10
+  clanWarDamageMultiplier: 0.3
+  shadowDistance: 2.5
+  buffAuraRadius: 8
+  buffDamageMultiplier: 1.4
+  buffCooldownMultiplier: 0.5
+  bombTriggerRange: 5
+  bombWindUpDuration: 0.75
+  bombDetonationDelay: 2.5
+  bombAoeRadius: 1.5
+  ritualDuration: 3.5
+  ritualInterruptRange: 5
+  ritualFleeDistance: 10
+  fleeSpeedMultiplier: 1.6
+  summonCooldown: 2

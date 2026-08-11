@@ -1,0 +1,96 @@
+{
+    "entries": [
+        {
+            "key": "Assets/Scenes/L0/L0_CityWater.unity␟Must-haves␟No LocationEntrance — twins cannot be positioned on arrival (SoftReset/streaming).",
+            "reason": "Supporting scene"
+        },
+        {
+            "key": "Assets/Scenes/L0/L0_CityWater.unity␟Must-haves␟No NavMesh (no NavMeshSurface, no baked NavMeshData beside the scene) — agents cannot navigate.",
+            "reason": "Supporting scene"
+        },
+        {
+            "key": "Assets/Scenes/L0/L0_CityWater.unity␟Must-haves␟No AreaSpawnPoints — fine unless twins start/are positioned here.",
+            "reason": "Supporting scene"
+        },
+        {
+            "key": "Assets/Scenes/L1_Park/L1_Park.unity␟Must-haves␟Adjacency not bidirectional: 'L1_Park' → 'L1_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L1_Park/L1_Park.unity␟Must-haves␟Adjacency not bidirectional: 'L1_Park' → 'L0_CityWatersSide' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L1_Park/L1_Park.unity␟Must-haves␟Adjacency not bidirectional: 'L1_Park' → 'L2_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L1_Park/L1_Side.unity␟Must-haves␟No LocationEntrance — twins cannot be positioned on arrival (SoftReset/streaming).",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L1_Park/L1_Side.unity␟Must-haves␟No AreaSpawnPoints — fine unless twins start/are positioned here.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L2_Streets/L2_Streets.unity␟Must-haves␟Adjacency not bidirectional: 'L2_Streets' → 'L2_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L2_Streets/L2_Streets.unity␟Must-haves␟Adjacency not bidirectional: 'L2_Streets' → 'L1_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L2_Streets/L2_Streets.unity␟Must-haves␟Adjacency not bidirectional: 'L2_Streets' → 'L3_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L2_Streets/L2_Side.unity␟Must-haves␟No LocationEntrance — twins cannot be positioned on arrival (SoftReset/streaming).",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L2_Streets/L2_Side.unity␟Must-haves␟No AreaSpawnPoints — fine unless twins start/are positioned here.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L3_Alley/L3_Alley.unity␟Must-haves␟Adjacency not bidirectional: 'L3_Alley' → 'L3_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L3_Alley/L3_Alley.unity␟Must-haves␟Adjacency not bidirectional: 'L3_Alley' → 'L2_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L3_Alley/L3_Alley.unity␟Must-haves␟Adjacency not bidirectional: 'L3_Alley' → 'L4_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L3_Alley/L3_Alley.unity␟Must-haves␟No AreaSpawnPoints — fine unless twins start/are positioned here.",
+            "reason": "twins dont strt here"
+        },
+        {
+            "key": "Assets/Scenes/L3_Alley/L3_Side.unity␟Must-haves␟No LocationEntrance — twins cannot be positioned on arrival (SoftReset/streaming).",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L3_Alley/L3_Side.unity␟Must-haves␟No AreaSpawnPoints — fine unless twins start/are positioned here.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L4_Museum/L4_MuseumStart.unity␟Must-haves␟Adjacency not bidirectional: 'L4_MuseumStart' → 'L4_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L4_Museum/L4_MuseumStart.unity␟Must-haves␟Adjacency not bidirectional: 'L4_MuseumStart' → 'L3_side' but not back — occupancy streaming will desync.",
+            "reason": "doesn't come in play area"
+        },
+        {
+            "key": "Assets/Scenes/L4_Museum/L4_MuseumStart.unity␟Must-haves␟No AreaSpawnPoints — fine unless twins start/are positioned here.",
+            "reason": "doesn't start here"
+        },
+        {
+            "key": "Assets/Scenes/L4_Museum/L4_MuseumStart.unity␟Must-haves␟Adjacency not bidirectional: 'L4_MuseumStart' → 'L5_side' but not back — occupancy streaming will desync.",
+            "reason": ""
+        }
+    ]
+}

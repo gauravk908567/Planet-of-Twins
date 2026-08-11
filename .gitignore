@@ -2,6 +2,12 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
+
+# Local scene/asset backup files (never commit — they are large and disposable)
+*.bak
+*.bak_*
+*.unity.bak*
+
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -16,6 +22,10 @@
 
 # Recordings can get excessive in size
 /[Rr]ecordings/
+
+# Editor / ProBuilder screenshots (disposable — never commit)
+/[Aa]ssets/[Ss]creenshots/
+/[Aa]ssets/[Ss]creenshots.meta
 
 # Uncomment this line if you wish to ignore the asset store tools plugin
 # /[Aa]ssets/AssetStoreTools*

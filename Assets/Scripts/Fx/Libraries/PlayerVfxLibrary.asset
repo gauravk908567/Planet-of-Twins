@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc2126b71102c704ab080a5fa008ea76, type: 3}
+  m_Name: PlayerVfxLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerVfxLibrary
+  Stun: {fileID: 11400000, guid: a38bcad53b4af6f43b17996f1e89bd22, type: 2}
+  Possess: {fileID: 11400000, guid: 1e96cacc29f889e40a26876a89237ae7, type: 2}
+  Teleport: {fileID: 11400000, guid: ba688a0326027c84e8964abecff7992f, type: 2}
+  RadiantSeeker: {fileID: 11400000, guid: 885c2e9f3c256034ca7b1c4d6fe69bed, type: 2}
+  Coalesce: {fileID: 11400000, guid: 3556703418ddea64eb62df8f5ed41a55, type: 2}
+  Attack: {fileID: 11400000, guid: 302554b90d055f44f8e4441d94850202, type: 2}
+  SoulPulse: {fileID: 11400000, guid: 8b0e8ad1be137734683f35f2b2d0b0a5, type: 2}
+  SoulConvergence: {fileID: 11400000, guid: 0067cab5c2ef98e459b5ca0f4f834213, type: 2}
+  AccordSpirit: {fileID: 11400000, guid: 8905cbb67df34fd44aafcd865c556615, type: 2}
+  AccordState: {fileID: 11400000, guid: 25aea54d186db634facf56736e1cb5ab, type: 2}
+  VoidStrike: {fileID: 11400000, guid: 58398f2cc5841e2468f6d95acc00b170, type: 2}
+  Setsuna: {fileID: 11400000, guid: 38195c55d0160594ea557a201999c281, type: 2}
+  Empower: {fileID: 11400000, guid: 03fd9796a2a842b4f8f7667ce0ba63a1, type: 2}

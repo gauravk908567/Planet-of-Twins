@@ -1,0 +1,223 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 499fa0d4b1090f04085fdbe2d2b6bad2, type: 3}
+  m_Name: ManpuVocabulary
+  m_EditorClassIdentifier: Assembly-CSharp::ManpuVocabulary
+  abilities:
+  - ability: 0
+    held:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+    closingSequence: []
+  - ability: 1
+    held:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+    closingSequence: []
+  - ability: 2
+    held:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+    closingSequence: []
+  - ability: 3
+    held:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+    closingSequence: []
+  moods:
+  - mood: 0
+    glyph:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 1
+    glyph:
+      sprite: {fileID: 21300000, guid: 7ed21a01f877f204fb073382e44b1ae0, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 9160814134794496824, guid: bc0bf0276a0cdac4daf05cf63d3bd6f5, type: 3}
+      sound: {fileID: 0}
+      channel: 2
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 2
+    glyph:
+      sprite: {fileID: 21300000, guid: e1255b96d1cb52f4e867909383d2adda, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 9102011835549263329, guid: cf502204c6736f444a8549c7f2b69b59, type: 3}
+      sound: {fileID: 0}
+      channel: 1
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 3
+    glyph:
+      sprite: {fileID: 21300000, guid: c26ffb7e902a5bf4c8fdb116bfe0500d, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 3683011797177274021, guid: b16d829e7fab1344d9e7f02b6eabaf4e, type: 3}
+      sound: {fileID: 0}
+      channel: 2
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 4
+    glyph:
+      sprite: {fileID: 21300000, guid: c13b05b83f850e64fb94ca34aeb1b190, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 3683011797177274021, guid: b16d829e7fab1344d9e7f02b6eabaf4e, type: 3}
+      sound: {fileID: 0}
+      channel: 2
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 5
+    glyph:
+      sprite: {fileID: 21300000, guid: 22b28c82b9de16a4d950d15a914e946f, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 7071680466882116860, guid: 5f39337267558cd419620226efb0f7ec, type: 3}
+      sound: {fileID: 0}
+      channel: 2
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 6
+    glyph:
+      sprite: {fileID: 21300000, guid: 983dc3a8b60865e4dbaf9feb98fd3382, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 7045661890914249632, guid: fb236482d1a911c43a1de007a7f08009, type: 3}
+      sound: {fileID: 0}
+      channel: 1
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 7
+    glyph:
+      sprite: {fileID: 21300000, guid: 1a528cd4463eb354a88ffcca0d48df8e, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 586084688883591759, guid: 1e68a2e1d70487342851b3d1725db4da, type: 3}
+      sound: {fileID: 0}
+      channel: 2
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 8
+    glyph:
+      sprite: {fileID: 21300000, guid: 1e3b28961a3c8f240aaa5f8b32e4a8ed, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 3164617064716297300, guid: 70ba21a1f3a7def41be527f6f4e41380, type: 3}
+      sound: {fileID: 0}
+      channel: 2
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 9
+    glyph:
+      sprite: {fileID: 21300000, guid: d9b98fe34b9361f4aa548f7471bed21d, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 1
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  - mood: 10
+    glyph:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+    escalatingOnly: 1
+    loopPrefab: {fileID: 0}
+  - mood: 11
+    glyph:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+    escalatingOnly: 1
+    loopPrefab: {fileID: 0}
+  - mood: 12
+    glyph:
+      sprite: {fileID: 21300000, guid: fd4067cfea4f39546b230459d0ca5a6b, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 2124639338741958655, guid: d0fe431f60f0f4d4aa7001863b86b957, type: 3}
+      sound: {fileID: 0}
+      channel: 2
+    escalatingOnly: 0
+    loopPrefab: {fileID: 0}
+  perception:
+  - state: 0
+    glyph:
+      sprite: {fileID: 0}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+  - state: 1
+    glyph:
+      sprite: {fileID: 21300000, guid: 075132475b675944ab4a1f93cdadac01, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+  - state: 2
+    glyph:
+      sprite: {fileID: 21300000, guid: fd4067cfea4f39546b230459d0ca5a6b, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+  - state: 3
+    glyph:
+      sprite: {fileID: 21300000, guid: fd4067cfea4f39546b230459d0ca5a6b, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0
+  - state: 4
+    glyph:
+      sprite: {fileID: 21300000, guid: fd4067cfea4f39546b230459d0ca5a6b, type: 3}
+      colorA: {r: 1, g: 1, b: 1, a: 1}
+      colorB: {r: 1, g: 1, b: 1, a: 1}
+      burstPrefab: {fileID: 0}
+      sound: {fileID: 0}
+      channel: 0

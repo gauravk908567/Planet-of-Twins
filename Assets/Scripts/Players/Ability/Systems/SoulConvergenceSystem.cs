@@ -1,0 +1,353 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+/// <summary>
+/// SoulConvergenceSystem — implements IAbilityActiveState so AccordStateSystem
+/// can block Accord activation while SC power state is running.
+///
+/// IsAbilityActive = true only during the 7s buff window (_abilityActive).
+/// Charging, idle, and cooldown states all return false.
+/// </summary>
+public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityActiveState
+{
+    public float DamageOutMultiplier { get; private set; } = 1f;
+    public float DamageInMultiplier { get; private set; } = 1f;
+
+    // ── IAbilityActiveState ───────────────────────────────────
+    public bool IsAbilityActive => _abilityActive;
+
+    // ── Setsuna hooks ─────────────────────────────────────────
+    public bool IsCharged => _charged;
+    public bool IsAbilityRunning => _abilityActive;
+    public int SoulCount => _soulCount;
+    public int SoulCap => _soulCap;
+
+    // ── Setsuna accord UI — counter text only, panel owned by SetsunaSystem ──
+    [Header("HUD UI — Accord slot counter (SetsunaAccordIconUI)")]
+    [Tooltip("SoulCounterText inside SetsunaAccordIconUI — mirrored from normal counter")]
+    [SerializeField] private TMP_Text _accordCounterText;
+
+    // Exposed so SetsunaSystem can display SC timer on accord panel
+    public float PowerTimeRemaining => _powerTimer;
+
+    public static SoulConvergenceSystem Instance { get; private set; }
+
+    // Called by SetsunaSystem to force-end SC cleanly after rewind
+    public void ForceDeactivate()
+    {
+        if (!_abilityActive) return;
+        Deactivate();
+    }
+
+    [Header("Inject")]
+    [SerializeField] private MonoBehaviour _unlockStateMono;
+    [SerializeField] private MonoBehaviour _dataStoreMono;
+    [SerializeField] private MonoBehaviour _deathNotifierMono;
+    [SerializeField] private MonoBehaviour _rescueActiveMono;
+    [SerializeField] private MonoBehaviour _inputProviderMono;
+    [SerializeField] private SharedHealthPool _healthPool;
+
+    private ISkillUnlockState _unlockState;
+    private IAbilityDataStore _dataStore;
+    private IEnemyDeathNotifier _deathNotifier;
+    private IRescueActive _rescueActive;
+    private IInputProvider _input;
+
+    [Header("Base Settings")]
+    [SerializeField] private int _soulCap = 10;
+    [SerializeField] private float _basePowerDuration = 7f;
+    [SerializeField] private float _damageOutBonus = 0.35f;
+    [SerializeField] private float _damageInReduction = 0.35f;
+    [SerializeField] private float _chargeHoldTime = 2f;
+
+    [Header("HUD UI")]
+    [SerializeField] private TMP_Text _counterText;
+    [SerializeField] private Slider _chargeBar;
+    [SerializeField] private GameObject _powerStatePanel;
+    [SerializeField] private TMP_Text _powerTimerText;
+
+    [Header("VFX")]
+    [SerializeField] private Player _leftTwin;
+    [SerializeField] private Player _rightTwin;
+    // Book pulled from PlayerVfxLibrary.SoulConvergence via VfxLibraryProvider (R4, resolved lazily at play time).
+    private CueBookData _cueBook;
+    [Tooltip("Optional explicit FxManager (R1). Resolves to .Instance otherwise (R4).")]
+    [SerializeField] private FxManager _fx;
+ [Tooltip("Shield prefab — STAYS gameplay (collider); not a cue.")]
+    [SerializeField] private GameObject _shieldPrefab;
+
+    private CueHandle _leftChargeHandle;
+    private CueHandle _rightChargeHandle;
+    // Held power-state cues: per-twin shield visual (prefab = collider only now) + per-twin buff aura. Kai=right, Lyra=left.
+    private CueHandle _leftShieldHandle, _rightShieldHandle, _leftBuffHandle, _rightBuffHandle;
+    private GameObject _leftShieldInstance;
+    private GameObject _rightShieldInstance;
+
+    private int _soulCount = 0;
+    private bool _charged = false;
+    private bool _abilityActive = false;
+    private float _chargeProgress = 0f;
+    private float _powerTimer = 0f;
+
+    // ── Lifecycle ─────────────────────────────────────────────
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        _unlockState = _unlockStateMono as ISkillUnlockState;
+        _dataStore = _dataStoreMono as IAbilityDataStore;
+        _deathNotifier = _deathNotifierMono as IEnemyDeathNotifier;
+        _rescueActive = _rescueActiveMono as IRescueActive;
+        _input = _inputProviderMono as IInputProvider;
+
+        if (_unlockState == null) Debug.LogError("[SoulConv] Missing ISkillUnlockState");
+        if (_dataStore == null) Debug.LogError("[SoulConv] Missing IAbilityDataStore");
+        if (_deathNotifier == null) Debug.LogError("[SoulConv] Missing IEnemyDeathNotifier");
+
+        ResetMultipliers();
+    }
+
+    void OnDestroy() { if (Instance == this) Instance = null; }
+
+    void Start()
+    {
+        if (_input == null) _input = TwinInputReader.Instance;
+        if (_input == null) Debug.LogError("[SoulConv] IInputProvider not resolved — wire _inputProviderMono or ensure TwinInputReader is loaded.", this);
+
+        _chargeBar?.gameObject.SetActive(false);
+        _powerStatePanel?.SetActive(false);
+        RefreshCounter();
+
+        // Charge cue is played on demand (pooled) — no pre-created idle instance needed.
+    }
+
+    void OnEnable()
+    {
+        if (_deathNotifier != null) _deathNotifier.OnEnemyDied += HandleKill;
+        if (_unlockState != null) _unlockState.OnSoulConvergenceUnlocked += OnUnlocked;
+    }
+
+    void OnDisable()
+    {
+        if (_deathNotifier != null) _deathNotifier.OnEnemyDied -= HandleKill;
+        if (_unlockState != null) _unlockState.OnSoulConvergenceUnlocked -= OnUnlocked;
+        ResetMultipliers();
+    }
+
+    // ── Kill handler ──────────────────────────────────────────
+    void HandleKill()
+    {
+        if (!IsActive() || _abilityActive || _charged) return;
+        _soulCount = Mathf.Min(_soulCount + 1, _soulCap);
+        if (_soulCount >= _soulCap) _charged = true;
+        RefreshCounter();
+    }
+
+    /// <summary>Bench cheat (GameDebuggerV2): fill the soul counter to cap and mark charged —
+    /// Soul Convergence becomes immediately usable (F-hold). Unlock gating stays real.</summary>
+    public void DebugFillSouls()
+    {
+        _soulCount = _soulCap;
+        _charged = true;
+        RefreshCounter();
+    }
+
+    // ── Update ────────────────────────────────────────────────
+    void Update()
+    {
+        TickAbility();
+        HandleInput();
+    }
+
+    void HandleInput()
+    {
+        if (!IsActive() || !_charged || _abilityActive) return;
+        if (_rescueActive != null && (_rescueActive.IsRescueActive || _rescueActive.HasActiveRescueTarget)) { CancelCharge(); return; }
+
+        if (_input?.GetConvergenceHeld() ?? false)
+        {
+            if (_chargeProgress == 0f)
+            {
+                StartChargeVFX();
+            }
+
+            _chargeProgress = Mathf.Clamp01(_chargeProgress + Time.deltaTime / _chargeHoldTime);
+            if (_chargeBar != null)
+            {
+                _chargeBar.gameObject.SetActive(true);
+                _chargeBar.value = _chargeProgress;
+            }
+            if (_chargeProgress >= 1f) Activate();
+        }
+        else CancelCharge();
+    }
+
+    void TickAbility()
+    {
+        if (!_abilityActive) return;
+        _powerTimer -= Time.deltaTime;
+        if (_powerTimerText) _powerTimerText.text = $"{_powerTimer:F1}s";
+        if (_powerTimer <= 0f) Deactivate();
+    }
+
+    // ── Activation ────────────────────────────────────────────
+    void Activate()
+    {
+        _abilityActive = true;
+        _chargeProgress = 0f;
+        _powerTimer = CurrentPowerDuration;
+        _soulCount = 0;
+        _charged = false;
+
+        DamageOutMultiplier = 1f + _damageOutBonus;
+        DamageInMultiplier = 1f - _damageInReduction;
+        if (_healthPool) _healthPool.IncomingDamageMultiplier = DamageInMultiplier;
+
+        StopChargeVFX();
+        _leftShieldInstance = SpawnShield(_leftTwin);
+        _rightShieldInstance = SpawnShield(_rightTwin);
+        StartPowerCues();   // per-twin shield visual + buff aura (held for the power window)
+
+        _chargeBar?.gameObject.SetActive(false);
+        _powerStatePanel?.SetActive(true);
+        RefreshCounter();
+    }
+
+    void Deactivate()
+    {
+        _abilityActive = false;
+        ResetMultipliers();
+
+        DestroyShield(ref _leftShieldInstance);
+        DestroyShield(ref _rightShieldInstance);
+        StopPowerCues();
+
+        _powerStatePanel?.SetActive(false);
+        RefreshCounter();
+    }
+
+ // ── Power-state cues (per-twin held; Tier 1) ────────
+    void StartPowerCues()
+    {
+        _cueBook ??= VfxLibraryProvider.Instance?.Player?.SoulConvergence;   // R4
+        var fx = FxManager.Instance;
+        if (_cueBook == null || fx == null) return;
+        // Shield cue is the shield VISUAL now (prefab keeps only its collider). soulcon_buff = held buff aura per twin.
+ // Tier-resolved: each id independently tries its _t[n] variant in the book, else its base.
+        var scData = _dataStore?.SoulConvData;
+        string buffId = UpgradeCueResolver.Resolve(_cueBook, scData, FxIds.Player.SoulConvergence.soulcon_buff);
+        if (_rightTwin != null)
+        {
+            _rightShieldHandle = fx.PlayBook(_cueBook,
+                UpgradeCueResolver.Resolve(_cueBook, scData, FxIds.Player.SoulConvergence.soulcon_shieldkai),
+                CueContext.Follow(_rightTwin.transform));
+            _rightBuffHandle   = fx.PlayBook(_cueBook, buffId, CueContext.Follow(_rightTwin.transform));
+        }
+        if (_leftTwin != null)
+        {
+            _leftShieldHandle = fx.PlayBook(_cueBook,
+                UpgradeCueResolver.Resolve(_cueBook, scData, FxIds.Player.SoulConvergence.soulcon_shieldlyra),
+                CueContext.Follow(_leftTwin.transform));
+            _leftBuffHandle   = fx.PlayBook(_cueBook, buffId, CueContext.Follow(_leftTwin.transform));
+        }
+    }
+
+    void StopPowerCues()
+    {
+        var fx = FxManager.Instance;
+        fx?.Stop(_leftShieldHandle);  fx?.Stop(_rightShieldHandle);
+        fx?.Stop(_leftBuffHandle);    fx?.Stop(_rightBuffHandle);
+        _leftShieldHandle = _rightShieldHandle = _leftBuffHandle = _rightBuffHandle = CueHandle.None;
+    }
+
+    void CancelCharge()
+    {
+        if (_chargeProgress > 0f)
+        {
+            StopChargeVFX();
+        }
+        _chargeProgress = 0f;
+        if (_chargeBar) { _chargeBar.value = 0; _chargeBar.gameObject.SetActive(false); }
+    }
+
+    void ResetMultipliers()
+    {
+        DamageOutMultiplier = 1f;
+        DamageInMultiplier = 1f;
+        if (_healthPool) _healthPool.IncomingDamageMultiplier = 1f;
+    }
+
+    // ── UI ────────────────────────────────────────────────────
+    void RefreshCounter()
+    {
+        string display = "";
+        if (IsActive() && !_abilityActive)
+            display = _charged ? "F" : $"{_soulCount} / {_soulCap}";
+
+        if (_counterText != null) _counterText.text = display;
+        if (_accordCounterText != null) _accordCounterText.text = display;
+    }
+
+ // ── Charge cue (pooled — Tier 1) ────────────────────
+    void StartChargeVFX()
+    {
+        _fx ??= FxManager.Instance;   // R4
+        _cueBook ??= VfxLibraryProvider.Instance?.Player?.SoulConvergence;  // R4 — book from PlayerVfxLibrary
+        if (_fx == null || _cueBook == null) return;
+        // Per-twin charge (Kai=right/Vethara, Lyra=left/Luminari) — book re-authored from the old shared "charge".
+ // Tier-resolved: each id independently tries its _t[n] variant in the book, else its base.
+        var scData = _dataStore?.SoulConvData;
+        if (_leftTwin != null)  _leftChargeHandle  = _fx.PlayBook(_cueBook,
+            UpgradeCueResolver.Resolve(_cueBook, scData, FxIds.Player.SoulConvergence.soulcon_chargelyra),
+            CueContext.Follow(_leftTwin.transform));
+        if (_rightTwin != null) _rightChargeHandle = _fx.PlayBook(_cueBook,
+            UpgradeCueResolver.Resolve(_cueBook, scData, FxIds.Player.SoulConvergence.soulcon_chargekai),
+            CueContext.Follow(_rightTwin.transform));
+    }
+
+    void StopChargeVFX()
+    {
+        _fx?.Stop(_leftChargeHandle);
+        _fx?.Stop(_rightChargeHandle);
+        _leftChargeHandle = CueHandle.None;
+        _rightChargeHandle = CueHandle.None;
+    }
+
+    GameObject SpawnShield(Player twin)
+    {
+        if (_shieldPrefab == null || twin == null) return null;
+        // P16: pooled — spawn then parent to the twin (pool reparents home on despawn).
+        var go = GameplayPool.Spawn(_shieldPrefab, PoolCategory.AbilityObjects,
+                                    twin.transform.position, _shieldPrefab.transform.rotation);
+        if (go == null) return null;
+        go.transform.SetParent(twin.transform, worldPositionStays: true);
+        var anim = go.GetComponent<Animation>();
+        if (anim != null) anim.Play();
+        return go;
+    }
+
+    void DestroyShield(ref GameObject instance)
+    {
+        if (instance == null) return;
+        GameplayPool.Despawn(instance);
+        instance = null;
+    }
+
+    // ── Data ──────────────────────────────────────────────────
+    float CurrentPowerDuration
+    {
+        get
+        {
+            var data = _dataStore?.SoulConvData;
+            if (data == null) return _basePowerDuration;
+            float v = _basePowerDuration;
+            for (int i = 0; i < data.currentNodeIndex && i < data.nodes.Count; i++)
+                v += data.nodes[i].soulDurationBonus;
+            return v;
+        }
+    }
+
+    bool IsActive() => _unlockState != null && _unlockState.IsSoulConvergenceUnlocked;
+    void OnUnlocked() => RefreshCounter();
+}
