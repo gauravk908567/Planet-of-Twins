@@ -230,6 +230,46 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
 
 **Critical path:** M0 → M1 → M3 → M4. (M2 can slot after M1; M5 parallels; M6/M7 are optional tail.)
 
+### Sub-slice checklist (living — tick as each lands; commit ref in parens)
+- **M0 — input split (non-breaking)**
+  - [x] M0.1 input-ownership seam — `PlayerInputRouter` + `IPlayerInputRouter` (`6aa2c1b`)
+  - [ ] M0.2a route shared-UI consumers → `PlayerInputRouter.SharedInput` (Pause, SkillTree, Overview,
+    Intro, QTE + QTEController, ControlHints, WorldSpacePickupPrompt, InputPromptView)
+  - [ ] M0.2b Persistent scene wiring — add `PlayerInputRouter` GameObject to Persistent.unity
+  - [ ] M0.3 second-provider scaffolding (`PlayerInputManager` / 2nd reader) spawnable but idle
+- **M1 — ownership + per-player control (walking skeleton → full)**
+  - [ ] M1.1 `PlayerRoster` ownership map (hardcode P1→twinA, P2→twinB)
+  - [ ] M1.2 kill `TwinSelector` → ownership binder; delete `MirroredMovementModifier`
+  - [ ] M1.3 sweep the 14 selection consumers (BUG-095): ability dispatcher, Teleport lock→no-op,
+    TwinAbilitySetup, SceneFlowManager active-location (D4/BUG-099), SelectedPlayerUI (D3/BUG-100)
+  - [ ] M1.4 per-player **movement** dispatch (skeleton: P1→twinA, P2→twinB)
+  - [ ] M1.5 per-player **attack + ability** dispatch; route gameplay consumers → `For(twin)`
+  - [ ] M1.6 router device-aware (`For(twin)` = owner's device); `Shared` = any-of aggregator (BUG-096)
+  - [ ] M1.7 `GetSwitchDown` orphan cleanup (BUG-098); rebind Empower dash off freed Shift
+- **M2 — character select (Kai/Lyra/Random)**
+  - [ ] M2.1 `CharacterSelectController` → writes `PlayerRoster`
+  - [ ] M2.2 two-device select UI
+  - [ ] M2.3 conflict resolution (distinct twins) + Random auto-assign
+- **M3 — rescue + joint abilities + Empower**
+  - [ ] M3.1 rescue partner-mash (remove ForceSelect/Lock; grabbed frozen, partner mashes)
+  - [ ] M3.2 `JointAbilityGate` grace-window infrastructure
+  - [ ] M3.3 wire joint set (Setsuna, SoulConvergence, AccordSpirit, Accord activation) through the gate
+  - [ ] M3.4 Empower redesign D1/BUG-097 (caster anchors, partner buffed; rebind dash)
+  - [ ] M3.5 Teleport selection-lock → no-op
+- **M4 — tutorial co-op rewrite (shared progression, D6 / BUG-094 — the #1 breakage)**
+  - [ ] M4.1 per-provider tutorial gate
+  - [ ] M4.2 shared progression (steps advance for both at once)
+  - [ ] M4.3 remove switch-teaching steps
+  - [ ] M4.4 rebind `TutorialTimelineDirector` targets to the ownership map (R11)
+- **M5 — HUD / UI**
+  - [ ] M5.1 second per-player ability strip · [ ] M5.2 SelectedPlayerUI → identity/delete (D3)
+  - [ ] M5.3 skill tree per-player (D5) · [ ] M5.4 per-device prompt glyphs · [ ] M5.5 char-select screen polish
+- **M6 — optional F13 ability close-up cam**
+  - [ ] M6.1 common CLOSE ability vcam (phase 1) · [ ] M6.2 two per-twin vcams + shared CamRig clip
+  - [ ] M6.3 split-screen halves + wipe in/out · [ ] M6.4 grabbed/stuck/dead guard (full-screen free twin)
+- **M7 — optional co-op sync puzzles**
+  - [ ] M7.1 `CoopSyncGate` (reuses M3 grace mechanism) · [ ] M7.2 authored puzzle instances
+
 ## VERIFICATION (two entry paths, per Working Method)
 Bootstrap full + direct area play: character select assigns two distinct twins (+ Random); two
 devices each drive one twin; tether drain reads on the shared bar; trap-grab on P1 rescued by P2's

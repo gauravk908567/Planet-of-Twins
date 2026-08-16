@@ -24,6 +24,7 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   `TwinInputReader.Instance` fallback so it works even before the Persistent slot is wired.
 - Additive only — **no existing consumer modified yet** (that's M1). Verified: forced script compile, domain
   reload completed, **0 errors**.
+- **Commits (rollback refs):** `6aa2c1b` (input-ownership seam) · `0cc3389` (BUGS.md couch watch/test ledger).
 
 ### Changed — PoT/Coexistence wind sway: angular model + per-object WindAnchor authoring (2026-08-16)
 - Wind sway is now an **angular** model instead of flat metres-of-displacement. `PoTApplyWind`
