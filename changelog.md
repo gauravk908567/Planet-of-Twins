@@ -12,6 +12,19 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op M0: input-ownership seam (2026-08-16, branch `couch-multiplayer`)
+- First slice of the couch multiplayer conversion (plan: `couch_multiplayer_conversion_analysis.md`,
+  staged M0–M7). New **input-ownership seam** so the eventual per-player split is a change in ONE place
+  rather than across the ~26 `IInputProvider` consumers:
+  [IPlayerInputRouter.cs](Assets/Scripts/Players/Multiplayer/IPlayerInputRouter.cs) +
+  [PlayerInputRouter.cs](Assets/Scripts/Players/Multiplayer/PlayerInputRouter.cs). `ProviderFor(Player twin)`
+  returns the twin's input provider; `Shared` returns the shared-UI provider. **M0 stage = behaviour-neutral**:
+  both return the single `TwinInputReader`, so the game plays identically on one device. Persistent R3 singleton
+  (duplicate-destroy Awake guard, null on OnDestroy, no DDOL); lazy resolve (Awake-order safe, R8) with a
+  `TwinInputReader.Instance` fallback so it works even before the Persistent slot is wired.
+- Additive only — **no existing consumer modified yet** (that's M1). Verified: forced script compile, domain
+  reload completed, **0 errors**.
+
 ### Changed — PoT/Coexistence wind sway: angular model + per-object WindAnchor authoring (2026-08-16)
 - Wind sway is now an **angular** model instead of flat metres-of-displacement. `PoTApplyWind`
   ([CoexistenceCommon.hlsl](Assets/Art/Shaders/CoexistenceCommon.hlsl)) rotates the free side about the
