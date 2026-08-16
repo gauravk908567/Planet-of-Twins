@@ -70,9 +70,9 @@ public class WorldSpacePickupPrompt : MonoBehaviour
 
         if (_showKeyGlyph && _keyText != null)
         {
-            var input = TwinInputReader.Instance;
+            var input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
             if (input != null) _keyText.text = input.GetBindingDisplay(_actionName);
-            else Debug.LogWarning("[WorldSpacePickupPrompt] TwinInputReader.Instance null — key glyph blank.", this);
+            else Debug.LogWarning("[WorldSpacePickupPrompt] PlayerInputRouter.SharedInput null — key glyph blank.", this);
         }
 
         if (_labelText != null) _labelText.text = _label;

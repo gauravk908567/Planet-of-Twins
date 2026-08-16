@@ -91,9 +91,9 @@ public class QTEController : MonoBehaviour
         if (cameraSwitcher == null)
             Debug.LogWarning("[QTEController] CameraSwitcher not found.", this);
 
-        _input = TwinInputReader.Instance;   // R4 — Persistent loads before area scenes
+        _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance); R4 — Persistent loads before area scenes
         if (_input == null)
-            Debug.LogError("[QTEController] TwinInputReader.Instance unresolved — QTE mash dead.", this);
+            Debug.LogError("[QTEController] PlayerInputRouter.SharedInput unresolved — QTE mash dead.", this);
     }
 
     // Returns the first MonoBehaviour in any loaded scene that implements T.

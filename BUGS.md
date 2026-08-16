@@ -1940,13 +1940,16 @@ Test: grep clean for the selection API after M1; no null-ref in play on two entr
 Verified by: —
 
 ### BUG-096 — [Watch] Input reclassification (per-player vs shared-UI)
-Status: Watch (M1)
+Status: Watch (M1) — shared-UI half routed (M0.2a); per-player gameplay half pending M1
 Severity: Major
 System: Input
 Risk: routing a shared-UI consumer to only P1 (P2 can't pause) or a gameplay consumer to shared (both twins
 react to one player). 26 consumers split via `PlayerInputRouter.For(twin)` vs `.SharedInput`.
+Progress (M0.2a): the 9 shared-UI consumers (Pause, SkillTree, Overview, Intro, QTE Manager+Controller,
+ControlHints, InputPrompt, WorldSpacePickup) now read `PlayerInputRouter.SharedInput` — still behaviour-neutral
+(SharedInput == TwinInputReader.Instance in M0). The per-player GAMEPLAY split (`For(twin)`) is M1.
 Test: P2 can pause / open skill tree; each player's attack/ability moves only their own twin.
-Verified by: —
+Verified by: — (M0.2a: shared-UI routing compiles 0-err; true 2-player test is M1)
 
 ### BUG-097 — [Watch] Empower single-driver redesign
 Status: Watch (M3)

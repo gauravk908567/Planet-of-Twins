@@ -22,8 +22,22 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   both return the single `TwinInputReader`, so the game plays identically on one device. Persistent R3 singleton
   (duplicate-destroy Awake guard, null on OnDestroy, no DDOL); lazy resolve (Awake-order safe, R8) with a
   `TwinInputReader.Instance` fallback so it works even before the Persistent slot is wired.
-- Additive only — **no existing consumer modified yet** (that's M1). Verified: forced script compile, domain
-  reload completed, **0 errors**.
+- Seam landed additive — the M0.1 slice added no consumer changes.
+- **M0.2a — shared-UI consumers routed through the seam:** the 9 shared-UI input readers now resolve
+  `PlayerInputRouter.SharedInput` instead of `TwinInputReader.Instance` directly —
+  [PauseMenuController](Assets/Scripts/SettingMenu/PauseMenuController.cs),
+  [SkillTreeUI](Assets/Scripts/UI/SkillNode/SkillTreeUI.cs),
+  [OverviewCamController](Assets/Scripts/Camera/OverviewCamController.cs),
+  [IntroController](Assets/Scripts/SceneLaoder/IntroController.cs),
+  [QTEManager](Assets/Scripts/QuickTimeEvents/QTEManager.cs) + [QTEController](Assets/Scripts/QuickTimeEvents/QTEController.cs),
+  [ControlHintsVisibility](Assets/Scripts/UI/InputPrompts/ControlHintsVisibility.cs),
+  [InputPromptView](Assets/Scripts/UI/InputPrompts/InputPromptView.cs),
+  [WorldSpacePickupPrompt](Assets/Scripts/UI/WorldSpaceUI/WorldSpacePickupPrompt.cs). **Behaviour-neutral**:
+  `SharedInput` falls back to `TwinInputReader.Instance` until M0.2b wires the router GameObject into Persistent,
+  so input is byte-identical today. Per-player **gameplay** consumers (dispatchers, ability systems, rescue) are
+  deliberately untouched — they route via `PlayerInputRouter.For(twin)` in M1.
+- Verified: forced script compile, domain reload completed, **0 compile errors** (only a pre-existing APV
+  `ProbeReferenceVolume` package NRE, unrelated).
 - **Commits (rollback refs):** `6aa2c1b` (input-ownership seam) · `0cc3389` (BUGS.md couch watch/test ledger).
 
 ### Changed — PoT/Coexistence wind sway: angular model + per-object WindAnchor authoring (2026-08-16)
