@@ -26,8 +26,14 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   [Persistent.unity](Assets/Scenes/Persistent.unity) with `twinA`=Lyra (leftTwin) / `twinB`=Kai (rightTwin) —
   the same two `Player` objects `TwinSelector`'s left/right reference (R1). Verified `TwinA`/`TwinB`/`Twins`
   resolve. Clean additive scene diff (47 insertions, no RenderSettings noise). Still inert (no consumer reads it).
+- **M1.1c — co-located onto the hub:** moved `PlayerInputRouter` (from M0.2b) **and** `PlayerRoster` off their
+  two standalone GameObjects and onto the **`PlayerManager`** hub (one home for all twin-control components:
+  `TwinInputReader`/`TwinSelector`/dispatchers/router/roster); deleted the two loose GameObjects. Router's
+  `_inputProviderObject` is now a same-object ref to `TwinInputReader`. Clean scene diff (29 ins / 93 del, no
+  RenderSettings noise), 0 console errors. **Note:** `PlayerInputRouter` does NOT replace `TwinInputReader` — it
+  routes *which* provider drives each twin; the reader stays as the input engine.
 - Full consumer map + teardown sequencing lives in `couch_multiplayer_conversion_analysis.md` **Appendix A**.
-- **Commits (rollback refs):** M1.1a code `4601626`; M1.1b Persistent wiring `03d1f15`.
+- **Commits (rollback refs):** M1.1a code `4601626`; M1.1b Persistent wiring `03d1f15`; M1.1c hub co-location `<pending>`.
 
 ### Added — Couch co-op M0: input-ownership seam (2026-08-16, branch `couch-multiplayer`)
 - First slice of the couch multiplayer conversion (plan: `couch_multiplayer_conversion_analysis.md`,
