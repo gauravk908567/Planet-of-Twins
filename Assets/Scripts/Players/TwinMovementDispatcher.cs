@@ -1,23 +1,20 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
-/// Dispatches movement input to both twins and the soul.
+/// Per-player movement dispatch (couch M1.4). Each twin is driven by its OWNING player's input provider
+/// (<see cref="PlayerInputRouter.For"/>); twins are resolved from <see cref="PlayerRoster"/>. The soul
+/// (rescue/emergency, reworked in M3) still reads shared input.
 ///
-/// Subscribes to CameraManager.OnMovementModeChanged.
-/// When true  → camera-relative movement (tutorial/external cam active)
-/// When false → raw world-Z movement (standard gameplay cam active)
+/// <para>The selection-based mirror is GONE — both twins move normally (MirroredMovementModifier deleted;
+/// a null movement modifier is normal movement). With P2's device unwired, <c>For(TwinB)</c> falls back to
+/// P1's provider, so both twins move together (single-device intermediate) until the second device is paired.</para>
 ///
-/// SETUP:
-///   Wire cameraManager in Inspector.
-///   Wire referenceCamera → your main Unity Camera GO.
-///   No tag setup needed — CameraManager owns the mode decision.
+/// Subscribes CameraManager.OnMovementModeChanged: true → camera-relative movement (tutorial/external cam),
+/// false → raw world-Z movement (standard gameplay cam).
 /// </summary>
 public class TwinMovementDispatcher : MonoBehaviour
 {
-    [SerializeField] private Player leftTwin;
-    [SerializeField] private Player rightTwin;
     [SerializeField] private Player soulTwin;
-    [SerializeField] private MonoBehaviour inputProviderObject;
 
     [Tooltip("Source of OnMovementModeChanged event.")]
     [SerializeField] private CameraManager cameraManager;
@@ -25,15 +22,10 @@ public class TwinMovementDispatcher : MonoBehaviour
     [Tooltip("Unity Camera used for direction reference in camera-relative mode.")]
     [SerializeField] private Camera referenceCamera;
 
-    private IInputProvider _input;
     private bool _useCameraRelative = false;
 
     private void Awake()
     {
-        _input = inputProviderObject as IInputProvider;
-        if (_input == null)
-            Debug.LogError("[TwinMovementDispatcher] inputProviderObject missing IInputProvider.", this);
-
         if (referenceCamera == null)
             referenceCamera = Camera.main;
     }
@@ -55,28 +47,40 @@ public class TwinMovementDispatcher : MonoBehaviour
 
     private void Update()
     {
-        if (_input == null) return;
+        var roster = PlayerRoster.Instance;
+        if (roster != null)
+        {
+            MoveTwin(roster.TwinA);   // P1's provider (slot One)
+            MoveTwin(roster.TwinB);   // P2's provider (slot Two; falls back to P1 until wired)
+        }
 
-        Vector2 raw = _input.GetMovementInput();
-        Vector2 finalInput = _useCameraRelative
-            ? GetCameraRelativeInput(raw)
-            : raw;
-
-        IPlayerCommand cmd = new MoveCommand(finalInput);
-
-        // Both twins always receive input — frozen twin ignores it internally
-        leftTwin?.Movement?.ExecuteCommand(cmd);
-        rightTwin?.Movement?.ExecuteCommand(cmd);
-
-        // Soul only when active
+        // Soul only when active — rescue/emergency entity, reworked in M3; reads shared input for now.
         if (soulTwin != null && soulTwin.gameObject.activeSelf)
-            soulTwin.Movement?.ExecuteCommand(cmd);
+        {
+            var shared = PlayerInputRouter.SharedInput;
+            if (shared != null)
+                soulTwin.Movement?.ExecuteCommand(BuildCommand(shared.GetMovementInput()));
+        }
+    }
+
+    private void MoveTwin(Player twin)
+    {
+        if (twin == null) return;
+        var input = PlayerInputRouter.For(twin);
+        if (input == null) return;
+        // Frozen/locked twin ignores the command internally (PlayerMovementController).
+        twin.Movement?.ExecuteCommand(BuildCommand(input.GetMovementInput()));
+    }
+
+    private IPlayerCommand BuildCommand(Vector2 raw)
+    {
+        Vector2 finalInput = _useCameraRelative ? GetCameraRelativeInput(raw) : raw;
+        return new MoveCommand(finalInput);
     }
 
     /// <summary>
-    /// Converts raw 2D input into world-space XZ direction relative to
-    /// the reference camera's current orientation.
-    /// W = away from camera, S = toward camera, A/D = camera left/right.
+    /// Converts raw 2D input into world-space XZ direction relative to the reference camera's current
+    /// orientation. W = away from camera, S = toward camera, A/D = camera left/right.
     /// </summary>
     private Vector2 GetCameraRelativeInput(Vector2 raw)
     {
