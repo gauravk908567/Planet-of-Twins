@@ -9,8 +9,11 @@ public class TwinSelector : MonoBehaviour, ITwinSelector, ISelectionLock, ISelec
     [SerializeField] private MonoBehaviour inputProviderObject;
 
     private IInputProvider _input;
-    private IMovementModifier _normal = new NormalMovementModifier();
-    private IMovementModifier _mirrored = new MirroredMovementModifier();
+
+    // COUCH M1.2: movement mirroring is GONE — this selector now only tracks the selected twin for the
+    // ABILITY path (TwinAbilityDispatcher / Empower / Rescue), which stays selection-based until M3.
+    // Per-player movement is owned by TwinMovementDispatcher via PlayerInputRouter.For(twin). Slated for
+    // removal in the post-M3 cleanup once abilities go per-player.
 
     private int _lockCounter = 0;  // counter handles overlapping locks
 
@@ -74,16 +77,12 @@ public class TwinSelector : MonoBehaviour, ITwinSelector, ISelectionLock, ISelec
     private void SelectLeft()
     {
         SelectedTransform = leftTwin.transform;
-        leftTwin.Movement.SetMovementModifier(_normal);
-        rightTwin.Movement.SetMovementModifier(_mirrored);
         OnTwinSelected?.Invoke(SelectedTransform);
     }
 
     private void SelectRight()
     {
         SelectedTransform = rightTwin.transform;
-        rightTwin.Movement.SetMovementModifier(_normal);
-        leftTwin.Movement.SetMovementModifier(_mirrored);
         OnTwinSelected?.Invoke(SelectedTransform);
     }
 }

@@ -1920,7 +1920,7 @@ the owning milestone's DoD runs. M0 (input-ownership seam) is additive/non-break
 input-glyph/world-pickups all behaviour-identical, intro N/A (no intro scene active). ⏳ one `Bootstrap`-Play run
 still owed for the §10 two-entry-path sign-off · M1 ownership+dispatch ☐ · M2 char-select ☐ ·
 M3 rescue+joint+Empower ☐ · M4 tutorial ☐ · M5 HUD ☐ · M6 F13 cam ☐ · M7 sync-puzzles ☐
-· **M1 in progress:** M1.1 `PlayerRoster` code ✅ 0-err (additive, coexists with TwinSelector); scene wiring + consumer migration pending
+· **M1 movement skeleton ✅ (2026-08-17, 0-err):** M1.1 PlayerRoster (`4601626`/`03d1f15`/`bc4f370`) · M1.3a registry migration (13 sites, `6169043`) · M1.2 movement decoupled from TwinSelector + MirroredMovementModifier deleted · M1.3b D4 (active-loc→TwinA) + D3 (SelectedPlayerUI inert) · M1.4 per-player movement · M1.6 device-aware router (P2 optional). **Deferred to M3:** per-player attack/ability (M1.5) + free-Shift (M1.7) — entangled with Accord/rescue/soul/teleport + D2. Needs sandbox test + a real P2 device provider
 
 ### BUG-094 — [Watch] Tutorial breaks when TwinSelector dies (the #1 breakage)
 Status: Watch (M1/M4)
@@ -1974,15 +1974,18 @@ Test: Empower buffs the partner twin; dash works on its new key; no selection ca
 Verified by: —
 
 ### BUG-098 — [Watch] GetSwitchDown orphan (Shift freed)
-Status: Watch (M1/M3)
+Status: Watch (M3) — **NOT freed in M1** (revised): Shift still selects which twin casts abilities until the
+per-player ability dispatch lands in M3 (M1.5). Movement no longer uses selection (M1.2), but the ability path
+does, so `TwinSelector`'s Shift-switch stays live for now.
 Severity: Minor
 System: Input
-Risk: Shift (switch-twin) is deleted but still read by `EmpowerSystem` dash + `TutorialInputGate` passthrough.
-Test: no dangling `GetSwitchDown` consumer; Shift rebound per-player where still needed.
+Risk: once M3 makes abilities per-player, Shift is orphaned as a switch but still read by `EmpowerSystem` dash +
+`TutorialInputGate` passthrough — rebind then.
+Test: no dangling `GetSwitchDown` consumer after M3; Shift rebound per-player where still needed.
 Verified by: —
 
 ### BUG-099 — [Watch] SceneFlowManager active-location by selected twin
-Status: Watch (M1) — **D4 RESOLVED 2026-08-16: pin to HOST (P1/TwinA)**
+Status: **DONE (code) 2026-08-17** — D4 implemented: `ResolveActiveLocation` pins to `PlayerRoster.TwinA`, no TwinSelector ref; pending sandbox test (music/active-scene stays on TwinA's side)
 Severity: Minor
 System: Streaming / Music
 Risk: `SceneFlowManager.ResolveActiveLocation` (`:246-268`) picks the active location by `SelectedTransform`
@@ -1994,7 +1997,7 @@ Test: with both twins straddling a scene boundary, music/active-scene stays on T
 Verified by: —
 
 ### BUG-100 — [Watch] SelectedPlayerUI dead "selected" state
-Status: Watch (M1/M5) — **D3 RESOLVED 2026-08-16: neutralize M1, remove post-M5**
+Status: **DONE (code) 2026-08-17** — D3 implemented: `SelectedPlayerUI` is inert (no TwinSelector/OnTwinSelected; applies plain material once). Physical removal = post-M5
 Severity: Minor
 System: UI
 Risk: `SelectedPlayerUI` swaps a body material to show the "selected" twin (`OnTwinSelected` sub, dangling

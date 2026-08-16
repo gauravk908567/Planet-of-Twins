@@ -249,17 +249,18 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
 - **M1 — ownership + per-player control (walking skeleton → full)**
   - [x] M1.1 `PlayerRoster` ownership map (hardcode P1→twinA, P2→twinB) — code (`PlayerRoster`+`PlayerSlot`, 0-err,
     `4601626`) + Persistent GameObject wired (twinA=Lyra/twinB=Kai, `Twins` verified)
-  - [ ] M1.2 neutralize `TwinSelector` selection (registry→roster; `ISelectionLock`→no-op); `Mirrored­MovementModifier`
-    dies — **physical `TwinSelector.cs` deletion gated on M3** (Rescue/Empower still consume selection; see Appendix A teardown)
-  - [~] M1.3 migrate the **13 Role-1 registry sites** → `PlayerRoster` (Appendix A) + the M1-scoped selection sites
-    (ability dispatcher, SceneFlowManager active-location D4/BUG-099, SelectedPlayerUI D3/BUG-100). Rescue/Empower
-    selection → M3; lock calls stay no-op until the post-M3 cleanup (BUG-095)
-    — **M1.3a registry DONE** (13 sites → TwinA/TwinB, 0-err); M1.3b selection (D4/D3/dispatch) pending
-  - [ ] M1.4 per-player **movement** dispatch (skeleton: P1→twinA, P2→twinB)
-  - [ ] M1.5 per-player **attack + ability** dispatch; route gameplay consumers → `For(twin)`
-  - [ ] M1.6 router device-aware (`For(twin)` = owner's device); `Shared` = any-of aggregator (BUG-096)
-  - [ ] M1.7 confirm Shift no longer switches (TwinSelector gone); Shift left unbound (BUG-098). Empower dash
-    still reads `GetSwitchDown` until M3 — its rebind off the freed Shift is **M3/D1**, not here
+  - [x] M1.2 **movement** decoupled from `TwinSelector` (SelectLeft/Right no longer set modifiers; `MirroredMovementModifier`
+    deleted — null modifier = normal, mirror gone). `TwinSelector` kept ALIVE for the ABILITY path (selection stays until
+    M3); physical `TwinSelector.cs`/`NormalMovementModifier` deletion = post-M3 cleanup (Appendix A teardown)
+  - [x] M1.3 registry (13 sites → `PlayerRoster`, `6169043`) **+ D4** (SceneFlow active-location → TwinA/BUG-099)
+    **+ D3** (SelectedPlayerUI neutralized/BUG-100). The ability-dispatch selection site → M1.5/M3 (entangled)
+  - [x] M1.4 per-player **movement** dispatch — `TwinMovementDispatcher` drives each twin via `PlayerInputRouter.For(twin)`
+    (P1→TwinA, P2→TwinB; P2 falls back to P1 single-device); soul on shared input
+  - [→M3] M1.5 per-player **attack + ability** dispatch — **DEFERRED**: `TwinAttackDispatcher`/`TwinAbilityDispatcher`
+    entangled with Accord/rescue/soul/teleport-emergency (M3) + pending D2. Stays selection-based until M3
+  - [~] M1.6 router device-aware — `For(twin)` routes by `PlayerRoster.SlotOf` to P1/P2 slot (P2 optional, falls back).
+    DONE. Pending: wire a real P2 device provider (user's Input-System work) + any-of `Shared` aggregator (BUG-096)
+  - [→M3] M1.7 free Shift — **DEFERRED**: Shift still selects which twin casts abilities until M1.5/M3 land (BUG-098)
 - **M2 — character select (Kai/Lyra/Random)**
   - [ ] M2.1 `CharacterSelectController` → writes `PlayerRoster`
   - [ ] M2.2 two-device select UI

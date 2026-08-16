@@ -12,6 +12,31 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op M1 movement skeleton: D4/D3 + per-player movement + device-aware router (2026-08-17, `couch-m1-ownership`)
+- **M1.3b · D4** — `SceneFlowManager.ResolveActiveLocation` pins the active location to the HOST twin
+  (`PlayerRoster.TwinA`) instead of the selected twin (deterministic, no music-crossfade flicker); removes the
+  last `TwinSelector` ref there.
+- **M1.3b · D3** — `SelectedPlayerUI` neutralized: cut the `TwinSelector`/`OnTwinSelected` coupling; now just
+  applies the plain material once at Start. Inert; scheduled for removal post-M5.
+- **M1.2** — `TwinSelector` no longer applies movement modifiers; `SelectLeft/SelectRight` only track the
+  selected twin + fire `OnTwinSelected` (for the ABILITY path, still selection-based until M3). Deleted
+  `MirroredMovementModifier.cs` (+meta) — only consumer was `TwinSelector`; a null modifier = normal movement.
+  **The mirror is gone — both twins move normally.**
+- **M1.4** — `TwinMovementDispatcher` rewritten to **per-player**: each twin driven by its owning player's provider
+  via `PlayerInputRouter.For(twin)` (twins from `PlayerRoster`); soul still reads shared input. Dropped its
+  serialized leftTwin/rightTwin/inputProviderObject (self-resolves via roster/router now).
+- **M1.6** — `PlayerInputRouter` is now device-aware: P1 slot (`_inputProviderObject`) + **optional** P2 slot
+  (`_inputProviderObjectP2`); `ProviderFor(twin)` routes by `PlayerRoster.SlotOf(twin)`. **P2 blank → falls back
+  to P1**, so single-device play works until a second device is paired. (Any-of `Shared` aggregator = follow-up.)
+- **Deferred to M3 (entanglement finding):** per-player ATTACK/ABILITY (`TwinAttackDispatcher` /
+  `TwinAbilityDispatcher`) + freeing Shift (M1.7) are threaded through Accord state, rescue struggle, soul mode,
+  and teleport-emergency (all M3) + the pending **D2** joint-abilities call. `TwinSelector` stays alive for ability
+  selection until then; the physical `TwinSelector`/`NormalMovementModifier` deletion is post-M3 cleanup.
+- Compiles **0 errors**, domain reload clean. **Sandbox test:** WASD moves BOTH twins (same direction now — mirror
+  removed); abilities still work via Shift-select; wiring a 2nd input provider into the router's P2 slot makes each
+  device drive its own twin. No scene edit needed (P2 slot defaults null; dispatcher self-resolves).
+- **Commits (rollback refs):** `<pending>`.
+
 ### Changed — Couch co-op M1.3a (registry migration): TwinSelector registry → PlayerRoster (2026-08-17, branch `couch-m1-ownership`)
 - Migrated the **13 Role-1 registry consumers** (Appendix A) from `TwinSelector.Instance.LeftTwin/RightTwin`
   → `PlayerRoster.Instance.TwinA/TwinB`. **Identity-preserving** (LeftTwin=Lyra→TwinA, RightTwin=Kai→TwinB),

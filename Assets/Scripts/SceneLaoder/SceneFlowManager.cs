@@ -242,21 +242,16 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
         SetActiveLocation(loc);
     }
 
-    // Selected twin's loaded location, else the first actor with a loaded scene, else null.
+    // Couch D4: no "selected" twin — the active location follows the HOST twin (TwinA), deterministically
+    // (no music-crossfade flicker; online-ready host authority). Falls through to the first actor with a
+    // loaded scene, else null. Bond + adjacency make a non-adjacent twin split unreachable in practice.
     private WorldLocationSO ResolveActiveLocation()
     {
-        var sel = TwinSelector.Instance;
-        if (sel != null)
+        var hostTwin = PlayerRoster.Instance?.TwinA;
+        if (hostTwin != null && _currentLocation.TryGetValue(hostTwin, out var pref) && pref != null)
         {
-            var selectedTransform = sel.SelectedTransform;
-            Player selectedTwin = (selectedTransform == sel.LeftTwin?.transform)
-                ? sel.LeftTwin : sel.RightTwin;
-
-            if (selectedTwin != null && _currentLocation.TryGetValue(selectedTwin, out var pref) && pref != null)
-            {
-                var s = SceneManager.GetSceneByName(pref.scene.Name);
-                if (s.IsValid() && s.isLoaded) return pref;
-            }
+            var s = SceneManager.GetSceneByName(pref.scene.Name);
+            if (s.IsValid() && s.isLoaded) return pref;
         }
 
         foreach (var kv in _currentLocation)
