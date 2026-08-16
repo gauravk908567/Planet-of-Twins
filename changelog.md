@@ -35,6 +35,8 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 - Compiles **0 errors**, domain reload clean. **Sandbox test:** WASD moves BOTH twins (same direction now — mirror
   removed); abilities still work via Shift-select; wiring a 2nd input provider into the router's P2 slot makes each
   device drive its own twin. No scene edit needed (P2 slot defaults null; dispatcher self-resolves).
+- **Sandbox-verified 2026-08-17 (single-device):** WASD moves both twins ✓ (per-player dispatch path confirmed).
+  Two-player (2nd physical device) test deferred to a build with a second tester.
 - **Commits (rollback refs):** `6f0efdc` (D4/D3 + M1.2 movement decouple + M1.4 per-player movement + M1.6 router).
 
 ### Changed — Couch co-op M1.3a (registry migration): TwinSelector registry → PlayerRoster (2026-08-17, branch `couch-m1-ownership`)

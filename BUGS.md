@@ -1920,7 +1920,7 @@ the owning milestone's DoD runs. M0 (input-ownership seam) is additive/non-break
 input-glyph/world-pickups all behaviour-identical, intro N/A (no intro scene active). ⏳ one `Bootstrap`-Play run
 still owed for the §10 two-entry-path sign-off · M1 ownership+dispatch ☐ · M2 char-select ☐ ·
 M3 rescue+joint+Empower ☐ · M4 tutorial ☐ · M5 HUD ☐ · M6 F13 cam ☐ · M7 sync-puzzles ☐
-· **M1 movement skeleton ✅ (2026-08-17, 0-err):** M1.1 PlayerRoster (`4601626`/`03d1f15`/`bc4f370`) · M1.3a registry migration (13 sites, `6169043`) · M1.2 movement decoupled from TwinSelector + MirroredMovementModifier deleted · M1.3b D4 (active-loc→TwinA) + D3 (SelectedPlayerUI inert) · M1.4 per-player movement · M1.6 device-aware router (P2 optional). **Deferred to M3:** per-player attack/ability (M1.5) + free-Shift (M1.7) — entangled with Accord/rescue/soul/teleport + D2. Needs sandbox test + a real P2 device provider
+· **M1 movement skeleton ✅ (2026-08-17, 0-err):** M1.1 PlayerRoster (`4601626`/`03d1f15`/`bc4f370`) · M1.3a registry migration (13 sites, `6169043`) · M1.2 movement decoupled from TwinSelector + MirroredMovementModifier deleted · M1.3b D4 (active-loc→TwinA) + D3 (SelectedPlayerUI inert) · M1.4 per-player movement · M1.6 device-aware router (P2 optional). **Deferred to M3:** per-player attack/ability (M1.5) + free-Shift (M1.7) — entangled with Accord/rescue/soul/teleport + D2. **Sandbox-verified single-device 2026-08-17** (WASD moves both twins ✓); 2-player test deferred to a build + second tester. Still needs a real P2 device provider
 
 ### BUG-094 — [Watch] Tutorial breaks when TwinSelector dies (the #1 breakage)
 Status: Watch (M1/M4)
