@@ -80,3 +80,13 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# --- Project-specific, added 2026-08-16 (user ruling) ---
+# Pitch/marketing decks + working images (not game assets)
+/PitchDeck/
+/potimg/
+# Cline AI-assistant config
+/.clinerules/
+/.clineignore
+# Reference e-books at repo root (large binaries, not game content)
+/*.pdf
