@@ -24,7 +24,7 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   (D4 active-location), `SelectedPlayerUI` (D3), `TwinAbilityDispatcher` (per-player rewrite), and Rescue/Empower
   (M3) + the `ISelectionLock` plumbing (`TutorialStepContext` etc.). Those are M1.3b / M3.
 - Compiles **0 errors**. `TwinSelector` now has 13 fewer consumers; its registry role is dead.
-- **Commit (rollback ref):** `<pending>`.
+- **Commit (rollback ref):** `6169043`.
 
 ### Added — Couch co-op M1.1: PlayerRoster (ownership + twin registry) (2026-08-17, branch `couch-m1-ownership`)
 - First M1 slice — the ownership spine. New `PlayerRoster` (Persistent **R3** singleton) is the surviving half
