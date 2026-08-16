@@ -44,14 +44,14 @@ public class TutorialZoneTrigger : MonoBehaviour
     {
         if (leftTwin == null || rightTwin == null)
         {
-            var selector = TwinSelector.Instance;
-            if (selector == null)
+            var roster = PlayerRoster.Instance;
+            if (roster == null)
             {
-                Debug.LogError("[TutorialZoneTrigger] TwinSelector.Instance is null — is Persistent loaded?", this);
+                Debug.LogError("[TutorialZoneTrigger] PlayerRoster.Instance is null — is Persistent loaded?", this);
                 return;
             }
-            if (leftTwin == null)  leftTwin  = selector.LeftTwin;
-            if (rightTwin == null) rightTwin = selector.RightTwin;
+            if (leftTwin == null)  leftTwin  = roster.TwinA;
+            if (rightTwin == null) rightTwin = roster.TwinB;
         }
     }
 

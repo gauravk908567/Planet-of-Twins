@@ -1935,7 +1935,7 @@ Test (M4 DoD): full Bootstrap tutorial run, 2 players, progressive unlock advanc
 Verified by: —
 
 ### BUG-095 — [Watch] Selection-consumer sweep completeness
-Status: Watch (M1) — **sweep COMPLETE + mapped 2026-08-16** (Appendix A of couch analysis); fix pending
+Status: Watch (M1) — **sweep mapped 2026-08-16; M1.3a registry migration DONE 2026-08-17** (13 sites → PlayerRoster, 0-err); selection sites + Rescue/Empower pending
 Severity: Major
 System: Abilities / Rescue / Streaming / UI
 Risk: miss one consumer → null `SelectedTransform` or stuck selection-lock after `TwinSelector` is removed.

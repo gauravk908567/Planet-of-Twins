@@ -79,10 +79,10 @@ public class SoulParticleAttractor : MonoBehaviour
 
     private Transform ResolveNearestTwin()
     {
-        var sel = TwinSelector.Instance;
-        if (sel == null) return null;
-        var l = sel.LeftTwin;
-        var r = sel.RightTwin;
+        var roster = PlayerRoster.Instance;
+        if (roster == null) return null;
+        var l = roster.TwinA;
+        var r = roster.TwinB;
         if (l == null) return r != null ? r.transform : null;
         if (r == null) return l.transform;
         float dl = (l.transform.position - transform.position).sqrMagnitude;

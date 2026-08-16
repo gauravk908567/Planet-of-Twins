@@ -66,9 +66,9 @@ public class TutorialCheckpoint : MonoBehaviour
     private void Start()
     {
         if (leftTwin != null && rightTwin != null) return;
-        if (TwinSelector.Instance == null) { Debug.LogWarning("[TutorialCheckpoint] TwinSelector not found.", this); return; }
-        if (leftTwin == null)  leftTwin  = TwinSelector.Instance.LeftTwin;
-        if (rightTwin == null) rightTwin = TwinSelector.Instance.RightTwin;
+        if (PlayerRoster.Instance == null) { Debug.LogWarning("[TutorialCheckpoint] PlayerRoster not found.", this); return; }
+        if (leftTwin == null)  leftTwin  = PlayerRoster.Instance.TwinA;
+        if (rightTwin == null) rightTwin = PlayerRoster.Instance.TwinB;
     }
 
     /// <summary>

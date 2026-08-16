@@ -132,9 +132,9 @@ public class SoftResetController : MonoBehaviour
     private IEnumerator ApplyTwinState(CheckpointData data)
     {
         // Use serialized refs — twins are Persistent, direct R1 wiring is correct.
-        // Fall back to TwinSelector if Inspector slots are unwired.
-        Player left = _leftTwin ?? TwinSelector.Instance?.LeftTwin;
-        Player right = _rightTwin ?? TwinSelector.Instance?.RightTwin;
+        // Fall back to PlayerRoster if Inspector slots are unwired.
+        Player left = _leftTwin ?? PlayerRoster.Instance?.TwinA;
+        Player right = _rightTwin ?? PlayerRoster.Instance?.TwinB;
 
         if (left == null || right == null)
             Debug.LogError("[SoftResetController] Twin refs null — wire _leftTwin/_rightTwin in Inspector.", this);
@@ -178,8 +178,8 @@ public class SoftResetController : MonoBehaviour
     private void RestoreSwords(CheckpointData data)
     {
         // Twins own their sword GO (R1) — restore the saved per-twin state directly, no cross-scene SwordPickup ref.
-        Player left = _leftTwin ?? TwinSelector.Instance?.LeftTwin;
-        Player right = _rightTwin ?? TwinSelector.Instance?.RightTwin;
+        Player left = _leftTwin ?? PlayerRoster.Instance?.TwinA;
+        Player right = _rightTwin ?? PlayerRoster.Instance?.TwinB;
         left?.GetComponentInChildren<PlayerAttackController>(true)?.SetHasWeapon(data.leftHasSword);
         right?.GetComponentInChildren<PlayerAttackController>(true)?.SetHasWeapon(data.rightHasSword);
 
@@ -205,7 +205,7 @@ public class SoftResetController : MonoBehaviour
         void OnLoaded(WorldLocationSO loc) { if (loc == location) loaded = true; }
         SceneFlowManager.Instance.OnLocationLoaded += OnLoaded;
         SceneFlowManager.Instance.NotifyTeleported(
-            _leftTwin ?? TwinSelector.Instance?.LeftTwin, location); // trigger occupancy → load
+            _leftTwin ?? PlayerRoster.Instance?.TwinA, location); // trigger occupancy → load
         yield return new WaitUntil(() => loaded || SceneFlowManager.Instance.IsLoaded(location));
         SceneFlowManager.Instance.OnLocationLoaded -= OnLoaded;
         yield return null; // one frame for scene objects to Awake/Start

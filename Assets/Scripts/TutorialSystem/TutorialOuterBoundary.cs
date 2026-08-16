@@ -31,16 +31,16 @@ public class TutorialOuterBoundary : MonoBehaviour
     private void Start()
     {
         _failureNotice = FailureNotice.Instance;
-        var selector = TwinSelector.Instance;
-        if (selector != null)
+        var roster = PlayerRoster.Instance;
+        if (roster != null)
         {
-            _leftTwin = selector.LeftTwin;
-            _rightTwin = selector.RightTwin;
+            _leftTwin = roster.TwinA;
+            _rightTwin = roster.TwinB;
         }
         if (_failureNotice == null)
             Debug.LogError("[TutorialOuterBoundary] FailureNotice.Instance is null — is Persistent loaded?", this);
         if (_leftTwin == null || _rightTwin == null)
-            Debug.LogError("[TutorialOuterBoundary] Twins unresolved via TwinSelector.Instance — is Persistent loaded?", this);
+            Debug.LogError("[TutorialOuterBoundary] Twins unresolved via PlayerRoster.Instance — is Persistent loaded?", this);
     }
 
     private void OnTriggerExit(Collider other)

@@ -251,9 +251,10 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
     `4601626`) + Persistent GameObject wired (twinA=Lyra/twinB=Kai, `Twins` verified)
   - [ ] M1.2 neutralize `TwinSelector` selection (registry→roster; `ISelectionLock`→no-op); `Mirrored­MovementModifier`
     dies — **physical `TwinSelector.cs` deletion gated on M3** (Rescue/Empower still consume selection; see Appendix A teardown)
-  - [ ] M1.3 migrate the **13 Role-1 registry sites** → `PlayerRoster` (Appendix A) + the M1-scoped selection sites
+  - [~] M1.3 migrate the **13 Role-1 registry sites** → `PlayerRoster` (Appendix A) + the M1-scoped selection sites
     (ability dispatcher, SceneFlowManager active-location D4/BUG-099, SelectedPlayerUI D3/BUG-100). Rescue/Empower
     selection → M3; lock calls stay no-op until the post-M3 cleanup (BUG-095)
+    — **M1.3a registry DONE** (13 sites → TwinA/TwinB, 0-err); M1.3b selection (D4/D3/dispatch) pending
   - [ ] M1.4 per-player **movement** dispatch (skeleton: P1→twinA, P2→twinB)
   - [ ] M1.5 per-player **attack + ability** dispatch; route gameplay consumers → `For(twin)`
   - [ ] M1.6 router device-aware (`For(twin)` = owner's device); `Shared` = any-of aggregator (BUG-096)

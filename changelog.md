@@ -12,6 +12,20 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op M1.3a (registry migration): TwinSelector registry → PlayerRoster (2026-08-17, branch `couch-m1-ownership`)
+- Migrated the **13 Role-1 registry consumers** (Appendix A) from `TwinSelector.Instance.LeftTwin/RightTwin`
+  → `PlayerRoster.Instance.TwinA/TwinB`. **Identity-preserving** (LeftTwin=Lyra→TwinA, RightTwin=Kai→TwinB),
+  **behaviour-identical** (same two twins). Call sites touched:
+  `CheckPointTrigger`, `SoftResetController` (×3), `IntroTimelinePositioner` (×2), `TutorialCheckpoint`,
+  `TutorialTrap`, `TutorialZoneTrigger`, `TutorialBoundary`, `TutorialOuterBoundary`, `IntroController` (×3),
+  `GameBootstrapper` (×3), `SoulParticleAttractor`, `SceneFlowManager` (editor-seed only), `GameDebuggerV2`
+  (field type + all `.LeftTwin/.RightTwin`).
+- **Deliberately NOT migrated** (still `TwinSelector`): the SELECTION consumers — `SceneFlowManager.ResolveActiveLocation`
+  (D4 active-location), `SelectedPlayerUI` (D3), `TwinAbilityDispatcher` (per-player rewrite), and Rescue/Empower
+  (M3) + the `ISelectionLock` plumbing (`TutorialStepContext` etc.). Those are M1.3b / M3.
+- Compiles **0 errors**. `TwinSelector` now has 13 fewer consumers; its registry role is dead.
+- **Commit (rollback ref):** `<pending>`.
+
 ### Added — Couch co-op M1.1: PlayerRoster (ownership + twin registry) (2026-08-17, branch `couch-m1-ownership`)
 - First M1 slice — the ownership spine. New `PlayerRoster` (Persistent **R3** singleton) is the surviving half
   of `TwinSelector`: a **twin registry** (`TwinA`/`TwinB`/`Twins`/`Other`/`Contains`) + an **ownership map**

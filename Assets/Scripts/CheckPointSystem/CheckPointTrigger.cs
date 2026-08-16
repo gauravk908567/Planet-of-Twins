@@ -27,10 +27,10 @@ public class CheckpointTrigger : MonoBehaviour
         if (_checkpointManager == null)
             Debug.LogError("[CheckpointTrigger] CheckpointManager.Instance is null.", this);
 
-        _leftTwin  = TwinSelector.Instance?.LeftTwin;
-        _rightTwin = TwinSelector.Instance?.RightTwin;
+        _leftTwin  = PlayerRoster.Instance?.TwinA;
+        _rightTwin = PlayerRoster.Instance?.TwinB;
         if (_leftTwin == null || _rightTwin == null)
-            Debug.LogError("[CheckpointTrigger] TwinSelector twins are null.", this);
+            Debug.LogError("[CheckpointTrigger] PlayerRoster twins are null.", this);
     }
 
     private void OnTriggerEnter(Collider other)

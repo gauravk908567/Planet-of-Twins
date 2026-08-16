@@ -102,9 +102,9 @@ public class GameBootstrapper : MonoBehaviour
             // Seed SceneFlowManager occupancy — triggers never see teleports (3.7b)
             if (devStartLocation != null)
             {
-                var sel = TwinSelector.Instance;
-                SceneFlowManager.Instance?.NotifyTeleported(sel?.LeftTwin,  devStartLocation);
-                SceneFlowManager.Instance?.NotifyTeleported(sel?.RightTwin, devStartLocation);
+                var roster = PlayerRoster.Instance;
+                SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinA, devStartLocation);
+                SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinB, devStartLocation);
             }
 
             // Make the area the active scene (drives ambient/skybox/NavMesh)
@@ -132,10 +132,10 @@ public class GameBootstrapper : MonoBehaviour
 
     private void SetTwinsMovementLocked(bool locked)
     {
-        var selector = TwinSelector.Instance;
-        if (selector == null) return;
-        selector.LeftTwin?.GetComponent<PlayerMovementController>()?.SetMovementLocked(locked);
-        selector.RightTwin?.GetComponent<PlayerMovementController>()?.SetMovementLocked(locked);
+        var roster = PlayerRoster.Instance;
+        if (roster == null) return;
+        roster.TwinA?.GetComponent<PlayerMovementController>()?.SetMovementLocked(locked);
+        roster.TwinB?.GetComponent<PlayerMovementController>()?.SetMovementLocked(locked);
     }
 
     private void PlaceTwinsAtAreaSpawn()
@@ -147,11 +147,11 @@ public class GameBootstrapper : MonoBehaviour
             SetTwinsMovementLocked(false);
             return;
         }
-        var selector = TwinSelector.Instance;
-        if (selector == null) { SetTwinsMovementLocked(false); return; }
+        var roster = PlayerRoster.Instance;
+        if (roster == null) { SetTwinsMovementLocked(false); return; }
 
-        PlaceTwin(selector.LeftTwin,  spawnPoints.leftStart  != null ? spawnPoints.leftStart.position  : Vector3.zero);
-        PlaceTwin(selector.RightTwin, spawnPoints.rightStart != null ? spawnPoints.rightStart.position : Vector3.zero);
+        PlaceTwin(roster.TwinA,  spawnPoints.leftStart  != null ? spawnPoints.leftStart.position  : Vector3.zero);
+        PlaceTwin(roster.TwinB, spawnPoints.rightStart != null ? spawnPoints.rightStart.position : Vector3.zero);
         SetTwinsMovementLocked(false);
         Debug.Log($"[GameBootstrapper] Twins placed — L={spawnPoints.leftStart?.position} R={spawnPoints.rightStart?.position}");
     }
