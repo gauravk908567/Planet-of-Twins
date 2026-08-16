@@ -44,7 +44,8 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   so `SharedInput`/`For(twin)` resolve through `Resolve()` → the wired reader (verified: `Shared` getter returns
   the `TwinInputReader`). Still behaviour-neutral — same single reader drives everything until M1.
 - **Commits (rollback refs):** `6aa2c1b` (input-ownership seam) · `0cc3389` (BUGS.md couch watch/test ledger) ·
-  `3745fbc` (M0.2a — shared-UI consumers → `PlayerInputRouter.SharedInput`).
+  `3745fbc` (M0.2a — shared-UI consumers → `PlayerInputRouter.SharedInput`) ·
+  `f23ca68` (M0.2b — router GameObject wired into Persistent).
 
 ### Changed — PoT/Coexistence wind sway: angular model + per-object WindAnchor authoring (2026-08-16)
 - Wind sway is now an **angular** model instead of flat metres-of-displacement. `PoTApplyWind`
