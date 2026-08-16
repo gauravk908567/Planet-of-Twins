@@ -1934,12 +1934,19 @@ Test (M4 DoD): full Bootstrap tutorial run, 2 players, progressive unlock advanc
 Verified by: —
 
 ### BUG-095 — [Watch] Selection-consumer sweep completeness
-Status: Watch (M1)
+Status: Watch (M1) — **sweep COMPLETE + mapped 2026-08-16** (Appendix A of couch analysis); fix pending
 Severity: Major
 System: Abilities / Rescue / Streaming / UI
-Risk: 14 consumers of `SelectedTransform`/`ForceSelect`/`Lock` (plan §1 grep list). Miss one → null
-`SelectedTransform` or a stuck selection-lock after `TwinSelector` is removed.
-Test: grep clean for the selection API after M1; no null-ref in play on two entry paths.
+Risk: miss one consumer → null `SelectedTransform` or stuck selection-lock after `TwinSelector` is removed.
+Mapped surface (grep-verified, by role): **13 Role-1 registry sites** (`LeftTwin`/`RightTwin`) → `PlayerRoster`,
+behaviour-identical · **4 Role-2 selection-state** sites (SceneFlowManager D4, TwinAbilityDispatcher [core],
+EmpowerSystem, RescueEventController) · **3 `ForceSelect`** callers (Rescue×2, Empower) · **~20 lock** call
+sites → no-op · SelectedPlayerUI (D3) · `GetSwitchDown` orphan (BUG-098). Teardown sequenced: registry+dispatch
+in M1, Rescue/Empower in M3, physical `TwinSelector.cs`/`MirroredMovementModifier.cs` delete + lock-call strip
+post-M3.
+Test: after M1 — grep clean for the MIGRATED selection API (registry+dispatch), no null-ref on two entry paths;
+Rescue/Empower selection still resolves (transitional). After post-M3 cleanup — grep clean for ALL of
+`TwinSelector`/`SelectedTransform`/`ForceSelect`/`ISelectionLock`.
 Verified by: —
 
 ### BUG-096 — [Watch] Input reclassification (per-player vs shared-UI)

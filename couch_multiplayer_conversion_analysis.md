@@ -240,13 +240,16 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
   - [ ] M0.3 second-provider scaffolding (`PlayerInputManager` / 2nd reader) spawnable but idle
 - **M1 — ownership + per-player control (walking skeleton → full)**
   - [ ] M1.1 `PlayerRoster` ownership map (hardcode P1→twinA, P2→twinB)
-  - [ ] M1.2 kill `TwinSelector` → ownership binder; delete `MirroredMovementModifier`
-  - [ ] M1.3 sweep the 14 selection consumers (BUG-095): ability dispatcher, Teleport lock→no-op,
-    TwinAbilitySetup, SceneFlowManager active-location (D4/BUG-099), SelectedPlayerUI (D3/BUG-100)
+  - [ ] M1.2 neutralize `TwinSelector` selection (registry→roster; `ISelectionLock`→no-op); `Mirrored­MovementModifier`
+    dies — **physical `TwinSelector.cs` deletion gated on M3** (Rescue/Empower still consume selection; see Appendix A teardown)
+  - [ ] M1.3 migrate the **13 Role-1 registry sites** → `PlayerRoster` (Appendix A) + the M1-scoped selection sites
+    (ability dispatcher, SceneFlowManager active-location D4/BUG-099, SelectedPlayerUI D3/BUG-100). Rescue/Empower
+    selection → M3; lock calls stay no-op until the post-M3 cleanup (BUG-095)
   - [ ] M1.4 per-player **movement** dispatch (skeleton: P1→twinA, P2→twinB)
   - [ ] M1.5 per-player **attack + ability** dispatch; route gameplay consumers → `For(twin)`
   - [ ] M1.6 router device-aware (`For(twin)` = owner's device); `Shared` = any-of aggregator (BUG-096)
-  - [ ] M1.7 `GetSwitchDown` orphan cleanup (BUG-098); rebind Empower dash off freed Shift
+  - [ ] M1.7 confirm Shift no longer switches (TwinSelector gone); Shift left unbound (BUG-098). Empower dash
+    still reads `GetSwitchDown` until M3 — its rebind off the freed Shift is **M3/D1**, not here
 - **M2 — character select (Kai/Lyra/Random)**
   - [ ] M2.1 `CharacterSelectController` → writes `PlayerRoster`
   - [ ] M2.2 two-device select UI
@@ -270,6 +273,80 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
   - [ ] M6.3 split-screen halves + wipe in/out · [ ] M6.4 grabbed/stuck/dead guard (full-screen free twin)
 - **M7 — optional co-op sync puzzles**
   - [ ] M7.1 `CoopSyncGate` (reuses M3 grace mechanism) · [ ] M7.2 authored puzzle instances
+
+## APPENDIX A — M1 CONSUMER MAP (grep-verified 2026-08-16, plan-only)
+
+**Key finding:** `TwinSelector` secretly does **two** jobs — (1) a twin **REGISTRY** (`LeftTwin`/`RightTwin`)
+and (2) a **SELECTION** state machine (`SelectedTransform`/`ForceSelect`/`OnTwinSelected` + the Shift-toggle +
+Normal/Mirrored modifiers + the switch-lock). Couch kills job 2 and keeps job 1 — **job 1 becomes
+`PlayerRoster`.** Most of the sweep is therefore a mechanical registry swap, not a redesign.
+
+**API surface** (`TwinSelector.cs`): registry `LeftTwin`/`RightTwin`; selection `SelectedTransform` (get),
+`OnTwinSelected` (event), `ForceSelect(Player)`; lock `LockSelection`/`UnlockSelection`/`IsSelectionLocked`;
+interfaces `ITwinSelector`/`ISelectionBroadcaster`/`ISelectionLock`; applies `Normal`/`Mirrored` modifiers on
+select; reads `GetSwitchDown()` (Shift) in `Update` to toggle.
+
+### ROLE 1 — Registry (`LeftTwin`/`RightTwin`) → `PlayerRoster`, behaviour-identical (selection-agnostic)
+These do NOT care about selection — they just want "the two twins." Mechanical swap to `PlayerRoster.TwinA/TwinB`.
+
+| Consumer (file:line) | How it uses it | M1 action |
+|---|---|---|
+| `CheckPointTrigger.cs:30-31` | both twins → checkpoint position save | → roster |
+| `SoftResetController.cs:136-137,181-182,208` | fallback both twins → reset positions + occupancy seed | → roster |
+| `IntroTimelinePositioner.cs:90-91` | left/right → deterministic timeline positioning | → roster |
+| `TutorialCheckpoint.cs:70-71` | both twins | → roster |
+| `TutorialTrap.cs:97-98` | both twins | → roster |
+| `TutorialZoneTrigger.cs:53-54` | both twins → zone-entry test | → roster |
+| `TutorialBoundary.cs:57` / `TutorialOuterBoundary.cs:34` | both twins → boundary containment | → roster |
+| `IntroController.cs:149-151,219-222,234-238` | both twins → `NotifyTeleported`, movement-lock, spawn placement | → roster |
+| `GameBootstrapper.cs:105-107,135-138,150-154` | both twins → `NotifyTeleported`, movement-lock, spawn placement | → roster |
+| `SoulParticleAttractor.cs:82-90` | nearest of the two twins (soul VFX target) | → roster |
+| `SceneFlowManager.cs:101-103` | editor-only: seed both twins into occupancy | → roster |
+| `GameDebuggerV2.cs:122` | debug handle | → roster |
+| `TimelineBindingResolver.cs:102` | comment reference only | → update comment |
+
+### ROLE 2 — Selection state (`SelectedTransform`) → REDESIGN
+| Consumer | How | Disposition |
+|---|---|---|
+| `SceneFlowManager.cs:248-253` (`ResolveActiveLocation`) | active area (skybox/ambient/navmesh) = the *selected* twin's location | **D4, M1** — no selected twin; drop the selected-preference block and fall through to the existing first-actor fallback at `:260+` (recommended), or host/P1-twin |
+| `TwinAbilityDispatcher.cs:66-67` + event `47/53/72` | routes ability input to `SelectedTransform`'s `AbilityController` | **CORE M1** — per-player: one dispatch path per twin, resolving `AbilityController` from `PlayerRoster` + `PlayerInputRouter.For(twin)` |
+| `EmpowerSystem.cs:422-424` (`GetCurrentTwin`) | which twin is the caster | **M3 / D1** |
+| `RescueEventController.cs:380` | was the *selected* twin the one grabbed? | **M3** |
+
+### ROLE 3 — `ForceSelect` callers → REDESIGN (all inside M3 systems)
+`RescueEventController.cs:383` (grabbed → switch to other), `:443` (post-death → select survivor); `EmpowerSystem.cs:307` (anchor on empowered twin). All become no-op/redesign in **M3**.
+
+### ROLE 4 — Selection LOCK (`Lock`/`Unlock`/`IsSelectionLocked`) → NO-OP
+The lock's ONLY purpose is blocking the Shift-switch (`TwinSelector.Update:59`). No switch in couch ⇒ nothing to block. Call sites: `TeleportAbility.cs:223,378`; `EmpowerSystem.cs:306,347`; `RescueEventController.cs:139,256,279,386,409,425,665`; `TutorialTimelineStepSO.cs:30,48`; `TutorialStepBase.cs:36`; `TutorialUnlockAllStepSO.cs:30`; `TutorialDirector.cs:38,74`; `TwinAbilitySetup.cs:47,57`; `TutorialStepContext.cs:54,68,74-75`.
+→ **M1 strategy:** `PlayerRoster` (or a tiny `NoOpSelectionLock`) implements `ISelectionLock` as a harmless no-op (`IsSelectionLocked`→`false`, `Lock`/`Unlock`→∅). All ~20 call sites keep compiling and behave correctly (nothing to block). **Remove the calls in a post-M3 cleanup slice** — no churn during M1.
+
+### ROLE 5 — `OnTwinSelected` subscribers → REDESIGN
+`TwinAbilityDispatcher` (Role 2). `SelectedPlayerUI.cs:31,39` → **D3** (repurpose as a per-player twin-identity indicator, or delete) — M1 stub / M5 finalize.
+
+### ROLE 6 — `GetSwitchDown()` (Shift) → ORPHAN / REBIND
+`TwinSelector.cs:60` (dies with the class). `EmpowerSystem.cs:263` — **dash reuses Shift** (BUG-098 / D1) → rebind in **M3**. Plumbing `TwinInputReader.cs:136` / `TutorialInputGate.cs:80` / `IInputProvider.cs:12` stays (harmless); Shift left unbound in M1.
+
+**Movement modifiers:** `MirroredMovementModifier` is applied ONLY by `TwinSelector` → **dies with it**. `NormalMovementModifier` + `SetMovementModifier` + `IMovementModifier` stay (general); both twins run Normal.
+
+### TEARDOWN SEQUENCING (resolves "delete `TwinSelector` in M1 vs Rescue/Empower still need it until M3")
+1. **M1:** add `PlayerRoster` (registry + no-op `ISelectionLock`). Migrate the 13 Role-1 sites. Rewrite ability dispatch per-player (Role 2). Resolve D4 (SceneFlowManager) + D3 (SelectedPlayerUI).
+2. **M1 leaves** `TwinSelector`'s selection members alive **only** for Rescue+Empower — *or* `PlayerRoster` exposes a defined-default `SelectedTransform` (= `TwinA`) so those two keep resolving until M3.
+3. **M3:** redesign Rescue + Empower off selection (Roles 2/3/6 for those files).
+4. **Post-M3 cleanup slice (isolated commit):** delete `TwinSelector.cs` + `MirroredMovementModifier.cs`, strip the no-op lock calls. `.meta` GUIDs drop with the deleted files.
+→ **Refinement to sub-slice M1.2:** "kill `TwinSelector`" in M1 = strip its registry role + neutralize selection for M1-scoped consumers; the **physical file deletion is gated on M3** so Rescue/Empower are never orphaned.
+
+### `PlayerRoster` design (M1.1)
+Persistent **R3** singleton (dup-destroy `Awake` guard, null `Instance` on `OnDestroy`, no DDOL). Takes over
+`TwinSelector`'s `leftTwin`/`rightTwin` serialized slots (same-scene R1). API: `Player TwinA`, `Player TwinB`,
+`Player For(PlayerSlot)`, `Player Other(Player)`, `IEnumerable<Player> Twins`; implements `ISelectionLock` as
+no-op; optional transitional default `SelectedTransform => TwinA`. M1 hardcodes P1→TwinA / P2→TwinB; **M2**
+(char-select) writes ownership into it.
+
+### Decisions M1 forces (surface — don't silently pick)
+- **D3 SelectedPlayerUI:** per-player twin-identity indicator, or remove?
+- **D4 active-location:** recommend dropping the selected-preference and using the **existing** first-actor
+  fallback (`SceneFlowManager:260+`) — minimal change, already written. Alt: host/P1 twin.
+- **Shift:** unbound in M1; EmpowerSystem dash rebind is M3/D1.
 
 ## VERIFICATION (two entry paths, per Working Method)
 Bootstrap full + direct area play: character select assigns two distinct twins (+ Random); two
