@@ -43,6 +43,10 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   same-scene `TwinInputReader` (R1) on the `PlayerManager` hub. `PlayerInputRouter.Instance` is now non-null,
   so `SharedInput`/`For(twin)` resolve through `Resolve()` → the wired reader (verified: `Shared` getter returns
   the `TwinInputReader`). Still behaviour-neutral — same single reader drives everything until M1.
+- **Sandbox-verified (2026-08-16, SampleScene):** 7/8 behaviour-neutral — ESC pause, Tab skill tree, B overview,
+  F QTE-mash, H hints, input glyph ("Press F"), and world pickups (skill orb + checkpoint save, floating melee
+  pickup) all identical to pre-M0. Intro-skip N/A (no intro scene active). One `Bootstrap`-Play run still owed for
+  the §10 two-entry-path sign-off.
 - **Commits (rollback refs):** `6aa2c1b` (input-ownership seam) · `0cc3389` (BUGS.md couch watch/test ledger) ·
   `3745fbc` (M0.2a — shared-UI consumers → `PlayerInputRouter.SharedInput`) ·
   `f23ca68` (M0.2b — router GameObject wired into Persistent).

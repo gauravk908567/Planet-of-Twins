@@ -1915,7 +1915,10 @@ Pre-emptive watch entries for the single→couch-co-op conversion (plan:
 "will break unless handled" risk surfaces to verify as each milestone lands. Flip to Fixed/Verified when
 the owning milestone's DoD runs. M0 (input-ownership seam) is additive/non-breaking.
 
-**Milestone status:** M0 seam ✅ (commit 6aa2c1b) · M1 ownership+dispatch ☐ · M2 char-select ☐ ·
+**Milestone status:** M0 input seam ✅ **COMPLETE** — M0.1 seam (`6aa2c1b`) · M0.2a shared-UI routing
+(`3745fbc`) · M0.2b Persistent wiring (`f23ca68`); **sandbox-verified 7/8 (2026-08-16)** — ESC/Tab/B/F-mash/H/
+input-glyph/world-pickups all behaviour-identical, intro N/A (no intro scene active). ⏳ one `Bootstrap`-Play run
+still owed for the §10 two-entry-path sign-off · M1 ownership+dispatch ☐ · M2 char-select ☐ ·
 M3 rescue+joint+Empower ☐ · M4 tutorial ☐ · M5 HUD ☐ · M6 F13 cam ☐ · M7 sync-puzzles ☐
 
 ### BUG-094 — [Watch] Tutorial breaks when TwinSelector dies (the #1 breakage)
@@ -1949,7 +1952,9 @@ Progress (M0.2a): the 9 shared-UI consumers (Pause, SkillTree, Overview, Intro, 
 ControlHints, InputPrompt, WorldSpacePickup) now read `PlayerInputRouter.SharedInput` — still behaviour-neutral
 (SharedInput == TwinInputReader.Instance in M0). The per-player GAMEPLAY split (`For(twin)`) is M1.
 Test: P2 can pause / open skill tree; each player's attack/ability moves only their own twin.
-Verified by: — (M0.2a: shared-UI routing compiles 0-err; true 2-player test is M1)
+Verified by: sandbox 2026-08-16 — shared-UI routing is behaviour-neutral PASS (pause / skill tree / overview /
+hints / QTE mash / input glyph "Press F" / world pickups + checkpoint save all identical to pre-M0). FULL
+Verified still deferred to M1 (the real per-player split) + a Bootstrap-path run.
 
 ### BUG-097 — [Watch] Empower single-driver redesign
 Status: Watch (M3)
