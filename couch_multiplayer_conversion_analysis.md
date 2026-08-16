@@ -233,8 +233,8 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
 ### Sub-slice checklist (living — tick as each lands; commit ref in parens)
 - **M0 — input split (non-breaking)**
   - [x] M0.1 input-ownership seam — `PlayerInputRouter` + `IPlayerInputRouter` (`6aa2c1b`)
-  - [ ] M0.2a route shared-UI consumers → `PlayerInputRouter.SharedInput` (Pause, SkillTree, Overview,
-    Intro, QTE + QTEController, ControlHints, WorldSpacePickupPrompt, InputPromptView)
+  - [x] M0.2a route shared-UI consumers → `PlayerInputRouter.SharedInput` (Pause, SkillTree, Overview,
+    Intro, QTE + QTEController, ControlHints, WorldSpacePickupPrompt, InputPromptView) — 9 sites, 0-err (`3745fbc`)
   - [ ] M0.2b Persistent scene wiring — add `PlayerInputRouter` GameObject to Persistent.unity
   - [ ] M0.3 second-provider scaffolding (`PlayerInputManager` / 2nd reader) spawnable but idle
 - **M1 — ownership + per-player control (walking skeleton → full)**
