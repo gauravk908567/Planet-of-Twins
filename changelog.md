@@ -38,7 +38,8 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   deliberately untouched — they route via `PlayerInputRouter.For(twin)` in M1.
 - Verified: forced script compile, domain reload completed, **0 compile errors** (only a pre-existing APV
   `ProbeReferenceVolume` package NRE, unrelated).
-- **Commits (rollback refs):** `6aa2c1b` (input-ownership seam) · `0cc3389` (BUGS.md couch watch/test ledger).
+- **Commits (rollback refs):** `6aa2c1b` (input-ownership seam) · `0cc3389` (BUGS.md couch watch/test ledger) ·
+  `3745fbc` (M0.2a — shared-UI consumers → `PlayerInputRouter.SharedInput`).
 
 ### Changed — PoT/Coexistence wind sway: angular model + per-object WindAnchor authoring (2026-08-16)
 - Wind sway is now an **angular** model instead of flat metres-of-displacement. `PoTApplyWind`
