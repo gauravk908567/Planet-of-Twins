@@ -65,12 +65,17 @@ Shader "PoT/Coexistence"
 
         _Grayscale      ("Grayscale Test (0/1)", Range(0,1)) = 0
 
+        // Angular sway (v5): the free side ROTATES about the attachment plane by up to Max Swing
+        // Angle (the WindAnchor gizmo draws this cone — tune it to clear neighbours). Additive Sway
+        // layers a small metres-based flutter on top for a natural feel. Prefer the WindAnchor
+        // component to author these per-object (it writes them via MaterialPropertyBlock).
         [Header(Wind Sway (WindDriver globals))]
         [Toggle] _WindEnable ("Wind Sway", Float) = 0
         [Enum(Standing,0,Hanging,1)] _WindMode ("Wind Mode (what is anchored)", Float) = 0
         _WindPivotY     ("Attachment Y (object space)", Float) = 0
-        _WindAmount     ("Sway Amount (metres at full mask)", Range(0, 1)) = 0.12
-        _WindResponse   ("Mask Falloff (per metre from pivot)", Range(0.05, 5)) = 1
+        _WindMaxAngle   ("Max Swing Half-Angle (deg +/-)", Range(0, 180)) = 8
+        _WindAmount     ("Additive Sway (metres)", Range(0, 1)) = 0.06
+        _WindResponse   ("Bend Stiffness (base to tip)", Range(0.05, 5)) = 1
 
         // Off = double-sided (greybox/ProBuilder meshes with mixed face windings render solid;
         // lighting stays correct — the fragment flips the normal on back faces).
