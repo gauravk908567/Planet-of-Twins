@@ -55,10 +55,10 @@ public class IntroTimelinePositioner : MonoBehaviour
 
     private static void LockTwins(bool locked)
     {
-        var sel = TwinSelector.Instance;
-        if (sel == null) return;
-        LockTwin(sel.LeftTwin, locked);
-        LockTwin(sel.RightTwin, locked);
+        var roster = PlayerRoster.Instance;
+        if (roster == null) return;
+        LockTwin(roster.TwinA, locked);
+        LockTwin(roster.TwinB, locked);
     }
 
     private static void LockTwin(Player p, bool locked)
@@ -86,9 +86,9 @@ public class IntroTimelinePositioner : MonoBehaviour
             return;
         }
 
-        // Identify left/right from TwinSelector — deterministic, no positional guessing.
-        Player left  = TwinSelector.Instance?.LeftTwin;
-        Player right = TwinSelector.Instance?.RightTwin;
+        // Identify left/right from PlayerRoster — deterministic, no positional guessing.
+        Player left  = PlayerRoster.Instance?.TwinA;
+        Player right = PlayerRoster.Instance?.TwinB;
 
         Teleport(left,  spawnPoints.leftStart);
         Teleport(right, spawnPoints.rightStart);

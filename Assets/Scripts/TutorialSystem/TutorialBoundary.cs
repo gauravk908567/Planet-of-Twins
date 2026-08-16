@@ -54,16 +54,16 @@ public class TutorialBoundary : MonoBehaviour
     {
         _resetSequencer = FailureResetSequencer.Instance;
         _failureNotice = FailureNotice.Instance;
-        var selector = TwinSelector.Instance;
-        if (selector != null)
+        var roster = PlayerRoster.Instance;
+        if (roster != null)
         {
-            _leftTwin = selector.LeftTwin;
-            _rightTwin = selector.RightTwin;
+            _leftTwin = roster.TwinA;
+            _rightTwin = roster.TwinB;
         }
         if (_resetSequencer == null)
             Debug.LogError("[TutorialBoundary] FailureResetSequencer.Instance is null — is Persistent loaded?", this);
         if (_leftTwin == null || _rightTwin == null)
-            Debug.LogError("[TutorialBoundary] Twins unresolved via TwinSelector.Instance — is Persistent loaded?", this);
+            Debug.LogError("[TutorialBoundary] Twins unresolved via PlayerRoster.Instance — is Persistent loaded?", this);
     }
 
     // ── Internal ──────────────────────────────────────────────────

@@ -146,9 +146,9 @@ public class IntroController : MonoBehaviour
                 SceneManager.SetActiveScene(areaScene);
 
             // Seed SceneFlowManager occupancy — triggers never see teleports (3.7b)
-            var sel = TwinSelector.Instance;
-            SceneFlowManager.Instance?.NotifyTeleported(sel?.LeftTwin,  firstAreaLocation);
-            SceneFlowManager.Instance?.NotifyTeleported(sel?.RightTwin, firstAreaLocation);
+            var roster = PlayerRoster.Instance;
+            SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinA, firstAreaLocation);
+            SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinB, firstAreaLocation);
         }
 
         // Ground-ready gate: wait for every required terrain (both AND'd), then unfreeze the
@@ -216,10 +216,10 @@ public class IntroController : MonoBehaviour
 
     private static void LockTwinMovement(bool locked)
     {
-        var selector = TwinSelector.Instance;
-        if (selector == null) return;
-        selector.LeftTwin?.Movement?.SetMovementLocked(locked);
-        selector.RightTwin?.Movement?.SetMovementLocked(locked);
+        var roster = PlayerRoster.Instance;
+        if (roster == null) return;
+        roster.TwinA?.Movement?.SetMovementLocked(locked);
+        roster.TwinB?.Movement?.SetMovementLocked(locked);
     }
 
     private static void PlaceTwinsAtAreaSpawn()
@@ -231,11 +231,11 @@ public class IntroController : MonoBehaviour
             LockTwinMovement(false);
             return;
         }
-        var selector = TwinSelector.Instance;
-        if (selector == null) { LockTwinMovement(false); return; }
+        var roster = PlayerRoster.Instance;
+        if (roster == null) { LockTwinMovement(false); return; }
 
-        PlaceTwin(selector.LeftTwin,  spawnPoints.leftStart  != null ? spawnPoints.leftStart.position  : Vector3.zero);
-        PlaceTwin(selector.RightTwin, spawnPoints.rightStart != null ? spawnPoints.rightStart.position : Vector3.zero);
+        PlaceTwin(roster.TwinA,  spawnPoints.leftStart  != null ? spawnPoints.leftStart.position  : Vector3.zero);
+        PlaceTwin(roster.TwinB, spawnPoints.rightStart != null ? spawnPoints.rightStart.position : Vector3.zero);
         LockTwinMovement(false);
         Debug.Log($"[IntroController] Twins placed (fallback) — L={spawnPoints.leftStart?.position} R={spawnPoints.rightStart?.position}");
     }

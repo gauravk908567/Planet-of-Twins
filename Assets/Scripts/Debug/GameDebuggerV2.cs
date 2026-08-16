@@ -66,7 +66,7 @@ public class GameDebuggerV2 : MonoBehaviour
     // ── Persistent deps (R4 — resolved in Start, fail-loud) ──────────────────
     private EnemyPool _pool;
     private SkillTreeManager _skillTree;
-    private TwinSelector _twins;
+    private PlayerRoster _twins;
     private EnemyDeathNotifier _deathNotifier;
     private FxManager _fx;
     private TimeFactorBootstrapper _timeFactor;   // non-singleton Persistent component (allowed sweep)
@@ -119,7 +119,7 @@ public class GameDebuggerV2 : MonoBehaviour
 
         _pool          = EnemyPool.Instance;
         _skillTree     = SkillTreeManager.Instance;
-        _twins         = TwinSelector.Instance;
+        _twins         = PlayerRoster.Instance;
         _deathNotifier = EnemyDeathNotifier.Instance;
         _fx            = FxManager.Instance;
         _timeFactor    = FindAnyObjectByType<TimeFactorBootstrapper>();
@@ -163,8 +163,8 @@ public class GameDebuggerV2 : MonoBehaviour
     {
         Vector3 pad = _twinPad != null ? _twinPad.position : transform.position;
         // +1 m up so the CharacterController never re-enables intersecting the ground (fall-through).
-        TeleportTwin(_twins?.LeftTwin,  pad + Vector3.left  + Vector3.up);
-        TeleportTwin(_twins?.RightTwin, pad + Vector3.right + Vector3.up);
+        TeleportTwin(_twins?.TwinA,  pad + Vector3.left  + Vector3.up);
+        TeleportTwin(_twins?.TwinB, pad + Vector3.right + Vector3.up);
     }
 
     // ── Spawn (the real pooled path — mirrors EnemySpawner.SpawnEnemy) ────────
@@ -289,16 +289,16 @@ public class GameDebuggerV2 : MonoBehaviour
         if (god != _godMode)
         {
             _godMode = god;
-            _twins?.LeftTwin?.GetComponent<PlayerHealthComponent>()?.SetInvincible(god);
-            _twins?.RightTwin?.GetComponent<PlayerHealthComponent>()?.SetInvincible(god);
+            _twins?.TwinA?.GetComponent<PlayerHealthComponent>()?.SetInvincible(god);
+            _twins?.TwinB?.GetComponent<PlayerHealthComponent>()?.SetInvincible(god);
         }
         // Rescue/soul bench: down one twin through the REAL damage path → rescue starts, the soul spawns,
         // Weaver's Gate + the Siphon ghost-bind become testable. (God mode wins if both are on.)
         if (GUILayout.Button("Down L twin", GUILayout.Width(90)))
-            _twins?.LeftTwin?.GetComponent<PlayerHealthComponent>()
+            _twins?.TwinA?.GetComponent<PlayerHealthComponent>()
                   ?.TakeDamage(new DamageData(99999f, DamageType.Combat));
         if (GUILayout.Button("Down R twin", GUILayout.Width(90)))
-            _twins?.RightTwin?.GetComponent<PlayerHealthComponent>()
+            _twins?.TwinB?.GetComponent<PlayerHealthComponent>()
                   ?.TakeDamage(new DamageData(99999f, DamageType.Combat));
         // Raw soul activation (playtest round 2 — SiphonGhost has no target without a soul out).
         // The REAL path is Down-a-twin (full rescue flow); this just wakes the Persistent SoulPlayer
@@ -315,9 +315,9 @@ public class GameDebuggerV2 : MonoBehaviour
         GUILayout.BeginHorizontal();
         bool weapon = GUILayout.Toggle(_twinsHaveWeapon, " Melee weapon (E swings + slashes)");
         if (weapon != _twinsHaveWeapon) { _twinsHaveWeapon = weapon; SetTwinsWeapon(weapon); }
-        if (GUILayout.Button("Slash L (Lyra)", GUILayout.Width(110))) Slash(_twins?.LeftTwin);
-        if (GUILayout.Button("Slash R (Kai)",  GUILayout.Width(110))) Slash(_twins?.RightTwin);
-        if (GUILayout.Button("Slash both",     GUILayout.Width(90)))  { Slash(_twins?.LeftTwin); Slash(_twins?.RightTwin); }
+        if (GUILayout.Button("Slash L (Lyra)", GUILayout.Width(110))) Slash(_twins?.TwinA);
+        if (GUILayout.Button("Slash R (Kai)",  GUILayout.Width(110))) Slash(_twins?.TwinB);
+        if (GUILayout.Button("Slash both",     GUILayout.Width(90)))  { Slash(_twins?.TwinA); Slash(_twins?.TwinB); }
         GUILayout.EndHorizontal();
     }
 
@@ -325,8 +325,8 @@ public class GameDebuggerV2 : MonoBehaviour
     // own weapon GO). GetComponentInChildren mirrors SoftResetController — the controller can sit on a child.
     private void SetTwinsWeapon(bool on)
     {
-        _twins?.LeftTwin?.GetComponentInChildren<PlayerAttackController>(true)?.SetHasWeapon(on);
-        _twins?.RightTwin?.GetComponentInChildren<PlayerAttackController>(true)?.SetHasWeapon(on);
+        _twins?.TwinA?.GetComponentInChildren<PlayerAttackController>(true)?.SetHasWeapon(on);
+        _twins?.TwinB?.GetComponentInChildren<PlayerAttackController>(true)?.SetHasWeapon(on);
     }
 
     // Fire one twin's melee through the REAL path (PerformAttack → attack anim → OnAttackHitFrame event →
@@ -587,8 +587,8 @@ public class GameDebuggerV2 : MonoBehaviour
         if (detectable != _twinsDetectable)
         {
             _twinsDetectable = detectable;
-            SetTwinPerceivable(_twins?.LeftTwin, detectable);
-            SetTwinPerceivable(_twins?.RightTwin, detectable);
+            SetTwinPerceivable(_twins?.TwinA, detectable);
+            SetTwinPerceivable(_twins?.TwinB, detectable);
         }
     }
 
@@ -759,8 +759,8 @@ public class GameDebuggerV2 : MonoBehaviour
         // Weaver's Gate still needs a twin in danger; SoulConv still needs its skill unlock.
         if (GUILayout.Button("Make abilities READY (cooldowns + SoulConv souls)"))
         {
-            _twins?.LeftTwin?.GetComponent<AbilityController>()?.DebugClearCooldowns();
-            _twins?.RightTwin?.GetComponent<AbilityController>()?.DebugClearCooldowns();
+            _twins?.TwinA?.GetComponent<AbilityController>()?.DebugClearCooldowns();
+            _twins?.TwinB?.GetComponent<AbilityController>()?.DebugClearCooldowns();
             SoulConvergenceSystem.Instance?.DebugFillSouls();
         }
 
@@ -777,7 +777,7 @@ public class GameDebuggerV2 : MonoBehaviour
 
     private Player NearestTwin(Vector3 from)
     {
-        var l = _twins?.LeftTwin; var r = _twins?.RightTwin;
+        var l = _twins?.TwinA; var r = _twins?.TwinB;
         if (l == null) return r;
         if (r == null) return l;
         return (l.transform.position - from).sqrMagnitude <= (r.transform.position - from).sqrMagnitude ? l : r;

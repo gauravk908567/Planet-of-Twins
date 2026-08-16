@@ -97,10 +97,10 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
 #if UNITY_EDITOR
             // Editor direct-play: seed both twins into the pre-opened area so
             // RecalculateLoadedSet() never unloads it before either twin crosses a trigger.
-            // TwinSelector.Awake() guaranteed to have run (same-scene, Start() fires after all Awakes).
-            var sel = TwinSelector.Instance;
-            if (sel?.LeftTwin != null)  _currentLocation.TryAdd(sel.LeftTwin,  loc);
-            if (sel?.RightTwin != null) _currentLocation.TryAdd(sel.RightTwin, loc);
+            // PlayerRoster.Awake() guaranteed to have run (same-scene, Start() fires after all Awakes).
+            var roster = PlayerRoster.Instance;
+            if (roster?.TwinA != null) _currentLocation.TryAdd(roster.TwinA, loc);
+            if (roster?.TwinB != null) _currentLocation.TryAdd(roster.TwinB, loc);
 #endif
         }
     }

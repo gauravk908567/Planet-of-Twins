@@ -94,10 +94,10 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
             Debug.LogError("[TutorialTrap] RescueEventController.Instance is null.", this);
         else { _registry.UnregisterTrap(this); _registry.RegisterTrap(this); }
 
-        if (leftTwin == null)  leftTwin  = TwinSelector.Instance?.LeftTwin;
-        if (rightTwin == null) rightTwin = TwinSelector.Instance?.RightTwin;
+        if (leftTwin == null)  leftTwin  = PlayerRoster.Instance?.TwinA;
+        if (rightTwin == null) rightTwin = PlayerRoster.Instance?.TwinB;
         if (leftTwin == null || rightTwin == null)
-            Debug.LogError("[TutorialTrap] Twin refs null — wire in Inspector or TwinSelector must be loaded.", this);
+            Debug.LogError("[TutorialTrap] Twin refs null — wire in Inspector or PlayerRoster must be loaded.", this);
     }
 
     private void OnEnable()
