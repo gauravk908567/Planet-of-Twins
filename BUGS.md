@@ -1905,3 +1905,80 @@ Not fixed here (separate): `_ttkPaused` is never reset in `PlayerDeathRescueProx
 Files: RescueEventController.cs (OnRescueFailed event + fire in EnterState(Failed)), GameOverController.cs (subscribe OnRescueFailed, drop HandleRescueState). validate_script: 0 errors both.
 Verified by: — (needs live: fail a rescue → game-over panel shows, timeScale 0, Restart/Load Checkpoint works)
 Regressions: 0 (watch: enemies still un-freeze after a normal successful rescue + soul return)
+
+---
+
+## Couch Co-op Conversion — watch / test ledger (branch `couch-multiplayer`, opened 2026-08-16)
+
+Pre-emptive watch entries for the single→couch-co-op conversion (plan:
+`couch_multiplayer_conversion_analysis.md`, staged M0–M7). Most are **not defects yet** — they are
+"will break unless handled" risk surfaces to verify as each milestone lands. Flip to Fixed/Verified when
+the owning milestone's DoD runs. M0 (input-ownership seam) is additive/non-breaking.
+
+**Milestone status:** M0 seam ✅ (commit 6aa2c1b) · M1 ownership+dispatch ☐ · M2 char-select ☐ ·
+M3 rescue+joint+Empower ☐ · M4 tutorial ☐ · M5 HUD ☐ · M6 F13 cam ☐ · M7 sync-puzzles ☐
+
+### BUG-094 — [Watch] Tutorial breaks when TwinSelector dies (the #1 breakage)
+Status: Watch (M1/M4)
+Severity: Blocker
+System: Tutorial / Input gate / Selection
+Risk: `TutorialDirector`/`TutorialStepContext`/`TutorialTimelineStepSO`/`TutorialStepBase`/`TutorialUnlockAllStepSO`
+all Lock/Unlock selection; the tutorial teaches the (deleted) switch mechanic; `TutorialInputGate` registers
+into the ONE reader; `TutorialTimelineDirector` rebinds by type/singleton — ambiguous with two owned twins.
+Decision: **SHARED progression (D6)** — both players advance together.
+Test (M4 DoD): full Bootstrap tutorial run, 2 players, progressive unlock advances jointly; direct-area play
+(no gate) fine; four entry paths.
+Verified by: —
+
+### BUG-095 — [Watch] Selection-consumer sweep completeness
+Status: Watch (M1)
+Severity: Major
+System: Abilities / Rescue / Streaming / UI
+Risk: 14 consumers of `SelectedTransform`/`ForceSelect`/`Lock` (plan §1 grep list). Miss one → null
+`SelectedTransform` or a stuck selection-lock after `TwinSelector` is removed.
+Test: grep clean for the selection API after M1; no null-ref in play on two entry paths.
+Verified by: —
+
+### BUG-096 — [Watch] Input reclassification (per-player vs shared-UI)
+Status: Watch (M1)
+Severity: Major
+System: Input
+Risk: routing a shared-UI consumer to only P1 (P2 can't pause) or a gameplay consumer to shared (both twins
+react to one player). 26 consumers split via `PlayerInputRouter.For(twin)` vs `.SharedInput`.
+Test: P2 can pause / open skill tree; each player's attack/ability moves only their own twin.
+Verified by: —
+
+### BUG-097 — [Watch] Empower single-driver redesign
+Status: Watch (M3)
+Severity: Major
+System: Abilities / EmpowerSystem
+Risk: `EmpowerSystem` force-selects + anchors one twin + Shift-dashes — whole model is single-driver.
+Decision D1: **caster's twin anchors, PARTNER gets the buff**; rebind dash off the freed Shift.
+Test: Empower buffs the partner twin; dash works on its new key; no selection calls throw.
+Verified by: —
+
+### BUG-098 — [Watch] GetSwitchDown orphan (Shift freed)
+Status: Watch (M1/M3)
+Severity: Minor
+System: Input
+Risk: Shift (switch-twin) is deleted but still read by `EmpowerSystem` dash + `TutorialInputGate` passthrough.
+Test: no dangling `GetSwitchDown` consumer; Shift rebound per-player where still needed.
+Verified by: —
+
+### BUG-099 — [Watch] SceneFlowManager active-location by selected twin
+Status: Watch (M1)
+Severity: Minor
+System: Streaming / Music
+Risk: `SceneFlowManager.ResolveActiveLocation` picks the active location by `SelectedTransform`
+(music/active scene). No selection in couch → needs the D4 rule (prefer P1's twin, else first loaded).
+Test: music/active-scene resolves sanely with the two twins in different loaded areas.
+Verified by: —
+
+### BUG-100 — [Watch] SelectedPlayerUI dead "selected" state
+Status: Watch (M1/M5)
+Severity: Minor
+System: UI
+Risk: `SelectedPlayerUI` swaps a material to show the "selected" twin — meaningless with no selection.
+Decision D3: repurpose as P1/P2 identity, or delete.
+Test: no material-swap referencing a dead selection; per-player identity reads correctly.
+Verified by: —
