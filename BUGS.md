@@ -1981,19 +1981,25 @@ Test: no dangling `GetSwitchDown` consumer; Shift rebound per-player where still
 Verified by: —
 
 ### BUG-099 — [Watch] SceneFlowManager active-location by selected twin
-Status: Watch (M1)
+Status: Watch (M1) — **D4 RESOLVED 2026-08-16: pin to HOST (P1/TwinA)**
 Severity: Minor
 System: Streaming / Music
-Risk: `SceneFlowManager.ResolveActiveLocation` picks the active location by `SelectedTransform`
-(music/active scene). No selection in couch → needs the D4 rule (prefer P1's twin, else first loaded).
-Test: music/active-scene resolves sanely with the two twins in different loaded areas.
+Risk: `SceneFlowManager.ResolveActiveLocation` (`:246-268`) picks the active location by `SelectedTransform`
+(drives active scene + `MusicManager` crossfade). No selection in couch.
+Fix (M1): drop the `SelectedTransform` block (`:248-260`); resolve the active location as TwinA's loaded
+location, falling through to the existing first-loaded fallback (`:262-267`) only if TwinA has none. Deterministic
+(no crossfade flicker); online-ready (host authority). Bond + adjacency make a non-adjacent split unreachable.
+Test: with both twins straddling a scene boundary, music/active-scene stays on TwinA's side (no flicker).
 Verified by: —
 
 ### BUG-100 — [Watch] SelectedPlayerUI dead "selected" state
-Status: Watch (M1/M5)
+Status: Watch (M1/M5) — **D3 RESOLVED 2026-08-16: neutralize M1, remove post-M5**
 Severity: Minor
 System: UI
-Risk: `SelectedPlayerUI` swaps a material to show the "selected" twin — meaningless with no selection.
-Decision D3: repurpose as P1/P2 identity, or delete.
-Test: no material-swap referencing a dead selection; per-player identity reads correctly.
+Risk: `SelectedPlayerUI` swaps a body material to show the "selected" twin (`OnTwinSelected` sub, dangling
+`TwinSelector` ref) — meaningless with no selection; a dangling ref also breaks compile once TwinSelector goes.
+Fix (M1): make inert — cut the `TwinSelector`/`OnTwinSelected` coupling, apply a plain material once at spawn.
+No identity-marker visual to build (Kai/Lyra look different + char-select conveys who's who). Physical removal =
+post-M5 cleanup.
+Test (M1): no `OnTwinSelected` subscription, no `TwinSelector` ref; twins render with plain material, no null-ref.
 Verified by: —

@@ -158,8 +158,16 @@ soul deploy/return, TTK. The Gate/teleport rescue soul is driven by the caster's
 - **D2 — Which held abilities are JOINT vs per-player** (pending): Setsuna, SoulConvergence,
   AccordSpirit, Accord activation. Default proposal: all four = joint (both trigger within grace);
   Empower is per-player (caster-initiated, per D1).
-- **D3 — `SelectedPlayerUI`** (pending): repurpose as P1/P2 identity tint, or delete.
-- **D4 — Active-location rule** (pending) when no selection (prefer P1's twin? first loaded?).
+- **D3 — `SelectedPlayerUI` — ✅ RESOLVED (2026-08-16): neutralize in M1, remove after M5.** No real use in
+  couch — Kai/Lyra are already visually distinct and character-select tells each player who's who, so a body tint
+  (or even a start-of-game "you are X" marker) is redundant. M1 makes it **inert** (cut the `TwinSelector`/
+  `OnTwinSelected` coupling so nothing dangles; apply a plain material once); physical removal is a **post-M5**
+  cleanup. No identity-marker visual to build.
+- **D4 — Active-location rule — ✅ RESOLVED (2026-08-16): pin to HOST (P1 / TwinA).** With no selected twin,
+  `ResolveActiveLocation` follows one designated twin — deterministic, no music-crossfade flicker, and the same
+  rule online will want (host authority). Rationale (user): adjacency streaming + the shared-health bond make a
+  "twins split across non-adjacent scenes" state effectively unreachable (they'd die first), and it only gets less
+  reachable as levels grow. If a freak straddle ever surfaces, revisit then.
 - **D5 — Skill tree** (pending): one shared party tree, or per-player trees.
 
 ## STAGED EXECUTION — build order (what we do first, and why)
@@ -342,10 +350,12 @@ Persistent **R3** singleton (dup-destroy `Awake` guard, null `Instance` on `OnDe
 no-op; optional transitional default `SelectedTransform => TwinA`. M1 hardcodes P1→TwinA / P2→TwinB; **M2**
 (char-select) writes ownership into it.
 
-### Decisions M1 forces (surface — don't silently pick)
-- **D3 SelectedPlayerUI:** per-player twin-identity indicator, or remove?
-- **D4 active-location:** recommend dropping the selected-preference and using the **existing** first-actor
-  fallback (`SceneFlowManager:260+`) — minimal change, already written. Alt: host/P1 twin.
+### Decisions M1 forces — ✅ RESOLVED (2026-08-16)
+- **D3 SelectedPlayerUI → neutralize in M1, remove post-M5.** Make inert (cut `TwinSelector`/`OnTwinSelected`,
+  apply a plain material once); no identity-marker visual to build (char-select conveys who's who).
+- **D4 active-location → pin to HOST (P1/TwinA).** `ResolveActiveLocation` drops the `SelectedTransform` block and
+  follows TwinA deterministically (no crossfade flicker; online-ready). Bond + adjacency make a non-adjacent
+  split unreachable.
 - **Shift:** unbound in M1; EmpowerSystem dash rebind is M3/D1.
 
 ## VERIFICATION (two entry paths, per Working Method)
