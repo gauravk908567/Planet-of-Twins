@@ -9108,10 +9108,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66830f5714a99e64f93d652861e172cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TwinMovementDispatcher
-  leftTwin: {fileID: 1497249656955866698}
-  rightTwin: {fileID: 8656432537708520579}
   soulTwin: {fileID: 2126716920}
-  inputProviderObject: {fileID: 247002344}
   cameraManager: {fileID: 1776615699}
   referenceCamera: {fileID: 21424138}
 --- !u!114 &247002343
@@ -9184,6 +9181,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputRouter
   _inputProviderObject: {fileID: 247002344}
+  _inputProviderObjectP2: {fileID: 0}
 --- !u!1 &249559632
 GameObject:
   m_ObjectHideFlags: 0
