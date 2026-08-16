@@ -22,8 +22,12 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   M1.3). With no GameObject in the scene it never instantiates, so the running game is unchanged. Fails loud
   (LogError + `enabled=false`) if `twinA`/`twinB` are unwired (R1). Verified: forced compile + domain reload,
   **0 errors**, both `.meta`s generated.
+- **M1.1b — wired into Persistent:** added a `PlayerRoster` root GameObject to
+  [Persistent.unity](Assets/Scenes/Persistent.unity) with `twinA`=Lyra (leftTwin) / `twinB`=Kai (rightTwin) —
+  the same two `Player` objects `TwinSelector`'s left/right reference (R1). Verified `TwinA`/`TwinB`/`Twins`
+  resolve. Clean additive scene diff (47 insertions, no RenderSettings noise). Still inert (no consumer reads it).
 - Full consumer map + teardown sequencing lives in `couch_multiplayer_conversion_analysis.md` **Appendix A**.
-- **Commits (rollback refs):** M1.1a code `<pending>`; M1.1b Persistent wiring `<pending>`.
+- **Commits (rollback refs):** M1.1a code `4601626`; M1.1b Persistent wiring `<pending>`.
 
 ### Added — Couch co-op M0: input-ownership seam (2026-08-16, branch `couch-multiplayer`)
 - First slice of the couch multiplayer conversion (plan: `couch_multiplayer_conversion_analysis.md`,

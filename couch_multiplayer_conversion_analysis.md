@@ -247,8 +247,8 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
     same-scene `TwinInputReader` on `PlayerManager` (verified `Shared` resolves)
   - [ ] M0.3 second-provider scaffolding (`PlayerInputManager` / 2nd reader) spawnable but idle
 - **M1 — ownership + per-player control (walking skeleton → full)**
-  - [~] M1.1 `PlayerRoster` ownership map (hardcode P1→twinA, P2→twinB) — code done (`PlayerRoster`+`PlayerSlot`,
-    0-err); Persistent GameObject wiring = M1.1b
+  - [x] M1.1 `PlayerRoster` ownership map (hardcode P1→twinA, P2→twinB) — code (`PlayerRoster`+`PlayerSlot`, 0-err,
+    `4601626`) + Persistent GameObject wired (twinA=Lyra/twinB=Kai, `Twins` verified)
   - [ ] M1.2 neutralize `TwinSelector` selection (registry→roster; `ISelectionLock`→no-op); `Mirrored­MovementModifier`
     dies — **physical `TwinSelector.cs` deletion gated on M3** (Rescue/Empower still consume selection; see Appendix A teardown)
   - [ ] M1.3 migrate the **13 Role-1 registry sites** → `PlayerRoster` (Appendix A) + the M1-scoped selection sites
