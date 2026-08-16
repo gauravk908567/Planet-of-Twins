@@ -12,6 +12,19 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op M1.1: PlayerRoster (ownership + twin registry) (2026-08-17, branch `couch-m1-ownership`)
+- First M1 slice — the ownership spine. New `PlayerRoster` (Persistent **R3** singleton) is the surviving half
+  of `TwinSelector`: a **twin registry** (`TwinA`/`TwinB`/`Twins`/`Other`/`Contains`) + an **ownership map**
+  (`For(slot)`/`SlotOf`/`Assign`, new `PlayerSlot` enum). M1 hardcodes P1→TwinA, P2→TwinB; character select (M2)
+  rewrites via `Assign`. Files: [PlayerRoster.cs](Assets/Scripts/Players/Multiplayer/PlayerRoster.cs),
+  [PlayerSlot.cs](Assets/Scripts/Players/Multiplayer/PlayerSlot.cs).
+- **Additive / non-breaking (M1.1a):** coexists with `TwinSelector`; **no consumer references it yet** (that's
+  M1.3). With no GameObject in the scene it never instantiates, so the running game is unchanged. Fails loud
+  (LogError + `enabled=false`) if `twinA`/`twinB` are unwired (R1). Verified: forced compile + domain reload,
+  **0 errors**, both `.meta`s generated.
+- Full consumer map + teardown sequencing lives in `couch_multiplayer_conversion_analysis.md` **Appendix A**.
+- **Commits (rollback refs):** M1.1a code `<pending>`; M1.1b Persistent wiring `<pending>`.
+
 ### Added — Couch co-op M0: input-ownership seam (2026-08-16, branch `couch-multiplayer`)
 - First slice of the couch multiplayer conversion (plan: `couch_multiplayer_conversion_analysis.md`,
   staged M0–M7). New **input-ownership seam** so the eventual per-player split is a change in ONE place

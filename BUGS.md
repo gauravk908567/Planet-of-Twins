@@ -1920,6 +1920,7 @@ the owning milestone's DoD runs. M0 (input-ownership seam) is additive/non-break
 input-glyph/world-pickups all behaviour-identical, intro N/A (no intro scene active). ⏳ one `Bootstrap`-Play run
 still owed for the §10 two-entry-path sign-off · M1 ownership+dispatch ☐ · M2 char-select ☐ ·
 M3 rescue+joint+Empower ☐ · M4 tutorial ☐ · M5 HUD ☐ · M6 F13 cam ☐ · M7 sync-puzzles ☐
+· **M1 in progress:** M1.1 `PlayerRoster` code ✅ 0-err (additive, coexists with TwinSelector); scene wiring + consumer migration pending
 
 ### BUG-094 — [Watch] Tutorial breaks when TwinSelector dies (the #1 breakage)
 Status: Watch (M1/M4)
