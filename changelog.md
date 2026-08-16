@@ -38,6 +38,11 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   deliberately untouched — they route via `PlayerInputRouter.For(twin)` in M1.
 - Verified: forced script compile, domain reload completed, **0 compile errors** (only a pre-existing APV
   `ProbeReferenceVolume` package NRE, unrelated).
+- **M0.2b — router wired into Persistent:** added a `PlayerInputRouter` root GameObject to
+  [Persistent.unity](Assets/Scenes/Persistent.unity) with its `_inputProviderObject` slot wired to the
+  same-scene `TwinInputReader` (R1) on the `PlayerManager` hub. `PlayerInputRouter.Instance` is now non-null,
+  so `SharedInput`/`For(twin)` resolve through `Resolve()` → the wired reader (verified: `Shared` getter returns
+  the `TwinInputReader`). Still behaviour-neutral — same single reader drives everything until M1.
 - **Commits (rollback refs):** `6aa2c1b` (input-ownership seam) · `0cc3389` (BUGS.md couch watch/test ledger) ·
   `3745fbc` (M0.2a — shared-UI consumers → `PlayerInputRouter.SharedInput`).
 

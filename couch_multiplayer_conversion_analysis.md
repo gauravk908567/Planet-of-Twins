@@ -235,7 +235,8 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
   - [x] M0.1 input-ownership seam — `PlayerInputRouter` + `IPlayerInputRouter` (`6aa2c1b`)
   - [x] M0.2a route shared-UI consumers → `PlayerInputRouter.SharedInput` (Pause, SkillTree, Overview,
     Intro, QTE + QTEController, ControlHints, WorldSpacePickupPrompt, InputPromptView) — 9 sites, 0-err (`3745fbc`)
-  - [ ] M0.2b Persistent scene wiring — add `PlayerInputRouter` GameObject to Persistent.unity
+  - [x] M0.2b Persistent scene wiring — `PlayerInputRouter` GameObject added to Persistent.unity, slot wired to
+    same-scene `TwinInputReader` on `PlayerManager` (verified `Shared` resolves)
   - [ ] M0.3 second-provider scaffolding (`PlayerInputManager` / 2nd reader) spawnable but idle
 - **M1 — ownership + per-player control (walking skeleton → full)**
   - [ ] M1.1 `PlayerRoster` ownership map (hardcode P1→twinA, P2→twinB)
