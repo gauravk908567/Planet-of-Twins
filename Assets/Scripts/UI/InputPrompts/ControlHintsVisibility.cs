@@ -30,10 +30,10 @@ public class ControlHintsVisibility : MonoBehaviour
 
     private void Start()
     {
-        _input = TwinInputReader.Instance;
+        _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
         if (_input == null)
         {
-            Debug.LogError("[ControlHintsVisibility] No IInputProvider (TwinInputReader.Instance " +
+            Debug.LogError("[ControlHintsVisibility] No IInputProvider (PlayerInputRouter.SharedInput " +
                            "null) — H toggle dead. Is Persistent loaded? Disabling.", this);
             enabled = false;
             return;

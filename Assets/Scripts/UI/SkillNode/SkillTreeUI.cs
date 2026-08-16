@@ -60,9 +60,9 @@ public class SkillTreeUI : MonoBehaviour
 
     void Start()
     {
-        _input = TwinInputReader.Instance;
+        _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
         if (_input == null)
-            Debug.LogError("[SkillTreeUI] TwinInputReader.Instance unresolved — Tab toggle dead.", this);
+            Debug.LogError("[SkillTreeUI] PlayerInputRouter.SharedInput unresolved — Tab toggle dead.", this);
 
         _dataStore = _dataStoreMono as IAbilityDataStore;
         _purchaser = _purchaserMono as ISkillTreePurchaser;

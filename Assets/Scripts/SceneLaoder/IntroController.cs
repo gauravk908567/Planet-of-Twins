@@ -87,11 +87,11 @@ public class IntroController : MonoBehaviour
             // P13: any-key via IInputProvider (Input System). Resolved LAZILY — Persistent
             // (and thus TwinInputReader) is background-loaded by THIS controller, so it does
             // not exist at our Start; _loadsComplete guarantees it exists here.
-            _input ??= TwinInputReader.Instance;
+            _input ??= PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
             if (_input == null && !_noInputLogged)
             {
                 _noInputLogged = true;
-                Debug.LogError("[IntroController] TwinInputReader.Instance unresolved after loads — intro skip dead.", this);
+                Debug.LogError("[IntroController] PlayerInputRouter.SharedInput unresolved after loads — intro skip dead.", this);
             }
             if (_input != null && _input.GetAnySkipDown())
                 StartCoroutine(FinishIntro());

@@ -51,9 +51,9 @@ public class OverviewCamController : MonoBehaviour, IOverviewBroadcaster
 
     private void Start()
     {
-        _input = TwinInputReader.Instance;
+        _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
         if (_input == null)
-            Debug.LogError("[OverviewCamController] TwinInputReader.Instance unresolved — overview key dead.", this);
+            Debug.LogError("[OverviewCamController] PlayerInputRouter.SharedInput unresolved — overview key dead.", this);
     }
 
     private void Update()

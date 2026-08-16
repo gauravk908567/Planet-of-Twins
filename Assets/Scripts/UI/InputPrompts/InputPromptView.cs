@@ -46,10 +46,10 @@ public class InputPromptView : MonoBehaviour
 
     private void Start()
     {
-        _input = TwinInputReader.Instance;
+        _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
         if (_input == null)
         {
-            Debug.LogError("[InputPromptView] No IInputProvider (TwinInputReader.Instance null) — " +
+            Debug.LogError("[InputPromptView] No IInputProvider (PlayerInputRouter.SharedInput null) — " +
                            "cannot resolve bindings. Is Persistent loaded? Disabling.", this);
             enabled = false;
             return;

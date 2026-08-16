@@ -68,9 +68,9 @@ public class PauseMenuController : MonoBehaviour
 
     private void Start()
     {
-        _input = TwinInputReader.Instance;
+        _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
         if (_input == null)
-            Debug.LogError("[PauseMenuController] TwinInputReader.Instance unresolved — ESC dead. Is Persistent loaded?", this);
+            Debug.LogError("[PauseMenuController] PlayerInputRouter.SharedInput unresolved — ESC dead. Is Persistent loaded?", this);
     }
 
     private void Update()

@@ -94,9 +94,9 @@ public class QTEManager : MonoBehaviour
 
     private void Start()
     {
-        _input = TwinInputReader.Instance;   // same-scene singleton (Persistent), R4 line
+        _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance), R4 line
         if (_input == null)
-            Debug.LogError("[QTEManager] TwinInputReader.Instance unresolved — QTE mash dead.", this);
+            Debug.LogError("[QTEManager] PlayerInputRouter.SharedInput unresolved — QTE mash dead.", this);
     }
 
     // ── Public API ─────────────────────────────────────────────────────────
