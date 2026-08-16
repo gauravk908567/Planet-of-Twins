@@ -12,6 +12,33 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — PoT/Coexistence wind sway: angular model + per-object WindAnchor authoring (2026-08-16)
+- Wind sway is now an **angular** model instead of flat metres-of-displacement. `PoTApplyWind`
+  ([CoexistenceCommon.hlsl](Assets/Art/Shaders/CoexistenceCommon.hlsl)) rotates the free side about the
+  attachment plane by up to `_WindMaxAngle` (± half-angle, clamped), with natural vertical foreshortening
+  (`leverArm*(cos θ−1)`) so it reads as a swing, not a shear. `_WindAmount` is kept as a small **additive**
+  positional flutter layered on top (the "natural feel"); `_WindResponse` is repurposed to a base→tip bend
+  **stiffness**. Applied identically across all four passes (ForwardLit/ShadowCaster/DepthOnly/DepthNormals)
+  via the shared include, so shadows + the depth-prime prepass stay aligned. New property `_WindMaxAngle`
+  (`Range(0,180)`, default 8); `_WindAmount` default lowered 0.12→0.06. **Migration:** existing wind
+  materials keep their `_WindAmount` (now additive) and pick up the 8° default swing — re-tune or drive them
+  via WindAnchor. Deliberately **no collision** — the clamp is the optimisation (clearance baked at author
+  time), not a cloth/joint sim.
+- New `WindAnchor` component ([WindAnchor.cs](Assets/Scripts/Environment/WindAnchor.cs)) makes the anchor +
+  swing envelope **specific to one placed object** by overriding the per-material wind fields through a
+  `MaterialPropertyBlock` (no shader change; no component = material defaults, fail-safe). Enable/disable
+  toggle (off = this object goes still while neighbours sway), Standing/Hanging mode, mesh-local pivot Y, a
+  swing-arc **preset** (Free 360 / Half 180 / Narrow 60 / Custom — the FULL aperture; the shader gets the ±
+  half-angle), additive metres, and stiffness. Cost note in the file: MPB overrides of a CBUFFER field
+  disable SRP batching for that renderer — fine for props (lanterns/banners/signs), use vertex-baked weights
+  for dense foliage.
+- New scene editor ([WindAnchorEditor.cs](Assets/Scripts/Environment/Editor/WindAnchorEditor.cs)): a
+  draggable handle on the attachment plane + a swing-**cone** gizmo (sphere at 360) showing the exact
+  aperture the object can rotate through, so a designer tunes the angle to clear neighbours by eye. (Live
+  sway needs the Persistent WindDriver running — the gizmo is the edit-mode authoring feedback.)
+- Verified: forced reimport + compile, domain reload completed, **0 errors / 0 warnings** (console clean,
+  no Coexistence-specific messages).
+
 ### Fixed — Failed rescue now ends the game again (BUG-093) (2026-08-10)
 - A failed rescue no longer leaves a movable-but-dead "zombie" twin with no game-over. Root cause
   (git-confirmed regression since pre-multiscene 5fa951d): `GameOverController` triggered game-over off
