@@ -33,7 +33,7 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
   RenderSettings noise), 0 console errors. **Note:** `PlayerInputRouter` does NOT replace `TwinInputReader` — it
   routes *which* provider drives each twin; the reader stays as the input engine.
 - Full consumer map + teardown sequencing lives in `couch_multiplayer_conversion_analysis.md` **Appendix A**.
-- **Commits (rollback refs):** M1.1a code `4601626`; M1.1b Persistent wiring `03d1f15`; M1.1c hub co-location `<pending>`.
+- **Commits (rollback refs):** M1.1a code `4601626`; M1.1b Persistent wiring `03d1f15`; M1.1c hub co-location `bc4f370`.
 
 ### Added — Couch co-op M0: input-ownership seam (2026-08-16, branch `couch-multiplayer`)
 - First slice of the couch multiplayer conversion (plan: `couch_multiplayer_conversion_analysis.md`,
