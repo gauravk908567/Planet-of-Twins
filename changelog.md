@@ -12,6 +12,27 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op M2.2 (logic): front-end flow scripts — Start Menu + Character-Select screen + sequencer (2026-08-17, `couch-m1-ownership`)
+- The greybox pre-game **front-end flow logic** (canvases built next). Three UI-controller scripts + a
+  `GameBootstrapper` hook, all in `Assets/Scripts/Players/Multiplayer/`:
+  - [MainMenuController.cs](Assets/Scripts/Players/Multiplayer/MainMenuController.cs) — Start Menu shell:
+    New Game / Continue / Options / Exit. Fires `NewGameRequested`/`OptionsRequested`; **Continue disabled (stub)**
+    until saves exist; Exit = `Application.Quit` (editor-stop in editor).
+  - [CharacterSelectScreen.cs](Assets/Scripts/Players/Multiplayer/CharacterSelectScreen.cs) — greybox 2-player
+    screen bound to `CharacterSelectController`: per-slot **Cycle** (Lyra→Kai→Random) + **Ready** toggle, shared
+    status line, **Back**. Mouse-driven for the flow test (real per-device input = M2.2-proper).
+  - [FrontEndFlowController.cs](Assets/Scripts/Players/Multiplayer/FrontEndFlowController.cs) — Persistent R3
+    singleton sequencer: Start Menu → New Game → Character Select → writes roster → `IsFrontEndComplete`. Back
+    returns to menu. **Fail-open** (unwired → completes immediately so boot still reaches gameplay).
+  - `GameBootstrapper` — new `useFrontEnd` flag (default **off**): in the DEV boot branch, after Persistent loads
+    and before the area loads, `Begin()`s the front-end and waits on `IsFrontEndComplete` (twins stay locked; menu
+    covers the void). Fail-open. Intro-mode integration is a later slice.
+- **Architecture:** front-end lives in Persistent (single EventSystem, R9-clean); the front-end root is
+  self-contained (its refs are same-scene R1; `CharacterSelectController` resolves `PlayerRoster.Instance` at
+  finalize — no cross-object serialized ref). Compiles **0 errors**.
+- **Not yet wired into a scene** — additive/inert (`useFrontEnd` off, no `FrontEndFlowController` in any scene),
+  running game unchanged. Greybox canvases + Persistent/Bootstrap wiring + Play-test = next.
+
 ### Added — Couch co-op M2.1: CharacterSelectController (pre-game character select core) (2026-08-17, `couch-m1-ownership`)
 - First **M2 (front-end)** slice — the pure pre-game character-select state machine that rewrites M1's
   default ownership. New `CharacterSelectController` + `CharacterPick` enum (Lyra/Kai/Random). Files:
