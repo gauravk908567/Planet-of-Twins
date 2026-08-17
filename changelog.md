@@ -12,6 +12,34 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op M3.2: joint-ability sync foundation (`JointHoldSync` + `JointAbilityGate`) (2026-08-18, `couch-m1-ownership`)
+- **Decisions locked (M3, user 2026-08-18):**
+  - **D1 — Empower = "caster anchors, partner buffed"** (faithful port of the single-player model to couch):
+    the *casting player's* twin anchors in place as the pulsing knockback totem; the *partner's* twin gets the
+    +speed/+damage buff + dash. Either player can cast (symmetric). Built in M3.4.
+  - **D2 — all four combined powers are JOINT** (both players must co-activate): **Accord State entry, Soul
+    Convergence, Setsuna, Accord Spirits**. Move / attack / primary / Empower / Teleport stay solo. Grace =
+    a **synchronized-start leniency window, default 0.5s, tunable** (designer-editable).
+- **New generic mechanism (serves all four joint consumers before any is wired — the "build the generic system"
+  rule):** two files in `Assets/Scripts/Players/Multiplayer/`:
+  - [JointHoldSync.cs](Assets/Scripts/Players/Multiplayer/JointHoldSync.cs) — pure per-ability tracker. Each frame
+    the owning ability feeds it *both players'* reads of its own activation key (`router.For(TwinA).GetX()` /
+    `router.For(TwinB).GetX()`); returns "jointly engaged." Leniency model: both engage within the window → engaged
+    (stays engaged while both hold); one holds alone past the window → expires until both release + re-press; brief
+    blip re-syncs. **Single-device fallback** (P2→P1) makes both reads identical → degrades to solo, so single-device
+    testing still fires joint abilities. Uses **unscaled** time (Setsuna/pause-proof).
+  - [JointAbilityGate.cs](Assets/Scripts/Players/Multiplayer/JointAbilityGate.cs) — Persistent R3 singleton holding
+    the single tunable `LeniencyWindow` (`[Range(0,1.5)]`, default 0.5s). Consumers resolve R4; absent gate →
+    ability degrades to solo (additive co-op layer must never brick a core ability).
+- **Why the gate lives at each ability, not on the input layer:** Accord Spirits and Empower read the *same* key
+  (`GetEmpowerHeld`) — solo outside Accord (Empower), joint inside Accord (Spirits). A global input filter couldn't
+  distinguish them; a per-ability gate can.
+- Verified: compiles clean (0 errors/warnings); new self-test **Planet of Twins Tools ▸ Couch ▸ Test Joint-Ability
+  Sync** ([JointAbilityGateSelfTest.cs](Assets/Scripts/Editor/JointAbilityGateSelfTest.cs)) — **all 15 cases passed**
+  (same-frame, staggered-within, staggered-beyond/expiry, single-device, blip re-sync, long-release expiry).
+- **Not yet wired** — no existing ability edited; `JointAbilityGate` GameObject not yet in Persistent. Consumer
+  wiring (M3.3) + the Persistent object land in the next slice.
+
 ### Fixed — Couch co-op M2.2: front-end greybox layout (buttons stacked / no labels) (2026-08-17, `couch-m1-ownership`)
 - **Symptom (play-test):** the Start Menu showed "one button, no label" that quit the game when clicked.
 - **Root cause:** MCP `manage_gameobject create` **silently dropped the create-time `component_properties`** for

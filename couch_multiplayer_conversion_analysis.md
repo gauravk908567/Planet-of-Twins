@@ -302,11 +302,20 @@ Only the character-select *logic core* is built. Everything below is explicitly 
 - **Explicit Start button** (replaces the current auto-start-on-both-ready). Pressing Start validates before launching.
 - **Distinct-twin rule at Start (unchanged logic):** if **both markers are on the SAME twin**, Start is refused — at least one player must be on **Random** (or move to the other twin). Random then resolves to the free twin; both-Random → coin-flip. (This is exactly `CharacterSelectController.TryResolve` — the V2 is a UI reskin over the same controller: map "marker in zone" → `SetPick`, Start button → check `CanStart`/`HasConflict`.)
 - **Reuse:** the existing `CharacterSelectController` already backs this — V2 only replaces `CharacterSelectScreen`'s presentation (drag/move marker between 3 zones + Start button) and keeps `SetPick`/`SetReady`/`CanStart`/`HasConflict`/`OnSelectionComplete`.
-- **M3 — rescue + joint abilities + Empower**
+- **M3 — rescue + joint abilities + Empower** — *decisions locked 2026-08-18:* **D1 = caster anchors, partner
+  buffed** (faithful port); **D2 = ALL FOUR combined powers joint** (Accord entry, SoulConvergence, Setsuna,
+  AccordSpirit), grace = a **tunable synchronized-start leniency window, default 0.5s**.
   - [ ] M3.1 rescue partner-mash (remove ForceSelect/Lock; grabbed frozen, partner mashes)
-  - [ ] M3.2 `JointAbilityGate` grace-window infrastructure
-  - [ ] M3.3 wire joint set (Setsuna, SoulConvergence, AccordSpirit, Accord activation) through the gate
-  - [ ] M3.4 Empower redesign D1/BUG-097 (caster anchors, partner buffed; rebind dash)
+  - [x] M3.2 `JointHoldSync` + `JointAbilityGate` grace-window infrastructure (`couch-m1-ownership`; self-test
+    15/15 green). Generic: per-ability `JointHoldSync` tracker fed both players' reads of its OWN key; gate holds
+    the one tunable `LeniencyWindow`. Gate lives at each ability (not the input layer) because AccordSpirit +
+    Empower share `GetEmpowerHeld` (solo outside Accord / joint inside). Input map — joint keys: **X-hold**
+    (`GetCancelHeld`) = Accord entry; **F-hold** (`GetConvergenceHeld`) = SC & Setsuna (shared channel);
+    **Empower-key hold** (`GetEmpowerHeld`, inside Accord) = AccordSpirit. Single-device (P2→P1) → degrades to solo.
+  - [ ] M3.3 wire joint set through the gate (each ability reads P1/P2 via `PlayerInputRouter.For(TwinA/TwinB)`;
+    add the `JointAbilityGate` GameObject to Persistent + resolve R4 in each consumer)
+  - [ ] M3.4 Empower redesign **D1** (caster anchors, partner buffed; drop `ForceSelect`/`LockSelection`/
+    `SelectedTransform`; rebind the Shift-dash to the buffed partner's own input) /BUG-097
   - [ ] M3.5 Teleport selection-lock → no-op
 - **M4 — tutorial co-op rewrite (shared progression, D6 / BUG-094 — the #1 breakage)**
   - [ ] M4.1 per-provider tutorial gate
