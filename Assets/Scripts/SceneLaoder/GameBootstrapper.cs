@@ -51,6 +51,11 @@ public class GameBootstrapper : MonoBehaviour
     [Tooltip("Unload the Bootstrap scene once handoff is complete.")]
     [SerializeField] private bool unloadBootstrapWhenDone = true;
 
+    [Tooltip("Couch M2 — run the pre-game front-end (Start Menu → Character Select) in the DEV boot branch, " +
+             "after Persistent loads and before the area loads. Requires a FrontEndFlowController in Persistent; " +
+             "fail-open (skips to gameplay if absent/unwired). Off by default so dev quick-boot is unaffected.")]
+    [SerializeField] private bool useFrontEnd = false;
+
     /// <summary>
     /// Fires after Persistent + first area are up (dev mode only).
     /// In intro mode, IntroController.OnIntroFinished is the equivalent hook.
@@ -89,6 +94,25 @@ public class GameBootstrapper : MonoBehaviour
             // during the area-scene load. Gravity only applies inside ExecuteCommand,
             // so SetMovementLocked(true) is sufficient (no CC disable needed yet).
             SetTwinsMovementLocked(true);
+
+            // FRONT-END (couch M2): Start Menu → Character Select (writes PlayerRoster). Persistent is up so the
+            // roster exists; the area isn't loaded yet (the full-screen menu covers the void). Twins stay locked
+            // throughout. Fail-open — if the flow controller is absent/unwired, boot proceeds straight to gameplay.
+            if (useFrontEnd)
+            {
+                var frontEnd = FrontEndFlowController.Instance;
+                if (frontEnd != null)
+                {
+                    frontEnd.Begin();
+                    yield return new WaitUntil(() => FrontEndFlowController.Instance == null
+                                                     || FrontEndFlowController.Instance.IsFrontEndComplete);
+                }
+                else
+                {
+                    Debug.LogWarning("[GameBootstrapper] useFrontEnd is on but no FrontEndFlowController in " +
+                                     "Persistent — skipping the front-end.");
+                }
+            }
 
             if (devStartArea.IsValid && !IsLoaded(devStartArea.Name))
                 yield return LoadAdditive(devStartArea.Name);
