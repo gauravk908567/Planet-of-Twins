@@ -12,6 +12,33 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op M2.1: CharacterSelectController (pre-game character select core) (2026-08-17, `couch-m1-ownership`)
+- First **M2 (front-end)** slice — the pure pre-game character-select state machine that rewrites M1's
+  default ownership. New `CharacterSelectController` + `CharacterPick` enum (Lyra/Kai/Random). Files:
+  [CharacterSelectController.cs](Assets/Scripts/Players/Multiplayer/CharacterSelectController.cs),
+  [CharacterPick.cs](Assets/Scripts/Players/Multiplayer/CharacterPick.cs).
+- **Rules (as specced):** both slots default **Random**; `SetPick`/`Cycle` change a pick, `SetReady(slot,true/false)`
+  = Select / Back; the game will not start until **both ready** AND resolvable to two **distinct** twins; both
+  ready on the **same explicit twin** → `HasConflict` (not startable). Random resolves to the complement;
+  both-Random → coin-flip distinct. On finalize it writes `PlayerRoster.Assign(One,…)`/`Assign(Two,…)` and raises
+  `OnSelectionComplete`. Fails loud (LogError) if `PlayerRoster.Instance` is null at finalize (Persistent must be up).
+- **Identity is positional** (project convention): Lyra→`TwinA` (left/Luminari), Kai→`TwinB` (right/Vethara).
+- **Mode-agnostic** — couch drives it with two local devices now; the (later) online lobby drives the same screen
+  at host time. Save slots are **NOT** required for this (roster-only); Continue/persistence is a separate later
+  milestone (research: no disk save system exists yet — moderate/low-risk to add; the `allLocations[]` registry
+  already solves the one SO-reference gotcha).
+- **Design:** plain MonoBehaviour (not a singleton) — the select screen holds a serialized ref (R1); it does not
+  poll input or draw UI. Pure resolver exposed as static `TryResolve` for a headless **[MenuItem] self-test**
+  (*Planet of Twins Tools ▸ Couch ▸ Test Character-Select Resolution*, 10 cases across the resolution table):
+  [CharacterSelectSelfTest.cs](Assets/Scripts/Editor/CharacterSelectSelfTest.cs).
+- **Additive / non-breaking:** no consumer references it yet (the Start Menu + select screen UI + GameBootstrapper
+  rewire are the following slices). Running game unchanged.
+- Compiles **0 errors** (forced refresh + domain reload clean); **self-test GREEN** — all 10 resolution cases
+  passed (*Planet of Twins Tools ▸ Couch ▸ Test Character-Select Resolution*). Verified 2026-08-17.
+- **Front-end stubs / remaining work recorded** in `couch_multiplayer_conversion_analysis.md` §"FRONT-END STUBS &
+  OUTSTANDING" (nothing-lost ledger): Continue disabled, save-slot select + save persistence deferred, Start Menu +
+  two-device select UI + GameBootstrapper rewire outstanding, P2 device provider still to wire.
+
 ### Changed — Couch co-op M1 movement skeleton: D4/D3 + per-player movement + device-aware router (2026-08-17, `couch-m1-ownership`)
 - **M1.3b · D4** — `SceneFlowManager.ResolveActiveLocation` pins the active location to the HOST twin
   (`PlayerRoster.TwinA`) instead of the selected twin (deterministic, no music-crossfade flicker); removes the

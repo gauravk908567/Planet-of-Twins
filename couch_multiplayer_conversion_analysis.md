@@ -261,10 +261,35 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
   - [~] M1.6 router device-aware — `For(twin)` routes by `PlayerRoster.SlotOf` to P1/P2 slot (P2 optional, falls back).
     DONE. Pending: wire a real P2 device provider (user's Input-System work) + any-of `Shared` aggregator (BUG-096)
   - [→M3] M1.7 free Shift — **DEFERRED**: Shift still selects which twin casts abilities until M1.5/M3 land (BUG-098)
-- **M2 — character select (Kai/Lyra/Random)**
-  - [ ] M2.1 `CharacterSelectController` → writes `PlayerRoster`
-  - [ ] M2.2 two-device select UI
-  - [ ] M2.3 conflict resolution (distinct twins) + Random auto-assign
+- **M2 — character select (Kai/Lyra/Random)** — *now part of a fuller FRONT-END: Start Menu (New Game /
+  Continue / Options / Exit) → save-slot select → character select. Save slots = a separate later milestone
+  (no disk save system exists yet — moderate/low-risk; `allLocations[]` registry solves the SO-ref gotcha). Menu +
+  slot UI STUBBED for now; character-select core built first (couch-critical, roster-only, testable). Mode-agnostic
+  (couch local devices now, online lobby later).*
+  - [~] M2.1 `CharacterSelectController` + `CharacterPick` — pure state machine, writes `PlayerRoster.Assign` ×2 on
+    finalize; both default Random; Select/Back = `SetReady`; both-ready+distinct gate; `OnSelectionComplete`.
+    **Code written, compile+self-test PENDING (MCP down)**, not yet committed.
+  - [x] M2.3 conflict resolution + Random auto-assign — folded into M2.1 (`TryResolve`: distinct guarantee,
+    same-explicit → `HasConflict`/won't-start, both-Random coin). Headless [MenuItem] self-test (10 cases).
+  - [ ] M2.2 two-device select UI (needs MCP/Editor) — per-slot panels read providers via `PlayerInputRouter`
+  - [ ] M2.4 Start Menu shell (New Game / Continue[stub] / Options→existing settings / Exit) + GameBootstrapper rewire
+
+#### FRONT-END STUBS & OUTSTANDING — *nothing-lost ledger* (M2, 2026-08-17)
+The couch/online pre-game FRONT-END = **Start Menu → (New Game→save-slot) → Character Select → gameplay**.
+Only the character-select *logic core* is built. Everything below is explicitly deferred/stubbed so nothing is lost:
+
+| Item | State | Notes / what "done" means |
+|---|---|---|
+| `CharacterSelectController` + `CharacterPick` (M2.1/M2.3) | ✅ **DONE, verified** | 0-err + self-test green (10 cases). Writes `PlayerRoster.Assign` ×2; both-Random default; same-twin blocks start. |
+| Two-device select **UI screen** (M2.2) | ⛔ **OUTSTANDING** | Persistent/menu canvas: per-slot panels (Lyra/Kai/Random + ready), read per-slot input via `PlayerInputRouter`. Needs Editor. |
+| **Start Menu** shell (M2.4) | ⛔ **OUTSTANDING** | New Game / Continue / Options / Exit. Title screen scene or Bootstrap canvas. Needs Editor. |
+| `GameBootstrapper` **rewire** (menu-first boot) | ⛔ **OUTSTANDING** | Boot → Start Menu first; New Game/Continue load Persistent+area *after* menu; ensure Persistent up before select finalizes. |
+| **Continue** menu action | 🚧 **STUBBED** | Disabled/greyed — depends on save persistence (below). Re-enable when saves land. |
+| Save-slot **select screen** | 🚧 **STUBBED** | Deferred with persistence. New Game currently → straight to Character Select. |
+| **Save persistence** (JSON slots) | ⛔ **OUTSTANDING (own milestone)** | *No disk save system exists yet* — settings-only (`PlayerPrefs`). Moderate/low-risk: `GameSaveData` (id-keyed mirror of `CheckpointData`) + JSON to `persistentDataPath/slot_N.json` + slot manager. One gotcha (SO refs) already solved by `SceneFlowManager.allLocations[]` + unique asset names; skill snapshot → `{treeId,level}` pairs. ~½–1 day. |
+| **Options** action | 🔁 **REUSE** | Wire to the existing `GraphicsSettingsController` / settings UI (already `PlayerPrefs`-backed). No new persistence. |
+| **P2 device provider** (from M1.6) | ⛔ **OUTSTANDING** | Real 2nd-device reader into `PlayerInputRouter` P2 slot — required for a genuine two-device select. User's Input-System work; single-device falls back to P1 until then. |
+| **Exit** action | ⛔ **OUTSTANDING (trivial)** | `Application.Quit()` (+ editor stop guard). |
 - **M3 — rescue + joint abilities + Empower**
   - [ ] M3.1 rescue partner-mash (remove ForceSelect/Lock; grabbed frozen, partner mashes)
   - [ ] M3.2 `JointAbilityGate` grace-window infrastructure
