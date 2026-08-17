@@ -12,6 +12,20 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Fixed — Couch co-op M2.2: front-end greybox layout (buttons stacked / no labels) (2026-08-17, `couch-m1-ownership`)
+- **Symptom (play-test):** the Start Menu showed "one button, no label" that quit the game when clicked.
+- **Root cause:** MCP `manage_gameobject create` **silently dropped the create-time `component_properties`** for
+  every UI element — so all button RectTransforms defaulted to anchoredPosition (0,0) / size 100×100 (all four
+  **stacked dead-center** → looked like one button) and every TMP `text` stayed empty `""` (→ "no label"). Same
+  class of bug as the Canvas coming out World-Space earlier. The font asset was fine (LiberationSans SDF).
+- **Fix:** re-applied all positions / sizes / anchors / text / colors via explicit `manage_components.set_property`
+  (which works reliably) across both panels (~50 property sets). Start Menu: title + 4 stacked buttons with labels.
+  Character Select: title, P1/P2 labels + Cycle/Ready buttons, status line, Back — laid out in two columns.
+- **Also:** editor **reassigns instance IDs across reloads**, so integer targets went stale mid-edit → switched to
+  **stable `by_path` targets** for `set_property`. Both panels saved **inactive** (runtime `Begin()` shows the menu).
+- Verified: Canvas is Screen-Space-Overlay sort 200 + active; MainMenuPanel has all 5 children + dark Image; every
+  `set_property` succeeded. (Edit-mode screenshots can't show overlay via camera capture — real check is a Play run.)
+
 ### Added — Couch co-op M2.2 (UI): greybox front-end canvases built + wired in Persistent (2026-08-17, `couch-m1-ownership`)
 - Built the greybox **Start Menu + Character-Select** UI in [Persistent.unity](Assets/Scenes/Persistent.unity)
   and wired it to the M2.2 logic scripts. New hierarchy `FrontEnd` (holds `FrontEndFlowController` +
