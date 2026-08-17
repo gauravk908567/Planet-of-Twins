@@ -38,6 +38,7 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 - **Front-end stubs / remaining work recorded** in `couch_multiplayer_conversion_analysis.md` §"FRONT-END STUBS &
   OUTSTANDING" (nothing-lost ledger): Continue disabled, save-slot select + save persistence deferred, Start Menu +
   two-device select UI + GameBootstrapper rewire outstanding, P2 device provider still to wire.
+- **Commit (rollback ref):** `8aa9ec2`.
 
 ### Changed — Couch co-op M1 movement skeleton: D4/D3 + per-player movement + device-aware router (2026-08-17, `couch-m1-ownership`)
 - **M1.3b · D4** — `SceneFlowManager.ResolveActiveLocation` pins the active location to the HOST twin
