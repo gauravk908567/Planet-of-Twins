@@ -294,6 +294,14 @@ Only the character-select *logic core* is built. Everything below is explicitly 
 | **Options** action | 🚧 **STUB** | Currently logs a TODO; wire to the existing `GraphicsSettingsController` / settings UI (already `PlayerPrefs`-backed). |
 | **P2 device provider** (from M1.6) | ⛔ **OUTSTANDING** | Real 2nd-device reader into `PlayerInputRouter` P2 slot — required for a genuine two-device select. User's Input-System work; single-device falls back to P1 until then. |
 | **Exit** action | ✅ **DONE** | `Application.Quit()` (+ editor-stop guard) wired in `MainMenuController`. |
+
+#### Character-Select screen V2 — SPATIAL redesign (future / user-requested, recorded 2026-08-17)
+*Flow works with the greybox (Cycle/Ready) — this is the intended visual/UX for the polish pass. Deferred.*
+- **Spatial layout, not per-slot cycle buttons:** three zones — **LEFT = Kai**, **RIGHT = Lyra**, **CENTER-BOTTOM = Random** (the default). Kai/Lyra names shown large on their sides; Random in the middle-bottom.
+- **Player markers:** P1 and P2 each shown as a **clan-colour outline/marker** (Kai=Vethara, Lyra=Luminari hues — see ArtStyle clan ramps). Both markers **start on Random** and the player moves their marker onto Kai or Lyra (or leaves it on Random).
+- **Explicit Start button** (replaces the current auto-start-on-both-ready). Pressing Start validates before launching.
+- **Distinct-twin rule at Start (unchanged logic):** if **both markers are on the SAME twin**, Start is refused — at least one player must be on **Random** (or move to the other twin). Random then resolves to the free twin; both-Random → coin-flip. (This is exactly `CharacterSelectController.TryResolve` — the V2 is a UI reskin over the same controller: map "marker in zone" → `SetPick`, Start button → check `CanStart`/`HasConflict`.)
+- **Reuse:** the existing `CharacterSelectController` already backs this — V2 only replaces `CharacterSelectScreen`'s presentation (drag/move marker between 3 zones + Start button) and keeps `SetPick`/`SetReady`/`CanStart`/`HasConflict`/`OnSelectionComplete`.
 - **M3 — rescue + joint abilities + Empower**
   - [ ] M3.1 rescue partner-mash (remove ForceSelect/Lock; grabbed frozen, partner mashes)
   - [ ] M3.2 `JointAbilityGate` grace-window infrastructure
