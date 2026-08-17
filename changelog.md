@@ -12,6 +12,23 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op M2.2 (UI): greybox front-end canvases built + wired in Persistent (2026-08-17, `couch-m1-ownership`)
+- Built the greybox **Start Menu + Character-Select** UI in [Persistent.unity](Assets/Scenes/Persistent.unity)
+  and wired it to the M2.2 logic scripts. New hierarchy `FrontEnd` (holds `FrontEndFlowController` +
+  `CharacterSelectController`) → `FrontEndCanvas` (Screen-Space-Overlay, sortingOrder 200) → two panels:
+  - **MainMenuPanel** (`MainMenuController`): New Game / Continue (disabled stub) / Options / Exit.
+  - **CharacterSelectPanel** (`CharacterSelectScreen`): P1/P2 columns each with Cycle + Ready buttons + a label,
+    a shared status line, and Back.
+- All component refs wired (verified via component reads — Buttons/TMP/`CharacterSelectController` all resolved,
+  none null). Both panels default **inactive** so direct-area play isn't covered; `FrontEndFlowController.Begin()`
+  shows the menu. Reuses Persistent's single EventSystem (`InputSystemUIInputModule`) — R9-clean, no new EventSystem.
+- **Fixes during build:** (1) a stray label mis-parented onto the existing pause-menu ExitButton (bare-name
+  collision) was removed — pause menu restored intact; (2) the Canvas came out of MCP creation as World-Space —
+  corrected to Screen-Space-Overlay, sortingOrder 200. Lesson recorded: parent UI by full path, not bare name.
+- Scene diff is additive + Unity re-serialization reorder (verified: all pre-existing named objects present in
+  both −/+, i.e. reordered not deleted; no RenderSettings/lighting noise). Not yet Play-tested — flow verification
+  (Play from Bootstrap with `useFrontEnd`) is the next step.
+
 ### Added — Couch co-op M2.2 (logic): front-end flow scripts — Start Menu + Character-Select screen + sequencer (2026-08-17, `couch-m1-ownership`)
 - The greybox pre-game **front-end flow logic** (canvases built next). Three UI-controller scripts + a
   `GameBootstrapper` hook, all in `Assets/Scripts/Players/Multiplayer/`:
