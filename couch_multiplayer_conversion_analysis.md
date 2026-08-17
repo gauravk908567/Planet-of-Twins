@@ -266,13 +266,16 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
   (no disk save system exists yet — moderate/low-risk; `allLocations[]` registry solves the SO-ref gotcha). Menu +
   slot UI STUBBED for now; character-select core built first (couch-critical, roster-only, testable). Mode-agnostic
   (couch local devices now, online lobby later).*
-  - [~] M2.1 `CharacterSelectController` + `CharacterPick` — pure state machine, writes `PlayerRoster.Assign` ×2 on
+  - [x] M2.1 `CharacterSelectController` + `CharacterPick` — pure state machine, writes `PlayerRoster.Assign` ×2 on
     finalize; both default Random; Select/Back = `SetReady`; both-ready+distinct gate; `OnSelectionComplete`.
-    **Code written, compile+self-test PENDING (MCP down)**, not yet committed.
+    0-err + self-test green (`8aa9ec2`).
   - [x] M2.3 conflict resolution + Random auto-assign — folded into M2.1 (`TryResolve`: distinct guarantee,
     same-explicit → `HasConflict`/won't-start, both-Random coin). Headless [MenuItem] self-test (10 cases).
-  - [ ] M2.2 two-device select UI (needs MCP/Editor) — per-slot panels read providers via `PlayerInputRouter`
-  - [ ] M2.4 Start Menu shell (New Game / Continue[stub] / Options→existing settings / Exit) + GameBootstrapper rewire
+  - [~] M2.2 select UI — greybox built + wired in Persistent (`15c0cab`): P1/P2 Cycle+Ready+label, status, Back.
+    **Mouse-driven for now**; real per-device input via `PlayerInputRouter` (+ P2 device) still pending.
+  - [~] M2.4 Start Menu shell (New Game / Continue[stub] / Options / Exit) built + wired (`15c0cab`) +
+    `GameBootstrapper.useFrontEnd` gate in the DEV branch (`249fc5c`). **Play-test pending** (needs DevConfig
+    dev mode). Intro-mode integration + menu-first-boot rewire = later.
 
 #### FRONT-END STUBS & OUTSTANDING — *nothing-lost ledger* (M2, 2026-08-17)
 The couch/online pre-game FRONT-END = **Start Menu → (New Game→save-slot) → Character Select → gameplay**.
@@ -281,15 +284,16 @@ Only the character-select *logic core* is built. Everything below is explicitly 
 | Item | State | Notes / what "done" means |
 |---|---|---|
 | `CharacterSelectController` + `CharacterPick` (M2.1/M2.3) | ✅ **DONE, verified** | 0-err + self-test green (10 cases). Writes `PlayerRoster.Assign` ×2; both-Random default; same-twin blocks start. |
-| Two-device select **UI screen** (M2.2) | ⛔ **OUTSTANDING** | Persistent/menu canvas: per-slot panels (Lyra/Kai/Random + ready), read per-slot input via `PlayerInputRouter`. Needs Editor. |
-| **Start Menu** shell (M2.4) | ⛔ **OUTSTANDING** | New Game / Continue / Options / Exit. Title screen scene or Bootstrap canvas. Needs Editor. |
-| `GameBootstrapper` **rewire** (menu-first boot) | ⛔ **OUTSTANDING** | Boot → Start Menu first; New Game/Continue load Persistent+area *after* menu; ensure Persistent up before select finalizes. |
-| **Continue** menu action | 🚧 **STUBBED** | Disabled/greyed — depends on save persistence (below). Re-enable when saves land. |
-| Save-slot **select screen** | 🚧 **STUBBED** | Deferred with persistence. New Game currently → straight to Character Select. |
+| Two-device select **UI screen** (M2.2) | 🟡 **GREYBOX DONE (`15c0cab`)** | Built + wired in Persistent. **Mouse-driven** for the flow test; real per-device input via `PlayerInputRouter` (+ P2 device) still to wire. |
+| **Start Menu** shell (M2.4) | ✅ **GREYBOX DONE (`15c0cab`)** | New Game / Continue[stub] / Options / Exit — greybox canvas in Persistent, wired. |
+| `GameBootstrapper` gate | ✅ **DONE (`249fc5c`)** | `useFrontEnd` flag runs the front-end in the DEV branch after Persistent, before area. Fail-open. Full menu-first-boot rewire + intro-mode integration = later. |
+| **Play-test the flow** | ⛔ **NEXT** | Set `DevConfig.skipTutorial=1` (dev mode), open Bootstrap, Play → menu → New Game → pick+ready → L1_Park loads. Watch: TMP text visibility (font). MCP can't click, so this is a manual run. |
+| **Continue** menu action | 🚧 **STUBBED** | Button present but disabled — depends on save persistence (below). |
+| Save-slot **select screen** | 🚧 **STUBBED** | Deferred with persistence. New Game → straight to Character Select. |
 | **Save persistence** (JSON slots) | ⛔ **OUTSTANDING (own milestone)** | *No disk save system exists yet* — settings-only (`PlayerPrefs`). Moderate/low-risk: `GameSaveData` (id-keyed mirror of `CheckpointData`) + JSON to `persistentDataPath/slot_N.json` + slot manager. One gotcha (SO refs) already solved by `SceneFlowManager.allLocations[]` + unique asset names; skill snapshot → `{treeId,level}` pairs. ~½–1 day. |
-| **Options** action | 🔁 **REUSE** | Wire to the existing `GraphicsSettingsController` / settings UI (already `PlayerPrefs`-backed). No new persistence. |
+| **Options** action | 🚧 **STUB** | Currently logs a TODO; wire to the existing `GraphicsSettingsController` / settings UI (already `PlayerPrefs`-backed). |
 | **P2 device provider** (from M1.6) | ⛔ **OUTSTANDING** | Real 2nd-device reader into `PlayerInputRouter` P2 slot — required for a genuine two-device select. User's Input-System work; single-device falls back to P1 until then. |
-| **Exit** action | ⛔ **OUTSTANDING (trivial)** | `Application.Quit()` (+ editor stop guard). |
+| **Exit** action | ✅ **DONE** | `Application.Quit()` (+ editor-stop guard) wired in `MainMenuController`. |
 - **M3 — rescue + joint abilities + Empower**
   - [ ] M3.1 rescue partner-mash (remove ForceSelect/Lock; grabbed frozen, partner mashes)
   - [ ] M3.2 `JointAbilityGate` grace-window infrastructure
