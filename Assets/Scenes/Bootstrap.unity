@@ -157,6 +157,7 @@ MonoBehaviour:
   devStartLocation: {fileID: 11400000, guid: dc133cf5612fe4747a0665fefee06a49, type: 2}
   devConfig: {fileID: 11400000, guid: ac08c51f8dfa1af4bba1808e999d935a, type: 2}
   unloadBootstrapWhenDone: 1
+  useFrontEnd: 1
 --- !u!4 &1795707179
 Transform:
   m_ObjectHideFlags: 0
