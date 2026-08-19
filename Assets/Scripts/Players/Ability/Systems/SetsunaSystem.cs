@@ -44,6 +44,12 @@ public class SetsunaSystem : MonoBehaviour
     [Header("Health pool")]
     [SerializeField] private SharedHealthPool _healthPool;
 
+    [Header("Co-op — joint activation (D2)")]
+    [Tooltip("Synchronized-start leniency (seconds, UNSCALED): the max gap between the two players' " +
+             "F-holds that still counts as pressing 'together'. Higher = more forgiving; 0 = frame-perfect.")]
+    [SerializeField, Range(0f, 1.5f)] private float _jointLeniency = 0.5f;
+    private readonly JointHoldSync _jointSync = new JointHoldSync();
+
     [Header("Timing")]
     [SerializeField] private float _chargeHoldTime = 2f;
     [SerializeField] private float _activeDuration = 7f;    // unscaled seconds
@@ -176,13 +182,26 @@ public class SetsunaSystem : MonoBehaviour
     }
 
     // ── State handlers ────────────────────────────────────────
+    /// <summary>Both players holding the Convergence key (F) together, synced within <c>_jointLeniency</c>
+    /// (D2 — Setsuna is a JOINT power). Shares the key with Soul Convergence (each has its own sync);
+    /// only ticked while listening (HandleIdle resets on context-exit). Single-device (P2→P1) → solo.
+    /// No router/roster → solo read.</summary>
+    private bool JointConvergenceHeld()
+    {
+        var pa = PlayerInputRouter.For(_leftTwin);
+        var pb = PlayerInputRouter.For(_rightTwin);
+        if (pa == null || pb == null) return _input.GetConvergenceHeld();
+        return _jointSync.Tick(pa.GetConvergenceHeld(), pb.GetConvergenceHeld(),
+                               _jointLeniency, Time.unscaledDeltaTime);
+    }
+
     private void HandleIdle()
     {
         // Must be: Accord active + SC charged + no rescue
-        if (!_accordMode.IsAccordActive) return;
-        if (_scSystem == null || !_scSystem.IsCharged && !_scSystem.IsAbilityRunning) return;
-        if (_rescueActive != null && _rescueActive.IsRescueActive) return;
-        if (!_input.GetConvergenceHeld()) return;
+        if (!_accordMode.IsAccordActive) { _jointSync.Reset(); return; }
+        if (_scSystem == null || !_scSystem.IsCharged && !_scSystem.IsAbilityRunning) { _jointSync.Reset(); return; }
+        if (_rescueActive != null && _rescueActive.IsRescueActive) { _jointSync.Reset(); return; }
+        if (!JointConvergenceHeld()) return;
 
         _chargeProgress = 0f;
         _state = State.Charging;
@@ -192,7 +211,7 @@ public class SetsunaSystem : MonoBehaviour
 
     private void HandleCharging()
     {
-        if (!_input.GetConvergenceHeld())
+        if (!JointConvergenceHeld())
         {
             CancelCharge();
             return;
