@@ -305,7 +305,11 @@ Only the character-select *logic core* is built. Everything below is explicitly 
 - **M3 — rescue + joint abilities + Empower** — *decisions locked 2026-08-18:* **D1 = caster anchors, partner
   buffed** (faithful port); **D2 = ALL FOUR combined powers joint** (Accord entry, SoulConvergence, Setsuna,
   AccordSpirit), grace = a **tunable synchronized-start leniency window, default 0.5s**.
-  - [ ] M3.1 rescue partner-mash (remove ForceSelect/Lock; grabbed frozen, partner mashes)
+  - [x] M3.1 rescue partner-mash (`couch-m1-ownership`; compiles clean). Removed both `ForceSelect` hijacks
+    (`HandlePlayerGrabbed` + `HandleTwinDeath`); mash split per-player — grabbed owner = **E** (`GrabbedStruggleMash`),
+    partner = **F** (`PartnerRescueMash`) via `PlayerInputRouter.For(grabbed/partner)`. Lock/Unlock no-op calls +
+    `_selector` LEFT (post-M3 TwinSelector teardown). Single-device unchanged (both reads = same provider);
+    two-device split + grab→mash→free flow need runtime play-test to verify.
   - [x] M3.2 `JointHoldSync` + `JointAbilityGate` grace-window infrastructure (`couch-m1-ownership`; self-test
     15/15 green). Generic: per-ability `JointHoldSync` tracker fed both players' reads of its OWN key; gate holds
     the one tunable `LeniencyWindow`. Gate lives at each ability (not the input layer) because AccordSpirit +

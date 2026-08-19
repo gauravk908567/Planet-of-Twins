@@ -12,6 +12,23 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op M3.1: rescue is a partner-mash (drop selection hijack; per-player mash) (2026-08-18, `couch-m1-ownership`)
+- **Rescue no longer hijacks twin selection.** [RescueEventController.cs](Assets/Scripts/Players/RescueEventController.cs)
+  removed both `ITwinSelector.ForceSelect` calls: `HandlePlayerGrabbed` (was: switch control to the free twin when
+  the grabbed twin was selected) and `HandleTwinDeath` (was: force-select the survivor). In couch each player owns
+  their own twin, so there is nothing to switch — the grabbed twin's player is frozen and the partner already drives
+  the free twin. The `ISelectionLock.Lock/Unlock` calls stay (harmless no-ops) until the post-M3 `TwinSelector`
+  teardown; `_selector` stays resolved (still null-checked) for the same reason.
+- **Mash routed per-player (the co-op split):** the **grabbed** twin's owner presses **E** to struggle/buy time
+  (`GrabbedStruggleMash`), the **partner** (owner of the non-grabbed twin) mashes **F** to fill the rescue bar
+  (`PartnerRescueMash`) — replacing the three shared `_input.GetRescueMash()` / `GetStruggleMash()` reads. Reads
+  route by twin ownership via `PlayerInputRouter.For(grabbed / partner)`.
+- **Single-device play is unchanged:** with one device, `For(grabbed)` and `For(partner)` resolve to the same
+  provider, so the shared reads are identical to before — one player still does both E and F. The genuine two-player
+  split ("you're caught, I run over and free you") only manifests with a paired P2 device.
+- Verified: compiles clean (0 errors/warnings). Runtime grab→mash→free flow is not fully verifiable until a trap
+  scenario is play-tested (needs an area scene / sandbox trap); two-device split needs the P2 provider.
+
 ### Changed — Couch co-op M3.3: four combined powers wired JOINT + per-ability leniency (2026-08-18, `couch-m1-ownership`)
 - **Wired the joint gate through all four combined powers (D2).** Each now activates only when BOTH players
   co-activate their hold, synced within a per-ability leniency window. Each ability reads P1/P2 independently via

@@ -377,12 +377,9 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         var moveable = grabbedPlayer.Movement as IMovementFreezable;
         moveable?.SetFrozen(true);
 
-        if (_selector?.SelectedTransform == grabbedPlayer.transform)
-        {
-            Player otherTwin = isLeft ? rightTwin : leftTwin;
-            _selector?.ForceSelect(otherTwin);
-        }
-
+        // Couch M3.1: nothing to hijack — the grabbed twin's player is frozen and the partner already
+        // controls the free twin. (Was: ForceSelect(otherTwin) when the grabbed twin was the selected
+        // one.) LockSelection stays a harmless no-op until the post-M3 TwinSelector teardown.
         _selectionLock?.LockSelection();
         OnPlayerInDanger?.Invoke(grabbedPlayer);
 
@@ -440,7 +437,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         Player survivor = (deadTwin == leftTwin) ? rightTwin : leftTwin;
         if (survivor.Health.IsDead) return;
 
-        _selector?.ForceSelect(survivor);
+        // Couch M3.1: no ForceSelect(survivor) — the survivor's own player already controls it.
         // NOTE: do NOT LockSelection here â HandlePlayerGrabbed fires immediately
         // after via OnPlayerGrabbed and locks it. Double-locking prevents unlock
         // after rescue since only one UnlockSelection is called in HandleDyingReleased.
@@ -465,6 +462,33 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     }
 
     // âUpdate
+    // Couch M3.1 — rescue is a PARTNER-mash. The grabbed twin is frozen; its OWNER presses E to
+    // struggle (buy time), while the PARTNER (owner of the free twin) mashes F to fill the rescue bar.
+    // Reads route by twin ownership via PlayerInputRouter; single-device (P2->P1) collapses both to one
+    // provider, so solo play is unchanged (one player does both E and F).
+    private Player PartnerOfGrabbed()
+    {
+        var grabbed = _activeTarget?.GrabbedPlayer;
+        if (grabbed == null) return null;
+        return grabbed == leftTwin ? rightTwin : leftTwin;
+    }
+
+    /// <summary>F (rescue mash) read from the PARTNER — the owner of the non-grabbed twin.</summary>
+    private bool PartnerRescueMash()
+    {
+        var partner = PartnerOfGrabbed();
+        var provider = partner != null ? PlayerInputRouter.For(partner) : _input;
+        return (provider ?? _input)?.GetRescueMash() ?? false;
+    }
+
+    /// <summary>E (struggle) read from the GRABBED twin's own owner (buys time; tier-1 traps).</summary>
+    private bool GrabbedStruggleMash()
+    {
+        var grabbed = _activeTarget?.GrabbedPlayer;
+        var provider = grabbed != null ? PlayerInputRouter.For(grabbed) : _input;
+        return (provider ?? _input)?.GetStruggleMash() ?? false;
+    }
+
     private void Update()
     {
         // ── Struggle (E mash by grabbed player, tier-1 traps only) ──
@@ -475,7 +499,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             !_struggleCapReached &&
             _state == RescueState.Idle && // disabled once rescue triggered
             _input != null &&
-            _input.GetStruggleMash())
+            GrabbedStruggleMash())
         {
             _activeTarget.OnStruggle();
             OnStruggleActivated?.Invoke();
@@ -498,7 +522,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                 break;
 
             case RescueState.Triggered:
-                if (IsSoulInMashRange() && _input.GetRescueMash())
+                if (IsSoulInMashRange() && PartnerRescueMash())
                 {
                     TransitionTo(RescueState.Mashing);
                 }
@@ -551,7 +575,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         _mashTimeRemaining -= Time.deltaTime;
         OnMashTimeUpdated?.Invoke(_mashTimeRemaining);
 
-        if (_input.GetRescueMash())
+        if (PartnerRescueMash())
         {
             float fillPerPress = 1f / _requiredPressesTotal;
             _mashProgress = Mathf.Clamp01(_mashProgress + fillPerPress);
