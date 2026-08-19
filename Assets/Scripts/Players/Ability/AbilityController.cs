@@ -166,4 +166,18 @@ public class AbilityController : MonoBehaviour, IAbilityLock
     public float GetPrimaryRange() => primaryAbility is AbilityBase b ? b.GetRange() : 0f;
     public IAbilityHUDSource GetPrimaryHUDSource() => primaryAbility as IAbilityHUDSource;
     public IAbilityHUDSource GetTeleportHUDSource() => teleportAbility as IAbilityHUDSource;
+
+    // ── Couch S2: shared-cooldown readiness ───────────────────
+    // Primary (Q) and emergency Teleport (C) are shared: TwinAbilityDispatcher gates on BOTH twins'
+    // readiness, so casting either (Kai=Stun/VoidStrike, Lyra=Possess/RadiantSeeker) puts that ability
+    // on cooldown → the AND becomes false → the slot is locked for both until it replenishes (the used
+    // ability's own cooldown; a whiff never starts a cooldown, so it never false-locks). Readiness is
+    // read through IAbilityHUDSource so it works for every ability type without a concrete-type check.
+    // COOLDOWN-based only — per-twin PrimaryLocked (bomb suppression) is enforced inside ActivatePrimary,
+    // so it blocks that twin's cast without locking the shared slot.
+    public bool IsPrimaryReady => IsAbilityReady(primaryAbility);
+    public bool IsTeleportReady => IsAbilityReady(teleportAbility);
+
+    private static bool IsAbilityReady(IAbility ability) =>
+        ability is IAbilityHUDSource hud && !hud.IsActive && hud.CooldownProgress >= 1f;
 }
