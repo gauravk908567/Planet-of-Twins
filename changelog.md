@@ -12,6 +12,27 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op: per-player PRIMARY + TELEPORT dispatch, shared-cooldown (S2) (2026-08-18, `couch-m1-ownership`)
+- **Primary (Q) and emergency Teleport (C) are now per-player + shared-cooldown.**
+  [TwinAbilityDispatcher.cs](Assets/Scripts/Players/TwinAbilityDispatcher.cs) rewritten off selection: each twin
+  fires its OWN ability (Kai=Stun/VoidStrike, Lyra=Possess/RadiantSeeker) on its owning player's input via
+  `PlayerInputRouter.For(twin)`; dropped `_currentAbilityController` / `OnTwinSelected` / the selector subscription.
+- **Shared availability = both twins' primary (or teleport) ready** — a new
+  [AbilityController.cs](Assets/Scripts/Players/Ability/AbilityController.cs) `IsPrimaryReady`/`IsTeleportReady`
+  (read through `IAbilityHUDSource`: `!IsActive && CooldownProgress >= 1`, so it works for every ability type with
+  **no** `IAbility`/`AbilityBase`/accord-ability changes). Casting either puts that ability on cooldown → the AND
+  goes false → the slot is locked for **both** until it replenishes, for exactly the **used ability's own cooldown**
+  (*user ruling 2026-08-18: "use the abilities' cooldown as usual"*). A whiff (no target → no cooldown started) never
+  false-locks. Cooldown-based only — per-twin `PrimaryLocked` (bomb) still blocks just that twin's cast, not the slot.
+- **No coordinator, no cooldown-syncing, no HUD rewire** — each ability keeps its own cooldown/ring; the dispatcher
+  just gates on both. (Per-player HUD rings for shared abilities are the M5 HUD revamp; the ring stays truthful.)
+- Teleport is now per-owner throughout: hold C → preview, release → launch (emergency + shared-ready), and each
+  gate's cancel window (X) is driven by its OWNING player's input. `inputProviderObject`/`twinSelectorObject`/
+  `accordModeProviderObject` serialized slots retained (unused) for wiring stability → retired in the S5 teardown.
+- **Online-ready:** the shared-ready check + per-owner trigger is the exact seam that becomes an intent-RPC→host with
+  a host-resolved cooldown. Single-device unchanged (both providers → P1 → identical reads).
+- Verified: compiles clean (0 errors/warnings). Two-device trigger + the shared-lock timing need a play-test.
+
 ### Changed — Couch co-op: per-player ATTACK dispatch (S1 of the ability-dispatch rework) (2026-08-18, `couch-m1-ownership`)
 - **Attack (E) is now per-twin.** [TwinAttackDispatcher.cs](Assets/Scripts/Players/TwinAttackDispatcher.cs): each
   twin melees on its OWNING player's E (`PlayerInputRouter.For(twin)`) — replacing the single shared-input read that

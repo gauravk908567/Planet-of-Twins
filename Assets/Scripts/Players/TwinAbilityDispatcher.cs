@@ -1,139 +1,103 @@
-﻿using UnityEngine;
-using System.Collections;
+using UnityEngine;
 
 /// <summary>
-/// Sole input dispatcher for all twin abilities.
+/// Per-player ability dispatch (couch S2). Primary (Q) and emergency Teleport (C) are SHARED-cooldown:
+/// either twin's OWNING player triggers, and the slot is unavailable to BOTH until it replenishes.
 ///
-/// Teleport flow:
-///   1. Emergency condition is met (EmergencyTeleportMonitor.IsEmergencyAvailable)
-///   2. Player holds C → marker preview shows, updates every frame
-///   3. Player releases C → preview hides, soul launches to marker position
-///   4. Soul arrives → TeleportAbility opens cancel window, fires OnCancelWindowOpened
-///   5. Player holds X → cancel progress accumulates via NotifyCancelInput
-///   6. Player releases X → progress resets via NotifyCancelReleased
-///   7. If X held for 0.75s → TeleportAbility.ForceEnd() → cooldown starts, soul returns
+/// <para><b>Shared availability = both twins' primary/teleport are ready.</b> Casting either (Kai=Stun/
+/// VoidStrike, Lyra=Possess/RadiantSeeker) puts that ability on cooldown → the AND becomes false → the
+/// slot is locked for the used ability's own cooldown. A whiff (no target) never starts a cooldown, so it
+/// never false-locks. No coordinator / cooldown-syncing / HUD rewire needed — each ability keeps its own
+/// cooldown; the dispatcher just gates on both.</para>
 ///
-/// EmergencyTeleportMonitor is a READ-ONLY condition gate — this dispatcher
-/// reads IsEmergencyAvailable and owns all teleport input. The monitor owns
-/// no input handling whatsoever.
+/// Selection is gone (dropped _currentAbilityController / OnTwinSelected). Each twin fires its own ability
+/// and cancels its own teleport via <see cref="PlayerInputRouter.For"/>. Single-device (P2→P1) → both reads
+/// identical → unchanged. The inputProviderObject / twinSelectorObject / accordModeProviderObject serialized
+/// slots are retained for wiring stability and retired in the S5 TwinSelector teardown.
+///
+/// Teleport flow (unchanged, now per-owner): hold C → preview; release C → launch (emergency + shared-ready);
+/// after the gate opens its cancel window, the OWNING player holds X → cancel accrues, releases X → resets.
 /// </summary>
 public class TwinAbilityDispatcher : MonoBehaviour
 {
-    [SerializeField] private MonoBehaviour inputProviderObject;
-    [SerializeField] private MonoBehaviour twinSelectorObject;
+    [SerializeField] private MonoBehaviour inputProviderObject;        // retained for wiring (unused post-S2)
+    [SerializeField] private MonoBehaviour twinSelectorObject;         // retained for wiring (unused post-S2)
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
     [SerializeField] private EmergencyTeleportMonitor emergencyMonitor;
-    [Tooltip("Drag AccordStateSystem here — used to check IsAccordActive for Q routing.")]
-    [SerializeField] private MonoBehaviour accordModeProviderObject;
+    [SerializeField] private MonoBehaviour accordModeProviderObject;   // retained for wiring (unused post-S2)
 
-    private IInputProvider _input;
-    private IAccordModeProvider _accordMode;
-    private ITwinSelector _selector;
-    private AbilityController _currentAbilityController;
     private AbilityController _leftController;
     private AbilityController _rightController;
 
-    private void Awake()
-    {
-        _input = inputProviderObject as IInputProvider;
-        _selector = twinSelectorObject as ITwinSelector;
-        _accordMode = accordModeProviderObject as IAccordModeProvider;
-    }
-
-    private void OnEnable()
-    {
-        if (_selector != null)
-            _selector.OnTwinSelected += OnTwinSelected;
-    }
-
-    private void OnDisable()
-    {
-        if (_selector != null)
-            _selector.OnTwinSelected -= OnTwinSelected;
-    }
-
     private void Start()
     {
-        if (leftTwin != null) _leftController = leftTwin.GetComponent<AbilityController>();
+        if (leftTwin != null)  _leftController  = leftTwin.GetComponent<AbilityController>();
         if (rightTwin != null) _rightController = rightTwin.GetComponent<AbilityController>();
-        StartCoroutine(ResolveInitialController());
-    }
-
-    private IEnumerator ResolveInitialController()
-    {
-        yield return null;
-        if (_selector?.SelectedTransform != null)
-            _currentAbilityController = _selector.SelectedTransform.GetComponent<AbilityController>();
-        else
-            Debug.LogError("[TwinAbilityDispatcher] Could not resolve initial controller.", this);
-    }
-
-    private void OnTwinSelected(Transform t)
-    {
-        _currentAbilityController = t?.GetComponent<AbilityController>();
     }
 
     private void Update()
     {
-        if (_input == null) return;
+        HandlePrimary();
+        HandleTeleport();
+    }
 
-        // ── Primary ability (Q) ───────────────────────────────
-        // During Accord: each twin has its own accord Q (VoidStrike/RadiantSeeker)
-        // routed to their own AbilityController. Fire on BOTH so each twin's
-        // accord ability activates from a single Q press.
-        // Outside Accord: only the selected twin's controller fires (existing behaviour).
-        if (_input.GetAbilityDown())
-        {
-            // During Accord and normal mode — only the selected twin's Q fires.
-            // Each twin has its own accord ability (VoidStrike on Kai, RadiantSeeker on Lyra).
-            // Player must switch with Shift to use the other twin's ability, same as normal mode.
-            _currentAbilityController?.ActivatePrimary();
-        }
+    // ── Primary (Q) — shared-cooldown, per-player trigger ─────
+    private void HandlePrimary()
+    {
+        // Shared availability: castable only while BOTH primaries are ready. Casting either drops it.
+        if (!(_leftController?.IsPrimaryReady ?? false) || !(_rightController?.IsPrimaryReady ?? false))
+            return;
 
-        // ── Teleport (C) ──────────────────────────────────────
+        // First presser casts their OWN primary (left wins a same-frame tie). ActivatePrimary enforces
+        // that twin's own PrimaryLocked (bomb suppression) — a suppressed twin simply doesn't fire.
+        if (PlayerInputRouter.For(leftTwin)?.GetAbilityDown() ?? false)
+            _leftController?.ActivatePrimary();
+        else if (PlayerInputRouter.For(rightTwin)?.GetAbilityDown() ?? false)
+            _rightController?.ActivatePrimary();
+    }
+
+    // ── Teleport (C, emergency) — shared-cooldown, per-owner ──
+    private void HandleTeleport()
+    {
         bool emergencyAvailable = emergencyMonitor != null && emergencyMonitor.IsEmergencyAvailable;
+        bool sharedReady = (_leftController?.IsTeleportReady ?? false)
+                        && (_rightController?.IsTeleportReady ?? false);
 
-        // Always hide preview on C release regardless of emergency state —
-        // prevents marker getting stuck when rescue fires mid-hold
-        if (_input.GetTeleportReleased())
+        TeleportForTwin(leftTwin,  _leftController,  emergencyAvailable, sharedReady);
+        TeleportForTwin(rightTwin, _rightController, emergencyAvailable, sharedReady);
+
+        // Cancel window (X) — each teleport is cancelled by its OWNING player's X.
+        HandleTeleportCancel(leftTwin,  _leftController);
+        HandleTeleportCancel(rightTwin, _rightController);
+    }
+
+    private void TeleportForTwin(Player twin, AbilityController ctrl, bool emergencyAvailable, bool sharedReady)
+    {
+        var input = PlayerInputRouter.For(twin);
+        if (input == null || ctrl == null) return;
+
+        if (input.GetTeleportReleased())
         {
-            _leftController?.HideTeleportPreview();
-            _rightController?.HideTeleportPreview();
-
-            if (emergencyAvailable && _currentAbilityController != null)
-                _currentAbilityController.ActivateTeleportEmergency();
+            ctrl.HideTeleportPreview();
+            if (emergencyAvailable && sharedReady) ctrl.ActivateTeleportEmergency();
         }
 
-        if (_input.GetTeleportHeld() && emergencyAvailable && _currentAbilityController != null)
-            _currentAbilityController.ShowTeleportPreview();
+        if (input.GetTeleportHeld() && emergencyAvailable && sharedReady)
+            ctrl.ShowTeleportPreview();
 
-        // Force hide preview if emergency is no longer available mid-hold
-        // (e.g. health recovered above threshold while C was held)
-        if (!emergencyAvailable && !_input.GetTeleportHeld())
-        {
-            _leftController?.HideTeleportPreview();
-            _rightController?.HideTeleportPreview();
-        }
+        // Force-hide preview if emergency ends mid-hold (e.g. health recovered above threshold).
+        if (!emergencyAvailable && !input.GetTeleportHeld())
+            ctrl.HideTeleportPreview();
+    }
 
-        // ── Teleport cancel window (X) ────────────────────────
-        // Driven by TeleportAbility's IsCancelWindowOpen — no-op when closed.
-        // Both controllers checked because either twin could have cast the gate.
-        bool cancelHeld = _input.GetCancelHeld();
+    private void HandleTeleportCancel(Player twin, AbilityController ctrl)
+    {
+        var ta = ctrl?.GetTeleportAbility();
+        if (ta == null || !ta.IsCancelWindowOpen) return;
 
-        TeleportAbility leftTA = _leftController?.GetTeleportAbility();
-        TeleportAbility rightTA = _rightController?.GetTeleportAbility();
-
-        if (leftTA != null && leftTA.IsCancelWindowOpen)
-        {
-            if (cancelHeld) leftTA.NotifyCancelInput(Time.deltaTime);
-            else leftTA.NotifyCancelReleased();
-        }
-
-        if (rightTA != null && rightTA.IsCancelWindowOpen)
-        {
-            if (cancelHeld) rightTA.NotifyCancelInput(Time.deltaTime);
-            else rightTA.NotifyCancelReleased();
-        }
+        bool xHeld = PlayerInputRouter.For(twin)?.GetCancelHeld() ?? false;
+        if (xHeld) ta.NotifyCancelInput(Time.deltaTime);
+        else ta.NotifyCancelReleased();
     }
 }

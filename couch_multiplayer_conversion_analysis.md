@@ -346,8 +346,14 @@ ownership spine (= networked-object ownership); per-owner dispatch = the single 
   - [x] **S1** attack per-player (`TwinAttackDispatcher` → `For(twin)`; modal soul/Accord/rescue preserved; compiles
     clean). Single-device unchanged. FLAG: struggle now grabbed-twin-only (mirrors M3.1 `GetStruggleMash` — verify no
     double-struggle).
-  - [ ] **S2** Primary (Q) + Teleport (C) as **shared-cooldown** (`TwinAbilityDispatcher` → `For(twin)` triggers the
-    twin's own controller, gated by ONE shared availability/cooldown; drop `_currentAbilityController`/`OnTwinSelected`).
+  - [x] **S2** Primary (Q) + Teleport (C) per-player + **shared-cooldown** (`couch-m1-ownership`; compiles clean).
+    `TwinAbilityDispatcher` rewritten off selection: each twin fires its own ability via `For(twin)`; dropped
+    `_currentAbilityController`/`OnTwinSelected`. **Shared availability = both twins' primary/teleport ready** —
+    `AbilityController.IsPrimaryReady`/`IsTeleportReady` via `IAbilityHUDSource` (`!IsActive && CooldownProgress>=1`,
+    works for every ability type, NO IAbility/AbilityBase/accord edits). Casting either → its cooldown → AND false →
+    both locked for the used ability's cd; whiff never false-locks; per-twin `PrimaryLocked` still per-twin. NO
+    coordinator/sync/HUD-rewire (per-player rings = M5). Teleport per-owner (preview/launch/cancel). Unused serialized
+    slots kept for wiring → retired in S5.
   - [ ] **S3** Solo/Joint (+ shared-cooldown) data flag on abilities.
   - [ ] **S4** repoint remaining `SelectedTransform` readers — `CameraFollowController` (frame both → couch-cam slice),
     `SelectedPlayerUI` (D3), `TutorialStepContext` → `PlayerRoster`.
