@@ -324,8 +324,13 @@ Only the character-select *logic core* is built. Everything below is explicitly 
     to 0.5 on existing components). Sync reset on each ability's context-exits so shared keys (Empower/AccordSpirit,
     SC/Setsuna) never cross-talk. Single-device play behaves exactly as before; two-device co-activation needs a
     paired P2 provider to runtime-verify.
-  - [ ] M3.4 Empower redesign **D1** (caster anchors, partner buffed; drop `ForceSelect`/`LockSelection`/
-    `SelectedTransform`; rebind the Shift-dash to the buffed partner's own input) /BUG-097
+  - [x] M3.4 Empower redesign **D1** (`couch-m1-ownership`; compiles clean). `EmpowerSystem`: caster = the player
+    who pressed (`DetectEmpowerCaster` per-provider `GetEmpowerHeld`), anchors own twin, partner buffed; dropped
+    `ForceSelect`; dash → partner's Shift (`For(_empoweredTwin).GetSwitchDown()`), cancel → caster's X
+    (`For(_anchoringTwin).GetCancelHeld()`); **kept `LockSelection`** (blocks Shift-switch so Shift=dash — it's still
+    functional, not a no-op). `ResolveSelectedTwin` removed. Single-instance; single-device caster defaults to left
+    twin. Active window already ends on cancel-X OR `ActiveDuration` timer. **Timing numbers left unchanged** (user —
+    no scaling formula exists; nodes hand-authored). Two-device cast needs P2 provider to verify. /BUG-097
   - [ ] M3.5 Teleport selection-lock → no-op
 - **M4 — tutorial co-op rewrite (shared progression, D6 / BUG-094 — the #1 breakage)**
   - [ ] M4.1 per-provider tutorial gate

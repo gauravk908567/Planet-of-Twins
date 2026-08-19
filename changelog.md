@@ -12,6 +12,27 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op M3.4: Empower is "caster anchors, partner buffed" (D1) (2026-08-18, `couch-m1-ownership`)
+- **Empower is now a per-player solo cast off selection.** [EmpowerSystem.cs](Assets/Scripts/Players/Ability/Systems/EmpowerSystem.cs):
+  - **Caster detection** — `DetectEmpowerCaster()` reads each player's `GetEmpowerHeld()` (via
+    `PlayerInputRouter.For(_leftTwin/_rightTwin)`) instead of `ResolveSelectedTwin()`. The player who presses
+    Empower anchors *their own* twin (movement + abilities locked, pulsing knockback totem); the **partner's** twin
+    gets the +speed/+damage buff. Charging tracks the same caster (`CasterEmpowerHeld`). `ResolveSelectedTwin` removed.
+  - **Dropped `ForceSelect(_empoweredTwin)`** — no control hijack; the partner already drives their own twin.
+  - **Dash rebound to the partner** — the buffed twin dashes with *its owner's* Shift
+    (`For(_empoweredTwin).GetSwitchDown()`), not the shared input. **Cancel** rerouted to the anchored **caster's**
+    X (`For(_anchoringTwin).GetCancelHeld()`).
+  - **Kept `LockSelection()`** — still functional (confirmed via `TwinSelector`): it blocks the Shift-*switch*
+    during the window so Shift means *dash*, not twin-switch. `_twinSelector`/`_selectionLock` fields stay for the
+    post-M3 teardown.
+- **Design:** single-instance (one Empower at a time — faithful port of D1); the caster is deliberately benched
+  (anchored) for the window. **The active window already ends on either the caster's cancel-hold-X OR the duration
+  timer** (`ActiveDuration`) — no timer was missing. Single-device play is unchanged (both providers resolve to P1;
+  caster defaults to the left twin). Two-device "either player casts, anchors self" needs a paired P2 device to verify.
+- **Timing numbers left unchanged** (user, 2026-08-18): the `EmpowerData` duration/cooldown and its upgrade-node
+  values are untouched — no scaling formula exists in code/docs (nodes are hand-authored), so no retune was made.
+- Verified: compiles clean (0 errors/warnings).
+
 ### Changed — Couch co-op M3.1: rescue is a partner-mash (drop selection hijack; per-player mash) (2026-08-18, `couch-m1-ownership`)
 - **Rescue no longer hijacks twin selection.** [RescueEventController.cs](Assets/Scripts/Players/RescueEventController.cs)
   removed both `ITwinSelector.ForceSelect` calls: `HandlePlayerGrabbed` (was: switch control to the free twin when

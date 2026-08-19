@@ -77,6 +77,7 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
 
     private Player _anchoringTwin;
     private Player _empoweredTwin;
+    private Player _pendingCaster;   // couch M3.4 — the twin whose player is charging Empower (the caster)
     private Coroutine _pulseCoroutine;
 
     private Action _onAnchorDied;
@@ -213,8 +214,10 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
         if (!IsUnlocked()) return;
         if (_rescueActive != null && _rescueActive.IsRescueActive) return;
         if (_accordMode != null && _accordMode.IsAccordActive) return;
-        if (!_input.GetEmpowerHeld()) return;
+        Player caster = DetectEmpowerCaster();
+        if (caster == null) return;
 
+        _pendingCaster = caster;
         _chargeProgress = 0f;
         _state = EmpowerState.Charging;
     }
@@ -222,7 +225,7 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     // ── State: Charging ───────────────────────────────────────
     private void HandleCharging()
     {
-        if (!_input.GetEmpowerHeld())
+        if (!CasterEmpowerHeld())
         {
             _chargeProgress = 0f;
             _state = EmpowerState.Idle;
@@ -245,7 +248,8 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     {
         _activeTimer += Time.deltaTime;
 
-        if (_input.GetCancelHeld())
+        // Couch M3.4: the anchored CASTER holds X to cancel their own Empower (read from the caster's provider).
+        if (PlayerInputRouter.For(_anchoringTwin)?.GetCancelHeld() ?? false)
         {
             _cancelProgress += Time.deltaTime;
             if (_cancelProgress >= _cancelThreshold)
@@ -260,7 +264,9 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
             _cancelProgress = 0f;
         }
 
-        if (_input.GetSwitchDown() && _dashCooldownTimer <= 0f)
+        // Couch M3.4: the buffed PARTNER dashes with their own Shift (GetSwitchDown), read from the
+        // empowered twin's provider. Selection is locked during the window, so Shift means dash, not switch.
+        if ((PlayerInputRouter.For(_empoweredTwin)?.GetSwitchDown() ?? false) && _dashCooldownTimer <= 0f)
         {
             _empoweredTwin.Movement.StartDash(_dashSpeed, _dashDuration);
             _dashCooldownTimer = _dashCooldown;
@@ -284,10 +290,10 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     // ── Activate ──────────────────────────────────────────────
     private void Activate()
     {
-        Player selected = ResolveSelectedTwin();
+        Player selected = _pendingCaster;   // couch M3.4 — the caster (set in HandleIdle), not the selected twin
         if (selected == null)
         {
-            Debug.LogWarning("[EmpowerSystem] Could not resolve selected twin.", this);
+            Debug.LogWarning("[EmpowerSystem] Could not resolve the Empower caster.", this);
             _chargeProgress = 0f;
             _state = EmpowerState.Idle;
             return;
@@ -417,12 +423,22 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     }
 
     // ── Helpers ───────────────────────────────────────────────
-    private Player ResolveSelectedTwin()
+    // Couch M3.4 — Empower is a per-player SOLO cast: the caster's twin anchors (pulsing knockback
+    // totem), the partner's twin is buffed. Caster = the player who pressed Empower, detected per
+    // provider (PlayerInputRouter). Single-device (both providers = P1) defaults the caster to the
+    // left twin. Only one Empower runs at a time (single-instance system — faithful port of D1).
+    private Player DetectEmpowerCaster()
     {
-        if (_twinSelector?.SelectedTransform == null) return null;
-        if (_twinSelector.SelectedTransform == _leftTwin.transform) return _leftTwin;
-        if (_twinSelector.SelectedTransform == _rightTwin.transform) return _rightTwin;
+        if (PlayerInputRouter.For(_leftTwin)?.GetEmpowerHeld() ?? false) return _leftTwin;
+        if (PlayerInputRouter.For(_rightTwin)?.GetEmpowerHeld() ?? false) return _rightTwin;
         return null;
+    }
+
+    /// <summary>The caster (the player who started the charge) still holding the Empower key.</summary>
+    private bool CasterEmpowerHeld()
+    {
+        var p = _pendingCaster != null ? PlayerInputRouter.For(_pendingCaster) : _input;
+        return (p ?? _input)?.GetEmpowerHeld() ?? false;
     }
 
     private bool IsUnlocked() =>
