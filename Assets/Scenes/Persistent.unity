@@ -10166,6 +10166,7 @@ GameObject:
   - component: {fileID: 247002339}
   - component: {fileID: 247002347}
   - component: {fileID: 247002346}
+  - component: {fileID: 247002348}
   m_Layer: 0
   m_Name: PlayerManager
   m_TagString: Untagged
@@ -10185,7 +10186,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1431332103}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &247002339
@@ -10286,6 +10288,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TwinInputReader
   _actions: {fileID: -944628639613478452, guid: 34fa1f072f6cf3546aa81a9adaf45d59, type: 3}
+  _isShared: 1
 --- !u!114 &247002345
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10329,6 +10332,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputRouter
   _inputProviderObject: {fileID: 247002344}
   _inputProviderObjectP2: {fileID: 0}
+--- !u!114 &247002348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 247002336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67169396ed90c554d84597afb5cc142d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CouchDeviceManager
+  _p2Reader: {fileID: 1431332102}
+  _p1Reader: {fileID: 0}
+  _router: {fileID: 0}
+  _autoAssign: 1
 --- !u!1 &249559632
 GameObject:
   m_ObjectHideFlags: 0
@@ -60647,6 +60666,52 @@ MonoBehaviour:
   _timerText: {fileID: 2127159359}
   _accordPowerStatePanel: {fileID: 894652266}
   _accordPowerTimerText: {fileID: 2127159359}
+--- !u!1 &1431332101
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1431332103}
+  - component: {fileID: 1431332102}
+  m_Layer: 0
+  m_Name: P2Input
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1431332102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1431332101}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9731b89a17a96c94fb71c1bcf898c927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TwinInputReader
+  _actions: {fileID: -944628639613478452, guid: 34fa1f072f6cf3546aa81a9adaf45d59, type: 3}
+  _isShared: 0
+--- !u!4 &1431332103
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1431332101}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 247002338}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1436127267
 PrefabInstance:
   m_ObjectHideFlags: 0

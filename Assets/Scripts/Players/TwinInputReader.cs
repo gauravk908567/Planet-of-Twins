@@ -26,6 +26,10 @@ public class TwinInputReader : MonoBehaviour, IInputProvider
     [Tooltip("PlanetOfTwins.inputactions — needs a 'Gameplay' and a 'UI' map. Fail-loud when missing.")]
     [SerializeField] private InputActionAsset _actions;
 
+    [Tooltip("Couch M1.6: the SHARED / P1 reader is the Instance singleton (UI/QTE/intro + tutorial gate). " +
+             "Uncheck for a P2 gameplay-only reader bound to a second device by CouchDeviceManager.")]
+    [SerializeField] private bool _isShared = true;
+
     // No serialized gate field — resolved at runtime by TutorialInputGate.
     private ITutorialGate _gate;
 
@@ -42,8 +46,13 @@ public class TwinInputReader : MonoBehaviour, IInputProvider
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
+        // Couch M1.6: only the SHARED reader (P1) is the Instance singleton, serves UI/QTE/intro, and hosts the
+        // tutorial gate. A non-shared reader (P2) is a second gameplay-only source bound to its own device.
+        if (_isShared)
+        {
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            Instance = this;
+        }
 
         if (_actions == null)
         {
@@ -51,6 +60,15 @@ public class TwinInputReader : MonoBehaviour, IInputProvider
                            "Wire Assets/Settings/Input/PlanetOfTwins.inputactions.", this);
             enabled = false;   // OnEnable never runs → actions never enable
             return;
+        }
+
+        // P2 needs its OWN asset instance so its device pairing (.devices) is independent of P1's.
+        // JSON round-trip is the Input System's stable deep-copy for a second player's action asset.
+        if (!_isShared)
+        {
+            var clone = InputActionAsset.FromJson(_actions.ToJson());
+            clone.name = _actions.name + " (P2)";
+            _actions = clone;
         }
 
         _move        = Find("Gameplay/Move");
@@ -104,6 +122,17 @@ public class TwinInputReader : MonoBehaviour, IInputProvider
 
     /// <summary>Overview cam holds the world still — gameplay inputs freeze; Pause/Overview/AnySkip stay live.</summary>
     public void SetGameplayFrozen(bool frozen) => _gameplayFrozen = frozen;
+
+    /// <summary>Couch M1.6 — restrict this reader to specific input devices (per-player pairing). Null/empty =
+    /// read from ALL devices (solo / single-device). Driven by CouchDeviceManager when a second device joins.</summary>
+    public void SetPairedDevices(params InputDevice[] devices)
+    {
+        if (_actions == null) return;
+        if (devices == null || devices.Length == 0)
+            _actions.devices = null;          // no restriction — read every device
+        else
+            _actions.devices = devices;       // restrict to this player's device(s)
+    }
 
     // ── Gate helpers (fail-open: null gate = everything allowed) ──
     private bool AttackAllowed => _gate == null || _gate.IsAttackAllowed;

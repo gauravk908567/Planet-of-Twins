@@ -12,6 +12,28 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op: two-device input (M1.6 — device pairing / second player) (2026-08-19, `couch-m1-ownership`)
+- **Two players can now drive the two twins from separate devices** — the piece every M3/S-series change was
+  degrading around (P2 always fell back to P1). Supports **2 gamepads**, **1 gamepad + 1 keyboard**, and solo.
+- **`TwinInputReader` is now instanceable + device-scopable** ([TwinInputReader.cs](Assets/Scripts/Players/TwinInputReader.cs)):
+  a new `_isShared` flag — the shared P1 reader stays the `Instance` singleton (UI/QTE/intro + tutorial gate); a
+  **non-shared P2 reader** clones the action asset (JSON round-trip) so its device pairing is independent, and
+  `SetPairedDevices(...)` restricts it to a player's device(s) via `InputActionAsset.devices` (null = all devices).
+- **`PlayerInputRouter` gained runtime P2 routing** ([PlayerInputRouter.cs](Assets/Scripts/Players/Multiplayer/PlayerInputRouter.cs)):
+  `SetP2Provider(...)` / `ClearP2Provider()` flip couch on/off through the existing slot-Two→P1 fallback, so solo
+  play is byte-unchanged.
+- **New `CouchDeviceManager`** ([CouchDeviceManager.cs](Assets/Scripts/Players/Multiplayer/CouchDeviceManager.cs), Persistent):
+  `AssignAuto()` picks a default (2 gamepads → P1/P2; 1 gamepad + keyboard → keyboard=P1, gamepad=P2; else solo) and
+  re-runs on device connect/disconnect; `AssignCouch(...)` / `SetSolo()` are the explicit API for Character Select (M2);
+  editor-only **F8** (Trainer) toggles solo↔couch for quick testing.
+- **Scene (Persistent):** a disabled non-shared `TwinInputReader` on a new `PlayerManager/P2Input` child, plus the
+  `CouchDeviceManager` on `PlayerManager` (its `_p2Reader` wired; P1 reader + router resolve from their singletons).
+- **Follow-ups noted in code:** the tutorial gate + overview-cam freeze are still P1-only (P2 twin ungated/unfrozen
+  during tutorial/overview → folded into the M4 tutorial co-op rewrite); **both-players-on-one-keyboard** needs a P2
+  arrow-key binding set added to the asset (M1.6b). Gamepad bindings already cover the gameplay actions.
+- Verified: compiles clean (0 errors). **This finally enables a real two-device runtime play-test** of the M3 +
+  S-series work. Runtime device-assignment behaviour itself still needs an in-editor Play pass.
+
 ### Removed — Couch co-op: TwinSelector teardown (S5 — the twin-selection spine deleted) (2026-08-19, `couch-m1-ownership`)
 - **The whole twin-selection mechanism is gone.** With movement (M1.4), attack (S1), primary/teleport (S2), Empower
   (M3.4) and the combined powers (M3.3) all per-player, nothing read `SelectedTransform` any more — it had become a

@@ -258,8 +258,13 @@ are the risky foundation and get a **walking-skeleton proof** before we invest i
     (P1→TwinA, P2→TwinB; P2 falls back to P1 single-device); soul on shared input
   - [→M3] M1.5 per-player **attack + ability** dispatch — **DEFERRED**: `TwinAttackDispatcher`/`TwinAbilityDispatcher`
     entangled with Accord/rescue/soul/teleport-emergency (M3) + pending D2. Stays selection-based until M3
-  - [~] M1.6 router device-aware — `For(twin)` routes by `PlayerRoster.SlotOf` to P1/P2 slot (P2 optional, falls back).
-    DONE. Pending: wire a real P2 device provider (user's Input-System work) + any-of `Shared` aggregator (BUG-096)
+  - [x] M1.6 router device-aware — `For(twin)` routes by `PlayerRoster.SlotOf` to P1/P2 slot (P2 optional, falls back).
+    **P2 device provider DONE (2026-08-19).** `TwinInputReader` gained `_isShared` + `SetPairedDevices` (a non-shared P2
+    reader clones the asset and restricts `.devices`); `PlayerInputRouter.SetP2Provider/ClearP2Provider` route couch on/off;
+    new `CouchDeviceManager` (Persistent) auto-assigns (2 pads → P1/P2; pad+keyboard → keyboard=P1/pad=P2; else solo) +
+    explicit `AssignCouch`/`SetSolo` API for M2 + editor F8 toggle. Scene: `PlayerManager/P2Input` (disabled non-shared
+    reader) + `CouchDeviceManager` on PlayerManager. Compiles clean; runtime Play-test pending. Still pending: any-of
+    `Shared` aggregator (BUG-096); P2 tutorial-gate + overview-freeze (P1-only → M4); both-on-one-keyboard binding set (M1.6b)
   - [→M3] M1.7 free Shift — **DEFERRED**: Shift still selects which twin casts abilities until M1.5/M3 land (BUG-098)
 - **M2 — character select (Kai/Lyra/Random)** — *now part of a fuller FRONT-END: Start Menu (New Game /
   Continue / Options / Exit) → save-slot select → character select. Save slots = a separate later milestone
@@ -292,7 +297,7 @@ Only the character-select *logic core* is built. Everything below is explicitly 
 | Save-slot **select screen** | 🚧 **STUBBED** | Deferred with persistence. New Game → straight to Character Select. |
 | **Save persistence** (JSON slots) | ⛔ **OUTSTANDING (own milestone)** | *No disk save system exists yet* — settings-only (`PlayerPrefs`). Moderate/low-risk: `GameSaveData` (id-keyed mirror of `CheckpointData`) + JSON to `persistentDataPath/slot_N.json` + slot manager. One gotcha (SO refs) already solved by `SceneFlowManager.allLocations[]` + unique asset names; skill snapshot → `{treeId,level}` pairs. ~½–1 day. |
 | **Options** action | 🚧 **STUB** | Currently logs a TODO; wire to the existing `GraphicsSettingsController` / settings UI (already `PlayerPrefs`-backed). |
-| **P2 device provider** (from M1.6) | ⛔ **OUTSTANDING** | Real 2nd-device reader into `PlayerInputRouter` P2 slot — required for a genuine two-device select. User's Input-System work; single-device falls back to P1 until then. |
+| **P2 device provider** (from M1.6) | ✅ **DONE (2026-08-19)** | Non-shared `TwinInputReader` (device-scoped via `.devices`) + `CouchDeviceManager` auto/explicit assignment routed into `PlayerInputRouter` P2 slot. 2 gamepads / gamepad+keyboard supported; both-on-one-keyboard needs a P2 binding set (M1.6b). Runtime Play-test pending. |
 | **Exit** action | ✅ **DONE** | `Application.Quit()` (+ editor-stop guard) wired in `MainMenuController`. |
 
 #### Character-Select screen V2 — SPATIAL redesign (future / user-requested, recorded 2026-08-17)
