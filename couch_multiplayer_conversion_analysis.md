@@ -312,8 +312,14 @@ Only the character-select *logic core* is built. Everything below is explicitly 
     Empower share `GetEmpowerHeld` (solo outside Accord / joint inside). Input map — joint keys: **X-hold**
     (`GetCancelHeld`) = Accord entry; **F-hold** (`GetConvergenceHeld`) = SC & Setsuna (shared channel);
     **Empower-key hold** (`GetEmpowerHeld`, inside Accord) = AccordSpirit. Single-device (P2→P1) → degrades to solo.
-  - [ ] M3.3 wire joint set through the gate (each ability reads P1/P2 via `PlayerInputRouter.For(TwinA/TwinB)`;
-    add the `JointAbilityGate` GameObject to Persistent + resolve R4 in each consumer)
+  - [x] M3.3 wire joint set through the gate (`couch-m1-ownership`; compiles clean, self-test still 15/15). All four
+    (AccordState X, SoulConvergence F, Setsuna F, AccordSpirit Empower-key) read P1/P2 via
+    `PlayerInputRouter.For(_leftTwin/_rightTwin)` → own `JointHoldSync`. **Refinement (user):** leniency is now a
+    **per-ability** `[SerializeField] _jointLeniency=0.5f`, not one global → `JointAbilityGate` **removed**
+    (single-device P2→P1 already degrades joint→solo, so no master switch needed). No scene edit (new field defaults
+    to 0.5 on existing components). Sync reset on each ability's context-exits so shared keys (Empower/AccordSpirit,
+    SC/Setsuna) never cross-talk. Single-device play behaves exactly as before; two-device co-activation needs a
+    paired P2 provider to runtime-verify.
   - [ ] M3.4 Empower redesign **D1** (caster anchors, partner buffed; drop `ForceSelect`/`LockSelection`/
     `SelectedTransform`; rebind the Shift-dash to the buffed partner's own input) /BUG-097
   - [ ] M3.5 Teleport selection-lock → no-op

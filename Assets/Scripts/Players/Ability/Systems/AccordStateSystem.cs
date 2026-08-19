@@ -53,6 +53,12 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
     [SerializeField] private float _healthThresholdMid = 0.60f;
     [SerializeField] private float _healthThresholdLow = 0.30f;
 
+    [Header("Co-op — joint activation (D2)")]
+    [Tooltip("Synchronized-start leniency (seconds, UNSCALED): the max gap between the two players' " +
+             "X-holds that still counts as pressing 'together' to enter Accord. Higher = more forgiving.")]
+    [SerializeField, Range(0f, 1.5f)] private float _jointLeniency = 0.5f;
+    private readonly JointHoldSync _jointSync = new JointHoldSync();
+
     [Header("Activation timing")]
     [SerializeField] private float _chargeTime = 1.25f;
     [SerializeField] private float _damageWindowBlock = 0.70f;
@@ -268,6 +274,20 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         }
     }
 
+    /// <summary>Both players holding the Accord key (X) together, synced within <c>_jointLeniency</c>
+    /// (D2 — entering Accord State is a JOINT act; it's the gateway the other combined powers live
+    /// behind). Only ticked while listening — the HandleIdle guards return before this when blocked
+    /// (rescue / SC / Empower / teleport), so it never cross-talks with those X uses. Single-device
+    /// (P2→P1) → engages on one press (solo). No router/roster → solo read.</summary>
+    private bool JointCancelHeld()
+    {
+        var pa = PlayerInputRouter.For(_leftTwin);
+        var pb = PlayerInputRouter.For(_rightTwin);
+        if (pa == null || pb == null) return _input?.GetCancelHeld() ?? false;
+        return _jointSync.Tick(pa.GetCancelHeld(), pb.GetCancelHeld(),
+                               _jointLeniency, Time.unscaledDeltaTime);
+    }
+
     // ── Idle ──────────────────────────────────────────────────
     private void HandleIdle()
     {
@@ -285,7 +305,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         // Block if teleport cancel window is open — X is claimed by teleport cancel
         if (IsTeleportCancelWindowOpen()) return;
 
-        if (!(_input?.GetCancelHeld() ?? false)) return;
+        if (!JointCancelHeld()) return;
 
         _chargeProgress = 0f;
         _damageWindowClosed = false;
@@ -314,7 +334,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
             return;
         }
 
-        if (!(_input?.GetCancelHeld() ?? false))
+        if (!JointCancelHeld())
         {
             StopChargeVFX();
             _chargeProgress = 0f;

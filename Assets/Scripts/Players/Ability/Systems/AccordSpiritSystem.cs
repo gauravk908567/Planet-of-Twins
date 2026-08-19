@@ -23,6 +23,12 @@ public class AccordSpiritSystem : MonoBehaviour, IAbilityHUDSource
     [Header("Activation")]
     [SerializeField] private float _chargeHoldTime = 0.75f;
 
+    [Header("Co-op — joint activation (D2)")]
+    [Tooltip("Synchronized-start leniency (seconds, UNSCALED): the max gap between the two players' " +
+             "R-holds that still counts as pressing 'together'. Higher = more forgiving; 0 = frame-perfect.")]
+    [SerializeField, Range(0f, 1.5f)] private float _jointLeniency = 0.5f;
+    private readonly JointHoldSync _jointSync = new JointHoldSync();
+
     [Header("Cooldown")]
     [SerializeField] private float _cooldown = 7f;
 
@@ -92,6 +98,7 @@ public class AccordSpiritSystem : MonoBehaviour, IAbilityHUDSource
         if (_accordMode == null || !_accordMode.IsAccordActive)
         {
             CancelCharge();
+            _jointSync.Reset();   // left Accord → fresh sync (no cross-talk with solo Empower on the same key)
             return;
         }
 
@@ -99,15 +106,29 @@ public class AccordSpiritSystem : MonoBehaviour, IAbilityHUDSource
         {
             _cooldownTimer -= Time.deltaTime;
             CancelCharge();
+            _jointSync.Reset();   // on cooldown → not listening
             return;
         }
 
         HandleInput();
     }
 
+    /// <summary>Both players holding the Empower key (R) together, synced within <c>_jointLeniency</c>
+    /// (D2 — Accord Spirits is a JOINT power). Only reached inside Accord (Update resets the sync on
+    /// exit), so it never cross-talks with Empower's solo use of the same key. Single-device (P2→P1) →
+    /// identical reads → engages on one press (degrades to solo). No router/roster → solo read.</summary>
+    private bool JointEmpowerHeld()
+    {
+        var pa = PlayerInputRouter.For(_leftTwin);
+        var pb = PlayerInputRouter.For(_rightTwin);
+        if (pa == null || pb == null) return _input.GetEmpowerHeld();
+        return _jointSync.Tick(pa.GetEmpowerHeld(), pb.GetEmpowerHeld(),
+                               _jointLeniency, Time.unscaledDeltaTime);
+    }
+
     private void HandleInput()
     {
-        if (_input.GetEmpowerHeld())
+        if (JointEmpowerHeld())
         {
             if (!_isCharging)
             {

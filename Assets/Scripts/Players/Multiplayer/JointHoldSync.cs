@@ -2,9 +2,9 @@
 /// Couch co-op (M3.2) — synchronized-hold tracker for ONE joint ability (a power that requires
 /// BOTH players to engage the activation input "together"). Generic: one instance per joint
 /// consumer (Accord-entry X-hold, Soul-Convergence/Setsuna F-hold, Accord-Spirits key-hold) ticks
-/// its own two per-player reads each frame. The gate type <see cref="JointAbilityGate"/> supplies
-/// the single tunable (<see cref="JointAbilityGate.LeniencyWindow"/>); the per-ability sync STATE
-/// lives here so the same physical key can be solo for one ability and joint for another.
+/// its own two per-player reads each frame. Each consumer owns its instance AND its own leniency
+/// value (a serialized field alongside its other timings), so the same physical key can be solo for
+/// one ability and joint for another, and every joint power tunes its press-together feel separately.
 ///
 /// Leniency model (window = leniency seconds, UNSCALED time — the sync is real-world "press
 /// together", so it is Setsuna/pause-proof):

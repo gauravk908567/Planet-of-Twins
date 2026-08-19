@@ -12,6 +12,35 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op M3.3: four combined powers wired JOINT + per-ability leniency (2026-08-18, `couch-m1-ownership`)
+- **Wired the joint gate through all four combined powers (D2).** Each now activates only when BOTH players
+  co-activate their hold, synced within a per-ability leniency window. Each ability reads P1/P2 independently via
+  `PlayerInputRouter.For(_leftTwin)` / `.For(_rightTwin)` and feeds both through its own `JointHoldSync`:
+  - [AccordStateSystem.cs](Assets/Scripts/Players/Ability/Systems/AccordStateSystem.cs) — Accord entry, hold **X**
+    (`GetCancelHeld`); `JointCancelHeld()` at both charge sites. Blocked-state guards return before the read, so the
+    sync only ticks while genuinely listening (no cross-talk with Empower-cancel / teleport / QTE on the same key).
+  - [SoulConvergenceSystem.cs](Assets/Scripts/Players/Ability/Systems/SoulConvergenceSystem.cs) — hold **F**
+    (`GetConvergenceHeld`); `JointConvergenceHeld()`; sync reset on the not-listening / rescue-preempt exits.
+  - [SetsunaSystem.cs](Assets/Scripts/Players/Ability/Systems/SetsunaSystem.cs) — hold **F** inside Accord (shares
+    SC's key, own sync — they charge in lockstep when both eligible); reset on the HandleIdle context-exits.
+  - [AccordSpiritSystem.cs](Assets/Scripts/Players/Ability/Systems/AccordSpiritSystem.cs) — hold **Empower key**
+    (`GetEmpowerHeld`) inside Accord; sync reset on the Accord-inactive / cooldown exits in `Update` — so it never
+    cross-talks with Empower's *solo* use of the same key outside Accord.
+- **Per-ability leniency (user 2026-08-18):** each of the four abilities gets its own `[SerializeField, Range(0,1.5)]
+  _jointLeniency = 0.5f` in its timing header — tune each independently in the Inspector. A new serialized field
+  defaults to 0.5 on the existing Persistent components automatically, so **no scene edit was needed**.
+- **Removed `JointAbilityGate`** (the single-global-tunable holder from M3.2) — superseded by the per-ability field;
+  single-device play already degrades joint→solo on its own (P2→P1 fallback makes both reads identical), so no
+  master switch is needed. `JointHoldSync` (the tracker) stays and is unchanged.
+- **Single-device behavior is unchanged:** with one device, `For(TwinA)` and `For(TwinB)` resolve to the same
+  provider → identical reads → `JointHoldSync` engages on one press. So existing solo/single-keyboard testing sees
+  these abilities behave exactly as before; the "press together" requirement only manifests with two paired devices.
+- Verified: compiles clean (0 errors/warnings after AssetDatabase refresh picked up the deletion); self-test still
+  **15/15 green**. Two-device co-activation is not runtime-verifiable until a second input provider is paired
+  (P2 device = user's Input-System work) — logic is proven by the self-test.
+- *Cosmetic follow-up:* the self-test file is still named `JointAbilityGateSelfTest.cs` (it tests `JointHoldSync`;
+  the gate it was named for is gone) — left as-is to avoid menu-reregistration churn; rename as an isolated commit.
+
 ### Added — Couch co-op M3.2: joint-ability sync foundation (`JointHoldSync` + `JointAbilityGate`) (2026-08-18, `couch-m1-ownership`)
 - **Decisions locked (M3, user 2026-08-18):**
   - **D1 — Empower = "caster anchors, partner buffed"** (faithful port of the single-player model to couch):

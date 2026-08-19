@@ -61,6 +61,12 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
     [SerializeField] private float _damageInReduction = 0.35f;
     [SerializeField] private float _chargeHoldTime = 2f;
 
+    [Header("Co-op — joint activation (D2)")]
+    [Tooltip("Synchronized-start leniency (seconds, UNSCALED): the max gap between the two players' " +
+             "F-holds that still counts as pressing 'together'. Higher = more forgiving; 0 = frame-perfect.")]
+    [SerializeField, Range(0f, 1.5f)] private float _jointLeniency = 0.5f;
+    private readonly JointHoldSync _jointSync = new JointHoldSync();
+
     [Header("HUD UI")]
     [SerializeField] private TMP_Text _counterText;
     [SerializeField] private Slider _chargeBar;
@@ -160,12 +166,25 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
         HandleInput();
     }
 
+    /// <summary>Both players holding the Convergence key (F) together, synced within <c>_jointLeniency</c>
+    /// (D2 — Soul Convergence is a JOINT power). Setsuna reads the same key with its own sync, so they
+    /// charge in lockstep when both are eligible. Single-device (P2→P1) → engages on one press (solo).
+    /// No router/roster → solo read.</summary>
+    private bool JointConvergenceHeld()
+    {
+        var pa = PlayerInputRouter.For(_leftTwin);
+        var pb = PlayerInputRouter.For(_rightTwin);
+        if (pa == null || pb == null) return _input?.GetConvergenceHeld() ?? false;
+        return _jointSync.Tick(pa.GetConvergenceHeld(), pb.GetConvergenceHeld(),
+                               _jointLeniency, Time.unscaledDeltaTime);
+    }
+
     void HandleInput()
     {
-        if (!IsActive() || !_charged || _abilityActive) return;
-        if (_rescueActive != null && (_rescueActive.IsRescueActive || _rescueActive.HasActiveRescueTarget)) { CancelCharge(); return; }
+        if (!IsActive() || !_charged || _abilityActive) { _jointSync.Reset(); return; }
+        if (_rescueActive != null && (_rescueActive.IsRescueActive || _rescueActive.HasActiveRescueTarget)) { CancelCharge(); _jointSync.Reset(); return; }
 
-        if (_input?.GetConvergenceHeld() ?? false)
+        if (JointConvergenceHeld())
         {
             if (_chargeProgress == 0f)
             {
