@@ -17,7 +17,6 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
 
     [Header("Inject")]
     [SerializeField] private MonoBehaviour _inputProviderObject;
-    [SerializeField] private MonoBehaviour _twinSelectorObject;
     [SerializeField] private MonoBehaviour _rescueActiveObject;
     [Tooltip("Drag AccordStateSystem — blocks Empower while Accord is active (R claimed by AccordSpiritSystem).")]
     [SerializeField] private MonoBehaviour _accordModeObject;
@@ -58,8 +57,6 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
 
     // ── Resolved interfaces ───────────────────────────────────
     private IInputProvider _input;
-    private ISelectionLock _selectionLock;
-    private ITwinSelector _twinSelector;
     private IRescueActive _rescueActive;
     private IAccordModeProvider _accordMode;
     private ISkillUnlockState _unlockState;
@@ -146,16 +143,12 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         _input = _inputProviderObject as IInputProvider;
-        _selectionLock = _twinSelectorObject as ISelectionLock;
-        _twinSelector = _twinSelectorObject as ITwinSelector;
         _rescueActive = _rescueActiveObject as IRescueActive;
         _accordMode = _accordModeObject as IAccordModeProvider;
         _unlockState = _unlockStateMono as ISkillUnlockState;
         _dataStore = _dataStoreMono as IAbilityDataStore;
 
         if (_input == null) Debug.LogError("[EmpowerSystem] Missing IInputProvider", this);
-        if (_selectionLock == null) Debug.LogError("[EmpowerSystem] Missing ISelectionLock", this);
-        if (_twinSelector == null) Debug.LogError("[EmpowerSystem] Missing ITwinSelector", this);
         if (_dataStore == null) Debug.LogError("[EmpowerSystem] Missing IAbilityDataStore", this);
     }
 
@@ -265,7 +258,7 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
         }
 
         // Couch M3.4: the buffed PARTNER dashes with their own Shift (GetSwitchDown), read from the
-        // empowered twin's provider. Selection is locked during the window, so Shift means dash, not switch.
+        // empowered twin's provider. Twin-switching no longer exists (S5 teardown), so Shift is purely dash.
         if ((PlayerInputRouter.For(_empoweredTwin)?.GetSwitchDown() ?? false) && _dashCooldownTimer <= 0f)
         {
             _empoweredTwin.Movement.StartDash(_dashSpeed, _dashDuration);
@@ -309,8 +302,6 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
 
         _anchoringTwin.Movement.SetMovementLocked(true);
         _anchoringTwin.GetComponent<AbilityController>()?.LockAbilities();
-        _selectionLock?.LockSelection();
-        _twinSelector?.ForceSelect(_empoweredTwin);
 
         _empoweredTwin.Movement.SetSpeedMultiplier(_speedMultiplier);
         _empoweredTwin.GetComponent<PlayerAttackController>()
@@ -349,8 +340,6 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
             _anchoringTwin.Movement.SetMovementLocked(false);
             _anchoringTwin.GetComponent<AbilityController>()?.UnlockAbilities();
         }
-
-        _selectionLock?.UnlockSelection();
 
         if (_empoweredTwin != null)
         {

@@ -35,7 +35,6 @@ public class TutorialDirector : MonoBehaviour
         if (DevConfig.SkipTutorial) { SkipTutorial(ownsLevelGos: true); return; }
 
         context.inputGate?.LockAll();
-        context.SelectionLock?.LockSelection();
     }
 
 #if UNITY_EDITOR
@@ -71,7 +70,6 @@ public class TutorialDirector : MonoBehaviour
         // default-locked flags, input stays open. AllowAll() also covers the case where the gate stays attached.
         context.inputGate?.AllowAll();
         TwinInputReader.Instance?.SetGate(null);
-        context.SelectionLock?.UnlockSelection();
         TutorialContext.Instance?.SetStage(TutorialStage.Complete);   // flag the game as genuinely past the tutorial
 
         // Hand the cameras to gameplay mode (off tutorial cams) — the switcher picks the right gameplay

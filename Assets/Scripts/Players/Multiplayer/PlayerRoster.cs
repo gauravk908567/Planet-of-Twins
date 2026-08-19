@@ -15,8 +15,8 @@ using UnityEngine;
 ///    <see cref="Assign"/>. Feeds per-player input routing (device→slot→twin).
 ///
 /// <para><b>M1.1 is ADDITIVE</b> — this coexists with <c>TwinSelector</c>; consumers migrate onto it in
-/// M1.3. <c>TwinSelector</c>'s selection API (SelectedTransform/ForceSelect/lock) stays alive for Rescue
-/// + Empower until M3; the physical <c>TwinSelector.cs</c> deletion is a post-M3 cleanup slice.</para>
+/// M1.3. <c>TwinSelector</c> was fully torn out in the S5 teardown: there is no "selected" twin, no
+/// selection lock, and no Shift-switch. Each player permanently drives their own twin.</para>
 ///
 /// R3 Restart-safe singleton (dup-destroy Awake guard, null Instance on OnDestroy, no DontDestroyOnLoad).
 /// Lives on a GameObject in Persistent; the twin slots are same-scene serialized refs (R1) — the same two

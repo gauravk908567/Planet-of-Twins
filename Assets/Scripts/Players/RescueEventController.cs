@@ -11,7 +11,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     [SerializeField] private Transform soulTransform;
 
     [Header("Coordinators")]
-    [SerializeField] private MonoBehaviour twinSelectorObject;   // ITwinSelector + ISelectionLock
     [SerializeField] private MonoBehaviour inputProviderObject;
 
     [Header("Proximity")]
@@ -134,10 +133,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             moveable?.SetFrozen(false);
         }
 
-        // Unlock twin selection if it was locked for the rescue
-        if (_state != RescueState.Idle && _state != RescueState.SoulDied)
-            _selectionLock?.UnlockSelection();
-
         CleanupRescueEvent();
         _state = RescueState.Idle;
         CurrentRescueState = RescueState.Idle;
@@ -159,8 +154,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     // _activeSoulAbility, which CleanupRescueEvent nulls at Success — too early for the return trip.
     private readonly List<TeleportAbility> _teleportAbilities = new List<TeleportAbility>();
 
-    private ITwinSelector _selector;
-    private ISelectionLock _selectionLock;
     private IInputProvider _input;
     private ITimeFactorController _timeFactorController;
 
@@ -188,12 +181,8 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        _selector = twinSelectorObject as ITwinSelector;
-        _selectionLock = twinSelectorObject as ISelectionLock;
         _input = inputProviderObject as IInputProvider;
 
-        if (_selector == null) Debug.LogError("[RescueEventController] twinSelectorObject missing ITwinSelector.", this);
-        if (_selectionLock == null) Debug.LogError("[RescueEventController] twinSelectorObject missing ISelectionLock.", this);
         if (_input == null) Debug.LogError("[RescueEventController] inputProviderObject missing IInputProvider.", this);
         _timeFactorController = timeFactorControllerObject as ITimeFactorController;
     }
@@ -253,7 +242,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                 bool isLeft = (_activeTarget.GrabbedPlayer == leftTwin);
                 emergencyTeleportMonitor?.SetEmergencyOverride(isLeft, false);
             }
-            _selectionLock?.UnlockSelection(); // unlock once â matched by single LockSelection in HandlePlayerGrabbed
+            // rescue selection-lock removed (S5); unlock onceâ matched by single LockSelection in HandlePlayerGrabbed
             CleanupRescueEvent();
             return;
         }
@@ -273,10 +262,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             bool isLeft = (_activeTarget.GrabbedPlayer == leftTwin);
             emergencyTeleportMonitor?.SetEmergencyOverride(isLeft, false);
         }
-
-        // Only unlock if selection was actually locked
-        if (_state != RescueState.Idle && _state != RescueState.SoulDied)
-            _selectionLock?.UnlockSelection();
 
         TransitionTo(RescueState.Failed);
     }
@@ -379,8 +364,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
 
         // Couch M3.1: nothing to hijack — the grabbed twin's player is frozen and the partner already
         // controls the free twin. (Was: ForceSelect(otherTwin) when the grabbed twin was the selected
-        // one.) LockSelection stays a harmless no-op until the post-M3 TwinSelector teardown.
-        _selectionLock?.LockSelection();
+        // one.) Twin-switching no longer exists after the S5 teardown.
         OnPlayerInDanger?.Invoke(grabbedPlayer);
 
         if (_debugRescue)
@@ -403,8 +387,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             moveable?.SetFrozen(false);
         }
 
-        _selectionLock?.UnlockSelection();
-
         if (_state != RescueState.Success)
             CleanupRescueEvent();
     }
@@ -419,7 +401,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             emergencyTeleportMonitor?.SetEmergencyOverride(isLeft, false);
         }
 
-        _selectionLock?.UnlockSelection();
         TransitionTo(RescueState.Failed);
     }
 
@@ -686,7 +667,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                               $"with heal={resolvedTarget?.PartialHealAmount:F0} → expect [DeathProxy]/[HealthRegen] next");
                 resolvedTarget?.ReleasePlayer(resolvedTarget.PartialHealAmount); // FIRST
                 _activeSoulAbility?.ResumeSoulTimer();
-                _selectionLock?.UnlockSelection();
 
                 if (rescued != null)
                 {

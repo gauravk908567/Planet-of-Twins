@@ -10160,7 +10160,6 @@ GameObject:
   - component: {fileID: 247002338}
   - component: {fileID: 247002345}
   - component: {fileID: 247002344}
-  - component: {fileID: 247002343}
   - component: {fileID: 247002342}
   - component: {fileID: 247002341}
   - component: {fileID: 247002340}
@@ -10223,7 +10222,6 @@ MonoBehaviour:
   minCastDistanceFromBarrier: 6
   timeFactorControllerObject: {fileID: 1203473028}
   coroutineRunnerObject: {fileID: 1203473028}
-  twinSelectorObject: {fileID: 247002343}
   rescueEventController: {fileID: 1203473038}
   _soulTravelTimeFactor: 0.85
   accordStateSystem: {fileID: 1429211813}
@@ -10239,12 +10237,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0b27ee1b888b3e478d0705882aea92d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TwinAbilityDispatcher
-  inputProviderObject: {fileID: 247002344}
-  twinSelectorObject: {fileID: 247002343}
   leftTwin: {fileID: 1497249656955866698}
   rightTwin: {fileID: 8656432537708520579}
   emergencyMonitor: {fileID: 247002345}
-  accordModeProviderObject: {fileID: 1429211813}
 --- !u!114 &247002341
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10278,21 +10273,6 @@ MonoBehaviour:
   soulTwin: {fileID: 2126716920}
   cameraManager: {fileID: 1776615699}
   referenceCamera: {fileID: 21424138}
---- !u!114 &247002343
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 247002336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85304b0ce5316174a97077f15edc24ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TwinSelector
-  leftTwin: {fileID: 1497249656955866698}
-  rightTwin: {fileID: 8656432537708520579}
-  inputProviderObject: {fileID: 247002344}
 --- !u!114 &247002344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -48222,7 +48202,6 @@ MonoBehaviour:
   leftTwin: {fileID: 1497249656955866698}
   rightTwin: {fileID: 8656432537708520579}
   soulTransform: {fileID: 2126716923}
-  twinSelectorObject: {fileID: 247002343}
   inputProviderObject: {fileID: 247002344}
   rescueProximityRadius: 2.5
   soulPlayer: {fileID: 2126716920}
@@ -60469,6 +60448,7 @@ MonoBehaviour:
   _damageOutBonus: 0.35
   _damageInReduction: 0.35
   _chargeHoldTime: 0.75
+  _jointLeniency: 0.5
   _counterText: {fileID: 244575949}
   _chargeBar: {fileID: 776507914}
   _powerStatePanel: {fileID: 2087491470}
@@ -60518,6 +60498,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   _chargeHoldTime: 0.75
+  _jointLeniency: 0.5
   _cooldown: 7
   _cleansePulseRadius: 4
   _portalDamagePerSec: 12
@@ -60557,7 +60538,6 @@ MonoBehaviour:
   _leftTwin: {fileID: 1497249656955866698}
   _rightTwin: {fileID: 8656432537708520579}
   _inputProviderObject: {fileID: 247002344}
-  _twinSelectorObject: {fileID: 247002343}
   _rescueActiveObject: {fileID: 1203473038}
   _accordModeObject: {fileID: 1429211813}
   _unlockStateMono: {fileID: 1429211806}
@@ -60606,6 +60586,7 @@ MonoBehaviour:
   _hitCooldownLow: 0.25
   _healthThresholdMid: 0.6
   _healthThresholdLow: 0.3
+  _jointLeniency: 0.5
   _chargeTime: 1.5
   _damageWindowBlock: 0.9
   _retryCooldown: 0.25
@@ -60654,6 +60635,7 @@ MonoBehaviour:
   _leftTwin: {fileID: 1497249656955866698}
   _rightTwin: {fileID: 8656432537708520579}
   _healthPool: {fileID: 1203473031}
+  _jointLeniency: 0.5
   _chargeHoldTime: 0.75
   _activeDuration: 7
   _rewindDuration: 2
@@ -90037,7 +90019,7 @@ PrefabInstance:
     - target: {fileID: 5823786070026600172, guid: 1a6989451c8ad6b45ae5126cfc5ab821, type: 3}
       propertyPath: selectionManagerObject
       value: 
-      objectReference: {fileID: 247002343}
+      objectReference: {fileID: 0}
     - target: {fileID: 5996518861697737502, guid: 1a6989451c8ad6b45ae5126cfc5ab821, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 1
@@ -90237,7 +90219,7 @@ PrefabInstance:
     - target: {fileID: 8837328111028401547, guid: 1a6989451c8ad6b45ae5126cfc5ab821, type: 3}
       propertyPath: selectionManagerObject
       value: 
-      objectReference: {fileID: 247002343}
+      objectReference: {fileID: 0}
     - target: {fileID: 8866096794440589174, guid: 1a6989451c8ad6b45ae5126cfc5ab821, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 1

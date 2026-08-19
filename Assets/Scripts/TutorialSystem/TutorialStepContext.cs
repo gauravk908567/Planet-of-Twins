@@ -16,9 +16,6 @@ public class TutorialStepContext
     [System.NonSerialized] public FailureResetSequencer resetSequencer;
     [System.NonSerialized] public FailureNotice failureNotice;
 
-    [Header("Twin control")]
-    public MonoBehaviour twinSelectorMono;   // ISelectionLock
-
     [Header("Checkpoints")]
     public TutorialCheckpointEntry[] checkpoints;
 
@@ -51,7 +48,6 @@ public class TutorialStepContext
     public GameObject[] deactivateOnSkip;
 
     // ── Runtime resolved ──────────────────────────────────────
-    [System.NonSerialized] public ISelectionLock SelectionLock;
     [System.NonSerialized] public ITutorialRescueProvider RescueProvider;
     // Persistent (R2 — never serialized cross-scene); resolved by Resolve() like resetSequencer/failureNotice.
     [System.NonSerialized] public FadeController fade;
@@ -65,15 +61,9 @@ public class TutorialStepContext
 
     public void Resolve()
     {
-        SelectionLock = twinSelectorMono as ISelectionLock;
         RescueProvider = rescueProviderMono as ITutorialRescueProvider;
         if (overlay == null) overlay = TutorialOverlayController.Instance;
         if (hintDisplay == null) hintDisplay = TutorialHintDisplay.Instance;
-        if (SelectionLock == null)
-        {
-            twinSelectorMono = TwinSelector.Instance;
-            SelectionLock = twinSelectorMono as ISelectionLock;
-        }
         if (RescueProvider == null)
             RescueProvider = RescueEventController.Instance;
 
