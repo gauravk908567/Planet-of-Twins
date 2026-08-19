@@ -73,6 +73,14 @@ public class PlayerInputRouter : MonoBehaviour, IPlayerInputRouter
         return slot == PlayerSlot.Two ? P2 : P1;
     }
 
+    // ── Couch M1.6 — runtime P2 routing (a second device joins / leaves) ──
+    /// <summary>Route slot Two to a specific provider (couch play ON). Called by CouchDeviceManager once a
+    /// second device is paired to its own <see cref="TwinInputReader"/>.</summary>
+    public void SetP2Provider(IInputProvider provider) => _p2 = provider;
+
+    /// <summary>Clear the slot-Two provider → P2 falls back to P1 again (solo / single-device play).</summary>
+    public void ClearP2Provider() => _p2 = null;
+
     // ── Static convenience for consumers (lazy, Instance-order-safe) ──
     /// <summary>Shared-UI input. Falls back to TwinInputReader.Instance if the router isn't in the scene yet.</summary>
     public static IInputProvider SharedInput =>
