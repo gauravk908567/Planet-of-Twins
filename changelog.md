@@ -12,6 +12,34 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Removed — Couch co-op: TwinSelector teardown (S5 — the twin-selection spine deleted) (2026-08-19, `couch-m1-ownership`)
+- **The whole twin-selection mechanism is gone.** With movement (M1.4), attack (S1), primary/teleport (S2), Empower
+  (M3.4) and the combined powers (M3.3) all per-player, nothing read `SelectedTransform` any more — it had become a
+  value written to nobody and a lock gating a Shift-switch nobody observes. This slice physically removes it.
+- **Deleted:** `TwinSelector.cs`, `TwinManager.cs` (already fully commented-out legacy), and the three now-unused
+  interfaces `ITwinSelector`, `ISelectionBroadcaster`, `ISelectionLock` (+ their `.meta`). `MirroredMovementModifier`
+  was already deleted in M1.2; `NormalMovementModifier` remains a harmless orphan (separate dead-code sweep).
+- **Scene:** the `TwinSelector` **component** was removed from the **`PlayerManager`** GameObject in `Persistent.unity`.
+  The GameObject is kept — it also hosts `TwinInputReader`, `PlayerInputRouter`, `PlayerRoster`, `EmergencyTeleportMonitor`,
+  and all four twin dispatchers/`TwinAbilitySetup`. Unity dropped the now-dead serialized slots (`twinSelectorObject` on
+  `TwinAbilitySetup`/`RescueEventController`, and `inputProviderObject`/`twinSelectorObject`/`accordModeProviderObject`
+  on `TwinAbilityDispatcher`).
+- **Code stripped** (vestigial select/lock plumbing): [EmpowerSystem.cs](Assets/Scripts/Players/Ability/Systems/EmpowerSystem.cs)
+  (removed the last live `ForceSelect` + `Lock/UnlockSelection` — dash already read `GetSwitchDown` directly, so behaviour
+  is unchanged), [RescueEventController.cs](Assets/Scripts/Players/RescueEventController.cs) (all no-op lock calls +
+  `_selector`/`_selectionLock`), [TeleportAbility.cs](Assets/Scripts/Players/Ability/TeleportAbility.cs) (ctor param +
+  field + 2 calls), [TwinAbilitySetup.cs](Assets/Scripts/Players/TwinAbilitySetup.cs) (DI + the ctor arg),
+  [TwinAbilityDispatcher.cs](Assets/Scripts/Players/TwinAbilityDispatcher.cs) (3 dead serialized fields), and the tutorial
+  chain — `TutorialDirector`, `TutorialStepBase`, `TutorialTimelineStepSO`, `TutorialUnlockAllStepSO`, `TutorialStepContext`
+  (dropped `SelectionLock`/`twinSelectorMono` + the `TwinSelector.Instance` fallback).
+- **Shift is now free** (no twin-switch to bind). `TutorialCheckpoint`/`SoulParticleAttractor` already resolved twins from
+  `PlayerRoster`; `PlayerRoster` is now the sole twin registry.
+- **S3 (per-ability bucket data flag) — dropped as unnecessary:** the buckets are structural by input slot, so a flag
+  would be speculative. **S4 (repoint `SelectedTransform` readers) — already absorbed:** every reader was migrated or inert.
+- Verified: compiles clean (0 errors, 0 missing-script warnings); `TwinSelector` returns 0 GameObjects; `PlayerManager`
+  intact with `PlayerRoster`. **This completes M3 + the per-player ability-dispatch rework.** Two-device runtime play-test
+  (tutorial lock paths, rescue, Empower) still pending. `M_SunShafts.mat` / `DevConfig.asset` deliberately left unstaged.
+
 ### Changed — Couch co-op: per-player PRIMARY + TELEPORT dispatch, shared-cooldown (S2) (2026-08-18, `couch-m1-ownership`)
 - **Primary (Q) and emergency Teleport (C) are now per-player + shared-cooldown.**
   [TwinAbilityDispatcher.cs](Assets/Scripts/Players/TwinAbilityDispatcher.cs) rewritten off selection: each twin

@@ -27,7 +27,6 @@ public class TutorialTimelineStepSO : TutorialStepBase
         if (lockInputDuringPlayback)
         {
             ctx.inputGate?.LockAll();
-            ctx.SelectionLock?.LockSelection();
         }
 
         if (ctx.timeline != null)
@@ -43,9 +42,6 @@ public class TutorialTimelineStepSO : TutorialStepBase
 
         if (ctx.fade != null)
             yield return FadeWhiteToGame(ctx, executor);
-
-        if (lockInputDuringPlayback)
-            ctx.SelectionLock?.UnlockSelection();
     }
 
     // Hold the cover, then fade to clear over whiteFadeInDuration. The wait is BOUNDED BY TIME, not by the

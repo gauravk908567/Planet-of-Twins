@@ -354,11 +354,21 @@ ownership spine (= networked-object ownership); per-owner dispatch = the single 
     both locked for the used ability's cd; whiff never false-locks; per-twin `PrimaryLocked` still per-twin. NO
     coordinator/sync/HUD-rewire (per-player rings = M5). Teleport per-owner (preview/launch/cancel). Unused serialized
     slots kept for wiring → retired in S5.
-  - [ ] **S3** Solo/Joint (+ shared-cooldown) data flag on abilities.
-  - [ ] **S4** repoint remaining `SelectedTransform` readers — `CameraFollowController` (frame both → couch-cam slice),
-    `SelectedPlayerUI` (D3), `TutorialStepContext` → `PlayerRoster`.
-  - [ ] **S5** teardown (isolated commit): delete `TwinSelector` + `MirroredMovementModifier`, strip lock plumbing
-    (Teleport's included), free Shift — once S1–S4 remove the consumers.
+  - [x] **S3 — not needed (verified 2026-08-19).** The three buckets are **structural by input slot** (attack=per-twin,
+    Q/C=shared-cooldown, combined=joint), not per-ability. Both twins' Q is shared regardless of which ability fills it,
+    so a per-ability data flag would be speculative generality. Add it only if a mixed-bucket ability ever exists.
+  - [x] **S4 — already absorbed (verified 2026-08-19).** Every `SelectedTransform` reader was migrated or is inert:
+    `CameraFollowController`'s `OnTwinSelected` hook is commented out (target set by `CameraManager`); `SelectedPlayerUI`
+    is D3-inert; `SoulParticleAttractor` + `TutorialCheckpoint` already resolve from `PlayerRoster`. Nothing to repoint.
+  - [x] **S5 DONE (2026-08-19, `couch-m1-ownership`).** Physical teardown: **`TwinSelector` component removed from the
+    `PlayerManager` GO** (GO kept — it hosts `TwinInputReader`/`PlayerInputRouter`/`PlayerRoster`/all dispatchers), and
+    `TwinSelector.cs` + `TwinManager.cs` + `ITwinSelector`/`ISelectionBroadcaster`/`ISelectionLock` deleted. Stripped all
+    vestigial select/lock plumbing from `EmpowerSystem` (incl. the last live `ForceSelect`), `RescueEventController`,
+    `TeleportAbility` (ctor param + field), `TwinAbilitySetup` (DI), `TwinAbilityDispatcher` (3 dead slots), and the
+    tutorial chain (`Director`/`StepBase`/`TimelineStepSO`/`UnlockAllStepSO`/`StepContext`). `MirroredMovementModifier`
+    was already gone; `NormalMovementModifier` is a harmless orphan (separate dead-code sweep). Shift is now free (no
+    switch to gate). Compiles clean (0 errors, 0 missing-script warnings); `TwinSelector` returns 0 GameObjects.
+    Runtime play-test (esp. the tutorial lock paths + rescue/Empower) still pending a 2-device session.
 - **M4 — tutorial co-op rewrite (shared progression, D6 / BUG-094 — the #1 breakage)**
   - [ ] M4.1 per-provider tutorial gate
   - [ ] M4.2 shared progression (steps advance for both at once)

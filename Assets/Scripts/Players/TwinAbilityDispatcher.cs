@@ -12,20 +12,16 @@ using UnityEngine;
 ///
 /// Selection is gone (dropped _currentAbilityController / OnTwinSelected). Each twin fires its own ability
 /// and cancels its own teleport via <see cref="PlayerInputRouter.For"/>. Single-device (P2→P1) → both reads
-/// identical → unchanged. The inputProviderObject / twinSelectorObject / accordModeProviderObject serialized
-/// slots are retained for wiring stability and retired in the S5 TwinSelector teardown.
+/// identical → unchanged. The old selection/accord serialized slots were removed in the S5 TwinSelector teardown.
 ///
 /// Teleport flow (unchanged, now per-owner): hold C → preview; release C → launch (emergency + shared-ready);
 /// after the gate opens its cancel window, the OWNING player holds X → cancel accrues, releases X → resets.
 /// </summary>
 public class TwinAbilityDispatcher : MonoBehaviour
 {
-    [SerializeField] private MonoBehaviour inputProviderObject;        // retained for wiring (unused post-S2)
-    [SerializeField] private MonoBehaviour twinSelectorObject;         // retained for wiring (unused post-S2)
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
     [SerializeField] private EmergencyTeleportMonitor emergencyMonitor;
-    [SerializeField] private MonoBehaviour accordModeProviderObject;   // retained for wiring (unused post-S2)
 
     private AbilityController _leftController;
     private AbilityController _rightController;

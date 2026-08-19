@@ -27,7 +27,6 @@ public class TutorialUnlockAllStepSO : TutorialStepBase
         }
 
         ctx.inputGate?.AllowAll();
-        ctx.SelectionLock?.UnlockSelection();
         TutorialContext.Instance?.SetStage(TutorialStage.Complete);
     }
 }

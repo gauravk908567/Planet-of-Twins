@@ -9,7 +9,6 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
     private readonly SoulPlayer _soul;
     private readonly ITimeFactorController _timeFactorController;
     private readonly ICoroutineRunner _coroutineRunner;
-    private readonly ISelectionLock _selectionLock;
     private IAbilityLock _casterAbilityLock;
     private IAbilityLock _targetAbilityLock;
     private IRescueActive _rescueActive;  // gate — teleport only usable during rescue
@@ -106,7 +105,6 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         Player soulPlayer,
         ITimeFactorController timeFactorController,
         ICoroutineRunner coroutineRunner,
-        ISelectionLock selectionLock,
         IRescueActive rescueActive = null)
         : base(data)
     {
@@ -115,7 +113,6 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         _soul = soulPlayer as SoulPlayer;
         _timeFactorController = timeFactorController;
         _coroutineRunner = coroutineRunner;
-        _selectionLock = selectionLock;
         _rescueActive = rescueActive;
 
         if (_soul == null)
@@ -220,7 +217,6 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         _cancelWindowOpen = false;
         _cancelHoldProgress = 0f;
 
-        _selectionLock?.LockSelection();
         _casterAbilityLock?.LockAbilities();
         _targetAbilityLock?.LockAbilities();
 
@@ -375,7 +371,6 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         }
 
         _timeFactorController?.ResolveEffect();
-        _selectionLock?.UnlockSelection();
         _casterAbilityLock?.UnlockAbilities();
         _targetAbilityLock?.UnlockAbilities();
 

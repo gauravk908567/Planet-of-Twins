@@ -28,7 +28,6 @@ public class TwinAbilitySetup : MonoBehaviour
 
     [SerializeField] private MonoBehaviour timeFactorControllerObject;
     [SerializeField] private MonoBehaviour coroutineRunnerObject;
-    [SerializeField] private MonoBehaviour twinSelectorObject;
     [SerializeField] private RescueEventController rescueEventController;
 
     [Header("Gate Soul Travel")]
@@ -44,7 +43,6 @@ public class TwinAbilitySetup : MonoBehaviour
 
     private ITimeFactorController _timeFactorController;
     private ICoroutineRunner _coroutineRunner;
-    private ISelectionLock _selectionLock;
 
     // Stored so we can restore after Accord State ends
     private IAbility _kaiOriginalQ;
@@ -54,10 +52,7 @@ public class TwinAbilitySetup : MonoBehaviour
     {
         _timeFactorController = timeFactorControllerObject as ITimeFactorController;
         _coroutineRunner = coroutineRunnerObject as ICoroutineRunner;
-        _selectionLock = twinSelectorObject as ISelectionLock;
 
-        if (_selectionLock == null)
-            Debug.LogError("[TwinAbilitySetup] twinSelectorObject missing ISelectionLock.", this);
         if (accordStateSystem == null)
             Debug.LogWarning("[TwinAbilitySetup] AccordStateSystem not assigned — abilities won't restore after Accord.", this);
     }
@@ -152,7 +147,6 @@ public class TwinAbilitySetup : MonoBehaviour
             caster, target, soulTwin,
             _timeFactorController,
             _coroutineRunner,
-            _selectionLock,
             rescueEventController);
 
         // Inject Gate upgrade data so pulse scales with tree upgrades

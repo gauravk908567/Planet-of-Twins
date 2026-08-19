@@ -7,18 +7,18 @@ using UnityEngine;
 /// Concrete step types inherit this and implement Execute().
 ///
 /// SOLID:
-///   S — each subclass does exactly one thing
-///   O — new step type = new class, no existing code changes
-///   L — all step types substitutable via ITutorialStep
-///   I — ITutorialStep is minimal (one method)
-///   D — steps depend on TutorialStepContext interface, not concrete types
+///   S ï¿½ each subclass does exactly one thing
+///   O ï¿½ new step type = new class, no existing code changes
+///   L ï¿½ all step types substitutable via ITutorialStep
+///   I ï¿½ ITutorialStep is minimal (one method)
+///   D ï¿½ steps depend on TutorialStepContext interface, not concrete types
 /// </summary>
 public abstract class TutorialStepBase : ScriptableObject, ITutorialStep
 {
-    [Header("Stage — set on TutorialContext when this step starts")]
+    [Header("Stage ï¿½ set on TutorialContext when this step starts")]
     public TutorialStage stage = TutorialStage.None;
 
-    [Header("Input unlocks — applied when this step starts")]
+    [Header("Input unlocks ï¿½ applied when this step starts")]
     public bool unlockSwitch = false;
     public bool unlockAttack = false;
     public bool unlockAbility = false;
@@ -33,7 +33,6 @@ public abstract class TutorialStepBase : ScriptableObject, ITutorialStep
 
         if (unlockSwitch)
         {
-            ctx.SelectionLock?.UnlockSelection();
             ctx.inputGate?.AllowSwitch(true);
         }
             if (unlockAttack) ctx.inputGate?.AllowAttack(true);

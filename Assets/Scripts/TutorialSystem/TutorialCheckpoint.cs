@@ -23,9 +23,9 @@ public class TutorialCheckpoint : MonoBehaviour
     public enum RequiredTwin { Either, Left, Right }
 
     [Header("Setup")]
-    [Tooltip("Leave null — resolved at Start from TwinSelector (Persistent).")]
+    [Tooltip("Leave null — resolved at Start from PlayerRoster (Persistent).")]
     [SerializeField] private Player leftTwin;
-    [Tooltip("Leave null — resolved at Start from TwinSelector (Persistent).")]
+    [Tooltip("Leave null — resolved at Start from PlayerRoster (Persistent).")]
     [SerializeField] private Player rightTwin;
     [SerializeField] private RequiredTwin requiredTwin = RequiredTwin.Either;
 
