@@ -331,7 +331,28 @@ Only the character-select *logic core* is built. Everything below is explicitly 
     functional, not a no-op). `ResolveSelectedTwin` removed. Single-instance; single-device caster defaults to left
     twin. Active window already ends on cancel-X OR `ActiveDuration` timer. **Timing numbers left unchanged** (user —
     no scaling formula exists; nodes hand-authored). Two-device cast needs P2 provider to verify. /BUG-097
-  - [ ] M3.5 Teleport selection-lock → no-op
+  - [x] M3.5 Teleport selection-lock → **verified no-op** (`couch-m1-ownership`). `TeleportAbility`'s ONLY selection
+    coupling is the `_selectionLock` Lock/Unlock pair (223/378) — no `SelectedTransform`/`ForceSelect` targeting
+    (caster/target come via DI, already per-twin). The lock only guarded the doomed Shift-switch and, unlike Empower,
+    teleport doesn't repurpose Shift → harmless. Physically removing the 2 calls alone leaves a CS0414 (unused
+    `_selectionLock`); the clean removal (param + field + DI site) belongs in the **post-M3 `TwinSelector` teardown**.
+
+**Per-player ability dispatch (the old M1.5, now post-M3) — plan + progress.** Three ability buckets: **per-twin**
+(independent cooldown — basic Attack); **shared-cooldown** (ONE shared cooldown, either twin triggers, unavailable to
+any twin until replenished — Primary Q, Teleport C, **Empower** — *user ruling 2026-08-18*; **Empower already realizes
+this** via its single-instance `EmpowerSystem` — one state machine → Active→Cooldown gates both players); **joint**
+(both co-activate — combined powers, done M3.3). Split is a DATA flag, never `if(isKai)`. Online-ready: rides the `PlayerRoster`+`PlayerInputRouter`
+ownership spine (= networked-object ownership); per-owner dispatch = the single seam to wrap as intent-RPCs→host.
+  - [x] **S1** attack per-player (`TwinAttackDispatcher` → `For(twin)`; modal soul/Accord/rescue preserved; compiles
+    clean). Single-device unchanged. FLAG: struggle now grabbed-twin-only (mirrors M3.1 `GetStruggleMash` — verify no
+    double-struggle).
+  - [ ] **S2** Primary (Q) + Teleport (C) as **shared-cooldown** (`TwinAbilityDispatcher` → `For(twin)` triggers the
+    twin's own controller, gated by ONE shared availability/cooldown; drop `_currentAbilityController`/`OnTwinSelected`).
+  - [ ] **S3** Solo/Joint (+ shared-cooldown) data flag on abilities.
+  - [ ] **S4** repoint remaining `SelectedTransform` readers — `CameraFollowController` (frame both → couch-cam slice),
+    `SelectedPlayerUI` (D3), `TutorialStepContext` → `PlayerRoster`.
+  - [ ] **S5** teardown (isolated commit): delete `TwinSelector` + `MirroredMovementModifier`, strip lock plumbing
+    (Teleport's included), free Shift — once S1–S4 remove the consumers.
 - **M4 — tutorial co-op rewrite (shared progression, D6 / BUG-094 — the #1 breakage)**
   - [ ] M4.1 per-provider tutorial gate
   - [ ] M4.2 shared progression (steps advance for both at once)

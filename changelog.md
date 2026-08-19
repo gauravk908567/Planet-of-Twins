@@ -12,6 +12,22 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op: per-player ATTACK dispatch (S1 of the ability-dispatch rework) (2026-08-18, `couch-m1-ownership`)
+- **Attack (E) is now per-twin.** [TwinAttackDispatcher.cs](Assets/Scripts/Players/TwinAttackDispatcher.cs): each
+  twin melees on its OWNING player's E (`PlayerInputRouter.For(twin)`) — replacing the single shared-input read that
+  made **both** twins attack on one key. Mirrors `TwinMovementDispatcher`.
+- Modal cases preserved: soul-active → soul (shared input); Accord → the shared `ExecuteAccordMelee()` (either
+  player, once, via `AnyAttackDown`); rescue → the grabbed twin's E struggles (tier-1), the free twin's E attacks.
+- Single-device unchanged (both providers → P1 → one E still swings both). Two-device: each player attacks their twin.
+- **Part of the per-player dispatch plan** (the old M1.5, now post-M3): **S1 attack ✓** / S2 Primary+Teleport as
+  *shared-cooldown* (either twin triggers, one shared cooldown, unavailable until replenished — per user 2026-08-18) /
+  S3 Solo/Joint data flag / S4 repoint remaining `SelectedTransform` readers / S5 `TwinSelector` teardown. Three
+  ability buckets: **per-twin** (attack), **shared-cooldown** (Q/C + **Empower** — either twin triggers, one shared
+  cooldown; Empower already realizes this via its single-instance system), **joint** (combined powers, done M3.3).
+- Verified: compiles clean (0 errors/warnings). Two-device split + rescue/Accord interactions need a play-test.
+- **FLAG:** struggle now fires only on the GRABBED twin's E (was: any E press) — more correct for couch; it mirrors
+  `RescueEventController`'s own `GetStruggleMash` struggle path (M3.1) — confirm no double-struggle in play-test.
+
 ### Changed — Couch co-op M3.4: Empower is "caster anchors, partner buffed" (D1) (2026-08-18, `couch-m1-ownership`)
 - **Empower is now a per-player solo cast off selection.** [EmpowerSystem.cs](Assets/Scripts/Players/Ability/Systems/EmpowerSystem.cs):
   - **Caster detection** — `DetectEmpowerCaster()` reads each player's `GetEmpowerHeld()` (via

@@ -2,9 +2,11 @@
 
 /// <summary>
 /// Sole dispatcher for twin E (melee) input.
-/// During Accord State: routes E to AccordStateSystem.ExecuteAccordMelee().
-/// During rescue: handles struggle + free twin attack.
-/// Normal: both twins attack.
+/// Soul active: E → soul (shared input; soul reworked in M3).
+/// During Accord State: E → the shared AccordStateSystem.ExecuteAccordMelee() (either player, once).
+/// During rescue: the grabbed twin's E struggles (tier-1), the free twin's E attacks.
+/// Normal (couch S1): each twin attacks on its OWNING player's E (PlayerInputRouter.For) — per-twin,
+/// independent. Single-device (P2→P1) → both reads identical → one E still swings both (unchanged).
 /// </summary>
 public class TwinAttackDispatcher : MonoBehaviour
 {
@@ -34,44 +36,48 @@ public class TwinAttackDispatcher : MonoBehaviour
 
     private void Update()
     {
-        if (_input == null) return;
-        if (!_input.GetAttackDown()) return;
-
-        // ── Soul active — E goes to soul ONLY ─────────────────
+        // ── Soul active — E goes to soul ONLY (shared input; soul reworked in M3) ──
         if (soulTwin != null && soulTwin.gameObject.activeSelf)
         {
-            soulTwin.GetComponent<PlayerAttackController>()?.PerformAttack();
+            if (_input != null && _input.GetAttackDown())
+                soulTwin.GetComponent<PlayerAttackController>()?.PerformAttack();
             return;
         }
 
-        // ── Accord State — E goes to accord melee ─────────────
+        // ── Accord State — E triggers the shared accord melee (either player, once) ──
         if (_accordMode != null && _accordMode.IsAccordActive)
         {
-            _accordMode.ExecuteAccordMelee();
+            if (AnyAttackDown())
+                _accordMode.ExecuteAccordMelee();
             return;
         }
 
-        // ── Rescue active — restrict melee ───────────────────
-        // If a twin is grabbed: only the FREE twin attacks.
-        // The grabbed twin cannot melee — they are held.
-        // If CanGrabbedPlayerStruggle: grabbed twin mashes E via struggle,
-        // free twin attacks normally.
-        Player grabbedPlayer = rescueEventController?.ActiveGrabbedPlayer;
+        // ── Rescue + Normal — per-twin (couch S1): each player attacks their OWN twin ──
+        AttackTwin(leftTwin);
+        AttackTwin(rightTwin);
+    }
+
+    // Either player's E is down (shared-effect triggers: soul / accord melee).
+    private bool AnyAttackDown() =>
+        (PlayerInputRouter.For(leftTwin)?.GetAttackDown() ?? false) ||
+        (PlayerInputRouter.For(rightTwin)?.GetAttackDown() ?? false);
+
+    // Per-twin melee on the twin's OWNING player's E. During rescue, the grabbed twin can't melee —
+    // its E struggles (tier-1 traps) instead; the free twin attacks. (RescueEventController also owns a
+    // GetStruggleMash path per M3.1 — the struggle here mirrors the pre-existing attack-dispatcher path.)
+    private void AttackTwin(Player twin)
+    {
+        if (twin == null) return;
+        if (!(PlayerInputRouter.For(twin)?.GetAttackDown() ?? false)) return;
+
+        Player grabbed = rescueEventController?.ActiveGrabbedPlayer;
         IRescueTarget target = rescueEventController?.ActiveTarget;
-
-        if (grabbedPlayer != null && target != null)
+        if (grabbed != null && target != null && twin == grabbed)
         {
-            if (target.CanGrabbedPlayerStruggle)
-                target.OnStruggle();
-
-            // Only the FREE twin attacks — grabbed twin is held
-            Player freeTwin = (grabbedPlayer == leftTwin) ? rightTwin : leftTwin;
-            freeTwin?.GetComponent<PlayerAttackController>()?.PerformAttack();
-            return;
+            if (target.CanGrabbedPlayerStruggle) target.OnStruggle();
+            return;   // held — no melee
         }
 
-        // ── Normal — both twins attack ─────────────────────────
-        leftTwin?.GetComponent<PlayerAttackController>()?.PerformAttack();
-        rightTwin?.GetComponent<PlayerAttackController>()?.PerformAttack();
+        twin.GetComponent<PlayerAttackController>()?.PerformAttack();
     }
 }
