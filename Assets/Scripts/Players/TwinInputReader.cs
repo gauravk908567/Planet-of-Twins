@@ -35,11 +35,18 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     [SerializeField] private bool _isShared = true;
 
     // No serialized gate field — resolved at runtime by TutorialInputGate.
-    private ITutorialGate _gate;
+    // STATIC (couch M4): the tutorial gate is GLOBAL progression policy, not player-scoped state — a mechanic
+    // unlocks for BOTH twins at once (shared-progression tutorial). TutorialInputGate registers it on the P1
+    // Instance, but every reader (P1 + the non-shared P2) must honor the same gate, so it lives on the TYPE,
+    // not the instance. Per-device *reading* stays per-instance (each reader owns its actions); only the
+    // allow/deny policy is shared. Cleared to fail-open in Awake by the shared reader (R3 — see below).
+    private static ITutorialGate _gate;
 
     // Overview-cam world freeze (2026-07-16): gameplay getters read as silence while true.
     // Same seam philosophy as the tutorial gate — checked INSIDE the getters, actions stay enabled.
-    private bool _gameplayFrozen;
+    // STATIC (couch M4): the overview freeze is a SHARED-SCREEN world stop (one camera, one world) — when P1
+    // holds B the P2 twin must freeze too. Same rationale as _gate: global policy, per-instance reads.
+    private static bool _gameplayFrozen;
 
     // Gameplay map (cached in Awake — FindAction per frame allocates)
     private InputAction _move, _attack, _switch, _ability, _teleport, _interact,
@@ -56,6 +63,13 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+
+            // R3: the static gate/freeze survive a Restart (Bootstrap reload — builds skip the domain reload).
+            // The shared/P1 reader is the one-per-boot anchor, so clear both to their fail-open defaults here —
+            // a fresh run never inherits a stale tutorial lock or overview freeze. Re-established at runtime by
+            // TutorialInputGate.Start (gate) and the overview B-hold (freeze).
+            _gate = null;
+            _gameplayFrozen = false;
         }
 
         if (_actions == null)
