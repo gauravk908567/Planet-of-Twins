@@ -73,6 +73,11 @@ public class PlayerInputRouter : MonoBehaviour, IPlayerInputRouter
         return slot == PlayerSlot.Two ? P2 : P1;
     }
 
+    /// <summary>The provider bound to a specific player SLOT directly (not via a twin). Used by the pre-game
+    /// front-end (Character Select), which runs BEFORE roster ownership exists so <see cref="ProviderFor"/>
+    /// can't route by twin yet. Slot Two → P2 (falls back to P1 if no second device is paired).</summary>
+    public IInputProvider ProviderForSlot(PlayerSlot slot) => slot == PlayerSlot.Two ? P2 : P1;
+
     // ── Couch M1.6 — runtime P2 routing (a second device joins / leaves) ──
     /// <summary>Route slot Two to a specific provider (couch play ON). Called by CouchDeviceManager once a
     /// second device is paired to its own <see cref="TwinInputReader"/>.</summary>
@@ -90,4 +95,9 @@ public class PlayerInputRouter : MonoBehaviour, IPlayerInputRouter
     /// TwinInputReader.Instance if the router isn't in the scene yet.</summary>
     public static IInputProvider For(Player twin) =>
         Instance != null ? Instance.ProviderFor(twin) : TwinInputReader.Instance;
+
+    /// <summary>Per-SLOT input (M2.2 — Character Select, before ownership exists). Falls back to
+    /// TwinInputReader.Instance if the router isn't in the scene yet.</summary>
+    public static IInputProvider ForSlot(PlayerSlot slot) =>
+        Instance != null ? Instance.ProviderForSlot(slot) : TwinInputReader.Instance;
 }
