@@ -51,9 +51,11 @@ public class GameBootstrapper : MonoBehaviour
     [Tooltip("Unload the Bootstrap scene once handoff is complete.")]
     [SerializeField] private bool unloadBootstrapWhenDone = true;
 
-    [Tooltip("Couch M2 — run the pre-game front-end (Start Menu → Character Select) in the DEV boot branch, " +
-             "after Persistent loads and before the area loads. Requires a FrontEndFlowController in Persistent; " +
-             "fail-open (skips to gameplay if absent/unwired). Off by default so dev quick-boot is unaffected.")]
+    [Tooltip("Couch M2 — MENU-FIRST boot: run the pre-game front-end (Start Menu → Character Select) after " +
+             "Persistent loads and before the area, in BOTH dev and shipped. When on, the intro cutscene is " +
+             "bypassed as the ENTRY (it is re-introduced as a New Game step inside the flow — C2). Requires a " +
+             "FrontEndFlowController in Persistent; fail-open (skips to gameplay if absent/unwired). Off by " +
+             "default so the legacy intro / dev quick-boot paths are unaffected.")]
     [SerializeField] private bool useFrontEnd = false;
 
     /// <summary>
@@ -73,72 +75,41 @@ public class GameBootstrapper : MonoBehaviour
         // Persistent isn't loaded yet — direct write; TimeScaleService takes over after.
         Time.timeScale = 1f;
 
-        // DevConfig.SkipTutorial ON → dev-boot (skip intro, load devStartArea straight). OFF (or release
-        // build) → normal intro flow. One flag instead of hand-editing introScene. Needs devStartArea set.
-        bool useIntro = introScene.IsValid && !(DevConfig.SkipTutorial && devStartArea.IsValid);
+        // Boot has three shapes:
+        //   • DEV-DIRECT (DevConfig.SkipTutorial + devStartArea): skip the intro/cutscene and jump straight to
+        //     a chosen area for fast iteration. LocalBoot() owns it (optionally showing the front-end first).
+        //   • SHIPPED (intro configured): the intro cutscene owns WHERE the game actually starts (its own
+        //     firstAreaLocation — the tutorial zone) and the tutorial start signal. We do NOT pick the start
+        //     area here. Menu-first (couch M2): when useFrontEnd is on we run the pre-game front-end (Main
+        //     Menu → Character Select) FIRST, then hand off to the untouched intro. Full order:
+        //     boot → menu → new game → character select → cutscene → game starts exactly where it always has.
+        //   • FALLBACK (no intro, no dev area): LocalBoot().
+        bool devDirect = DevConfig.SkipTutorial && devStartArea.IsValid;
+        bool useIntro  = introScene.IsValid && !devDirect;
 
-        if (useIntro)
+        if (devDirect)
         {
-            // ── Intro mode: hand off to IntroController ──────────────────────
-            // IntroController will load Persistent + first area in background.
+            yield return LocalBoot();
+        }
+        else if (useIntro)
+        {
+            // Menu-first: the menu lives in Persistent, so load Persistent in the foreground BEFORE the menu,
+            // run the front-end, THEN hand off to the intro. IntroController re-guards the Persistent load
+            // (won't double-load) and owns the real start-area load + cutscene + tutorial start — untouched.
+            if (useFrontEnd)
+            {
+                if (!IsLoaded(persistentScene.Name))
+                    yield return LoadAdditive(persistentScene.Name);
+                SetTwinsMovementLocked(true);   // twins sit in Persistent over the void while the menu shows
+                yield return RunFrontEnd();
+            }
+
             yield return LoadAdditive(introScene.Name);
             Debug.Log("[GameBootstrapper] Intro scene loaded — handing off to IntroController.");
         }
         else
         {
-            // ── Dev mode: load Persistent + first area directly ───────────────
-            if (!IsLoaded(persistentScene.Name))
-                yield return LoadAdditive(persistentScene.Name);
-
-            // Persistent has no floor — lock twin movement so they don't fall
-            // during the area-scene load. Gravity only applies inside ExecuteCommand,
-            // so SetMovementLocked(true) is sufficient (no CC disable needed yet).
-            SetTwinsMovementLocked(true);
-
-            // FRONT-END (couch M2): Start Menu → Character Select (writes PlayerRoster). Persistent is up so the
-            // roster exists; the area isn't loaded yet (the full-screen menu covers the void). Twins stay locked
-            // throughout. Fail-open — if the flow controller is absent/unwired, boot proceeds straight to gameplay.
-            if (useFrontEnd)
-            {
-                var frontEnd = FrontEndFlowController.Instance;
-                if (frontEnd != null)
-                {
-                    frontEnd.Begin();
-                    yield return new WaitUntil(() => FrontEndFlowController.Instance == null
-                                                     || FrontEndFlowController.Instance.IsFrontEndComplete);
-                }
-                else
-                {
-                    Debug.LogWarning("[GameBootstrapper] useFrontEnd is on but no FrontEndFlowController in " +
-                                     "Persistent — skipping the front-end.");
-                }
-            }
-
-            if (devStartArea.IsValid && !IsLoaded(devStartArea.Name))
-                yield return LoadAdditive(devStartArea.Name);
-
-            // Place twins at the area's designated per-twin gameplay-start positions.
-            // AreaSpawnPoints (leftStart / rightStart) is the authoritative source for
-            // "where twins stand when gameplay begins" — not LocationEntrance, which is
-            // for streaming transitions between areas.
-            PlaceTwinsAtAreaSpawn();
-
-            // Seed SceneFlowManager occupancy — triggers never see teleports (3.7b)
-            if (devStartLocation != null)
-            {
-                var roster = PlayerRoster.Instance;
-                SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinA, devStartLocation);
-                SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinB, devStartLocation);
-            }
-
-            // Make the area the active scene (drives ambient/skybox/NavMesh)
-            // SceneFlowManager.UpdateActiveScene() will take over once occupancy is seeded above.
-            var area = SceneManager.GetSceneByName(devStartArea.Name);
-            if (area.IsValid() && area.isLoaded)
-                SceneManager.SetActiveScene(area);
-
-            OnBootstrapComplete?.Invoke();
-            Debug.Log($"[GameBootstrapper] Boot complete — Persistent + '{devStartArea.Name}' loaded.");
+            yield return LocalBoot();
         }
 
         // Unload Bootstrap (this GameObject lives here, so do it last)
@@ -151,6 +122,69 @@ public class GameBootstrapper : MonoBehaviour
             {
                 yield return SceneManager.UnloadSceneAsync(boot);
             }
+        }
+    }
+
+    /// <summary>Local boot with NO intro/cutscene: load Persistent, (optionally) run the front-end, then load
+    /// <see cref="devStartArea"/> directly and place the twins. This is the DEV-DIRECT fast-iteration path
+    /// (DevConfig.SkipTutorial) and the no-intro fallback — it is the ONLY path that picks a start area itself;
+    /// the shipped path defers that to the intro.</summary>
+    private IEnumerator LocalBoot()
+    {
+        if (!IsLoaded(persistentScene.Name))
+            yield return LoadAdditive(persistentScene.Name);
+
+        // Persistent has no floor — lock twin movement so they don't fall during the area-scene load. Gravity
+        // only applies inside ExecuteCommand, so SetMovementLocked(true) is sufficient (no CC disable needed).
+        SetTwinsMovementLocked(true);
+
+        // Front-end (couch M2): Main Menu → Character Select (writes PlayerRoster). Persistent is up so the
+        // roster exists; the area isn't loaded yet (the full-screen menu covers the void). Twins stay locked.
+        if (useFrontEnd)
+            yield return RunFrontEnd();
+
+        if (devStartArea.IsValid && !IsLoaded(devStartArea.Name))
+            yield return LoadAdditive(devStartArea.Name);
+
+        // Place twins at the area's designated per-twin gameplay-start positions. AreaSpawnPoints
+        // (leftStart / rightStart) is the authoritative source for "where twins stand when gameplay begins" —
+        // not LocationEntrance, which is for streaming transitions between areas.
+        PlaceTwinsAtAreaSpawn();
+
+        // Seed SceneFlowManager occupancy — triggers never see teleports (3.7b)
+        if (devStartLocation != null)
+        {
+            var roster = PlayerRoster.Instance;
+            SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinA, devStartLocation);
+            SceneFlowManager.Instance?.NotifyTeleported(roster?.TwinB, devStartLocation);
+        }
+
+        // Make the area the active scene (drives ambient/skybox/NavMesh). SceneFlowManager.UpdateActiveScene()
+        // takes over once occupancy is seeded above.
+        var area = SceneManager.GetSceneByName(devStartArea.Name);
+        if (area.IsValid() && area.isLoaded)
+            SceneManager.SetActiveScene(area);
+
+        OnBootstrapComplete?.Invoke();
+        Debug.Log($"[GameBootstrapper] Boot complete — Persistent + '{devStartArea.Name}' loaded.");
+    }
+
+    /// <summary>Run the pre-game front-end (Main Menu → Character Select) and wait for it to finish. Fail-open:
+    /// if the <see cref="FrontEndFlowController"/> is absent/unwired, log and proceed so boot still reaches the
+    /// game. The controller writes the ownership into PlayerRoster; it never loads any area.</summary>
+    private IEnumerator RunFrontEnd()
+    {
+        var frontEnd = FrontEndFlowController.Instance;
+        if (frontEnd != null)
+        {
+            frontEnd.Begin();
+            yield return new WaitUntil(() => FrontEndFlowController.Instance == null
+                                             || FrontEndFlowController.Instance.IsFrontEndComplete);
+        }
+        else
+        {
+            Debug.LogWarning("[GameBootstrapper] useFrontEnd is on but no FrontEndFlowController in " +
+                             "Persistent — skipping the front-end.");
         }
     }
 
