@@ -40,6 +40,13 @@ namespace CommonCore
         protected IPerceivable CurrentBestPerceivable = null;
         protected float CurrentBestDetection = float.MinValue;
 
+        /// <summary>Dev toggle (Editor/Dev builds): logs target-focus changes AND rejected re-targets with each
+        /// candidate's detection strength + distance, so you can see WHY an enemy attacked a given twin. Note:
+        /// targeting is STRENGTH-based with hysteresis (a candidate must beat the current best AND clear
+        /// AcquisitionThreshold to steal focus) — NOT raw distance, which is why closer ≠ always chosen.</summary>
+        public static bool DebugTargeting = false;   // flip true to diagnose targeting live
+        private float _lastRejectLog;
+
         protected void Awake()
         {
             ServiceLocator.AsyncLocateService<IFaction>((ILocatableService InService) =>
@@ -124,6 +131,19 @@ namespace CommonCore
             {
                 CurrentBestDetection = LinkedPerceptionManager.GetDetectionStrength(this, CurrentBestPerceivable);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (DebugTargeting && Time.time - _lastRejectLog > 0.75f &&
+                    (CurrentBestDetection > InDetectionStrength || InDetectionStrength < AcquisitionThreshold))
+                {
+                    _lastRejectLog = Time.time;
+                    Vector3 me = SensorLocation;
+                    Debug.Log($"[Targeting] {Owner.name} KEEPS {CurrentBestPerceivable.Owner.name} " +
+                              $"(str={CurrentBestDetection:F2}, dist={Vector3.Distance(me, CurrentBestPerceivable.Position):F1})  vs  " +
+                              $"{InPerceivable.Owner.name} (str={InDetectionStrength:F2}, dist={Vector3.Distance(me, InPerceivable.Position):F1}) " +
+                              $"— candidate must beat current str AND clear acq={AcquisitionThreshold:F2} to switch", Owner);
+                }
+#endif
+
                 // new detection is not stronger than current best
                 if (CurrentBestDetection > InDetectionStrength)
                     return;
@@ -167,6 +187,20 @@ namespace CommonCore
 
             CurrentBestPerceivable = InPerceivable;
             CurrentBestDetection = InDetectionStrength;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (DebugTargeting)
+            {
+                Vector3 me = SensorLocation;
+                string now = CurrentBestPerceivable != null
+                    ? $"{CurrentBestPerceivable.Owner.name} (str={CurrentBestDetection:F2}, dist={Vector3.Distance(me, CurrentBestPerceivable.Position):F1})"
+                    : "none";
+                string was = PreviousBestPerceivable != null
+                    ? $"{PreviousBestPerceivable.Owner.name} (str={PreviousBestDetection:F2}, dist={Vector3.Distance(me, PreviousBestPerceivable.Position):F1})"
+                    : "none";
+                Debug.Log($"[Targeting] {Owner.name} SWITCH: {was} → {now}", Owner);
+            }
+#endif
 
             if (UpdateBlackboard && (LinkedBlackboard != null))
             {
