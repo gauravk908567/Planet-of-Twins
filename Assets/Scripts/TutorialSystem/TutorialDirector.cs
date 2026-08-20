@@ -153,6 +153,10 @@ public class TutorialDirector : MonoBehaviour
         foreach (var step in steps)
         {
             if (step == null) continue;
+            // Couch (S5): twin-switching no longer exists, so the switch-teaching steps — SwitchPrompt /
+            // SwitchWait / SwitchCheckpoint, the ONLY SwitchUnlocked-stage steps — are skipped. Nothing gates
+            // on the SwitchUnlocked stage (verified), so movement flows straight into the next teaching step.
+            if (step.stage == TutorialStage.SwitchUnlocked) continue;
             yield return step.Execute(context, this);
         }
     }
