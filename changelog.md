@@ -12,6 +12,26 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op: menu-first boot (M2 — front-end prepended to the untouched intro) (2026-08-20, `couch-m1-ownership`)
+- **The pre-game front-end (Main Menu → Character Select) now runs in the SHIPPED boot, before the intro.**
+  Final order: **boot → Main Menu → New Game → Character Select → intro cutscene → game starts in the
+  L2_Streets tutorial zone** (save-slot select is deferred with save persistence). The greybox front-end
+  (menu / character-select / `FrontEndFlowController`) was already fully built + wired in Persistent; it just
+  never appeared because the intro path won first.
+- **The front-end only PREPENDS — it never picks the start area.** `GameBootstrapper`
+  ([GameBootstrapper.cs](Assets/Scripts/SceneLaoder/GameBootstrapper.cs)) was restructured into three explicit
+  shapes: **dev-direct** (`DevConfig.SkipTutorial` → `LocalBoot()` jumps to `devStartArea`), **shipped**
+  (intro configured → when `useFrontEnd`, load Persistent + run the front-end, then hand off to the untouched
+  `IntroController`), and a no-intro fallback. `IntroController` still owns *where the game starts* (its
+  `firstAreaLocation` = L2_Streets) + the tutorial-start signal — unchanged. Persistent is loaded up front so
+  the menu (which lives there) exists; `IntroController` re-guards its own Persistent load (no double-load).
+- **Why this shape:** an earlier attempt bypassed the intro and had the local path load `devStartArea`
+  (L1_Park) directly — which wrongly *moved the start point*. The start area is the intro's decision, always;
+  the corrected design keeps it there and only inserts menu/character-select ahead of the cutscene.
+- Extracted `LocalBoot()` + `RunFrontEnd()` helpers (no behaviour change to the dev-direct/no-intro paths).
+  Compiles clean (0 errors). **Needs a Bootstrap play-test** (SkipTutorial OFF → menu → New Game →
+  character-select (mouse) → cutscene → L2_Streets). Char-select is still mouse-only (per-device input = M2.2).
+
 ### Fixed — Couch co-op: tutorial gate + overview freeze now apply to BOTH twins (M4, part 1 — the "P2 gate") (2026-08-20, `couch-m1-ownership`)
 - **The P2 twin was ungated during the tutorial and unfrozen during the overview cam.** Root cause: both live-lock
   states on [TwinInputReader.cs](Assets/Scripts/Players/TwinInputReader.cs) — `_gate` (`ITutorialGate`) and
