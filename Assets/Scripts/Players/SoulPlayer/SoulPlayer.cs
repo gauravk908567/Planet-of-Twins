@@ -8,6 +8,10 @@ public class SoulPlayer : Player
     private Player _caster;
     private Player _target;
 
+    /// <summary>The twin whose player deployed and CONTROLS this soul (couch: soul input follows the caster).
+    /// Fixed at setup via SetLinkedPlayers — Lyra's soul → Lyra, Kai's soul → Kai.</summary>
+    public Player Caster => _caster;
+
     public override void OnEffectStarted() { } // soul is immune to time freeze
     public override void OnEffectEnded() { }
 

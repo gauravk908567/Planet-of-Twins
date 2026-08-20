@@ -16,8 +16,6 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     [Header("Proximity")]
     [SerializeField] private float rescueProximityRadius = 2.5f;
 
-    [SerializeField] private SoulPlayer soulPlayer;
-
     [Header("Emergency Teleport")]
     [SerializeField] private EmergencyTeleportMonitor emergencyTeleportMonitor;
     [SerializeField] private MonoBehaviour timeFactorControllerObject; // → ITimeFactorController
@@ -141,7 +139,8 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     }
 
     /// <summary>Exposed so SiphonGhost can read soul break-mash input without raw Input calls.</summary>
-    public IInputProvider InputProvider => _input;
+    public IInputProvider InputProvider =>
+        ActiveSoul?.Caster != null ? PlayerInputRouter.For(ActiveSoul.Caster) : _input;
 
     // ââ Internal âââââââââââââââââââââââââââââââââââââââââââââââ
     private RescueState _state = RescueState.Idle;
@@ -149,6 +148,20 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     private float _totalStruggleTimePaused;
     private bool _struggleCapReached;
     private TeleportAbility _activeSoulAbility;
+    /// <summary>The soul currently deployed — resolved from whichever registered gate has its soul OUT
+    /// (<see cref="TeleportAbility.IsSoulDeployed"/>). Note: <c>_activeSoulAbility</c> is never assigned
+    /// (SetActiveSoulAbility has no callers), so we poll the gate list instead. Couch: the dispatchers drive
+    /// this soul with its CASTER's input; null when no soul is out.</summary>
+    public SoulPlayer ActiveSoul
+    {
+        get
+        {
+            for (int i = 0; i < _teleportAbilities.Count; i++)
+                if (_teleportAbilities[i] != null && _teleportAbilities[i].IsSoulDeployed)
+                    return _teleportAbilities[i].Soul;
+            return null;
+        }
+    }
     // BUG-082: both twins' Gate abilities register here (left+right caster). Polled via
     // IsAnySoulDeployed to keep enemies frozen until the rescue soul is home. Distinct from
     // _activeSoulAbility, which CleanupRescueEvent nulls at Success — too early for the return trip.
@@ -353,7 +366,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         LastBlowEnemy = (target as MonoBehaviour)?.gameObject;
 
         // Notify SoulPulseSystem of last blow enemy
-        var pulse = soulPlayer?.GetComponent<SoulPulseSystem>();
+        var pulse = ActiveSoul?.GetComponent<SoulPulseSystem>();
         pulse?.SetLastBlowEnemy(LastBlowEnemy);
 
         bool isLeft = (grabbedPlayer == leftTwin);
@@ -700,7 +713,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         _totalStruggleTimePaused = 0f;
         _activeTarget = null;
         LastBlowEnemy = null;
-        var pulse = soulPlayer?.GetComponent<SoulPulseSystem>();
+        var pulse = ActiveSoul?.GetComponent<SoulPulseSystem>();
         pulse?.ClearLastBlowEnemy();
         _activeGhostCount = 0;
         OnActiveTargetChanged?.Invoke(null);
