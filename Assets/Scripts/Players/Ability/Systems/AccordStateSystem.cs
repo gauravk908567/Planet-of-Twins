@@ -296,6 +296,10 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         // Block if rescue is active
         if (_rescueActive != null && _rescueActive.IsRescueActive) return;
 
+        // Block if EITHER twin is down — Accord State is the CLAN-combining power and needs BOTH twins up.
+        // (Soul Convergence / Setsuna / Accord Spirit are SOUL powers and are NOT gated this way.)
+        if (IsEitherTwinDown()) return;
+
         // Block if Soul Convergence power state is running
         if (_scActiveState != null && _scActiveState.IsAbilityActive) return;
 
@@ -318,6 +322,15 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
     {
         // Cancel charge if rescue becomes active mid-charge
         if (_rescueActive != null && _rescueActive.IsRescueActive)
+        {
+            StopChargeVFX();
+            _chargeProgress = 0f;
+            _chargeState = ChargeState.Idle;
+            return;
+        }
+
+        // Cancel charge if a twin goes down mid-charge (Accord needs both twins up).
+        if (IsEitherTwinDown())
         {
             StopChargeVFX();
             _chargeProgress = 0f;
@@ -355,6 +368,13 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
             ActivateAccord();
         }
     }
+
+    // Accord State is the clan-combining power → both twins must be up. "Down" = dead here; a grabbed/in-rescue
+    // twin is already blocked by the IsRescueActive guards above. (The soul powers — SC / Setsuna / Accord Spirit
+    // — are NOT gated this way: they can still fire with one twin down.)
+    private bool IsEitherTwinDown() =>
+        (_leftTwin != null && _leftTwin.Health != null && _leftTwin.Health.IsDead) ||
+        (_rightTwin != null && _rightTwin.Health != null && _rightTwin.Health.IsDead);
 
     // ── Retry cooldown ────────────────────────────────────────
     private void HandleRetryCooldown()
