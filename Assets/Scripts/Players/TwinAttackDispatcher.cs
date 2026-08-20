@@ -2,7 +2,7 @@
 
 /// <summary>
 /// Sole dispatcher for twin E (melee) input.
-/// Soul active: E → soul (shared input; soul reworked in M3).
+/// Soul active: E → the deployed soul, driven by its CASTER's input (couch two-soul model).
 /// During Accord State: E → the shared AccordStateSystem.ExecuteAccordMelee() (either player, once).
 /// During rescue: the grabbed twin's E struggles (tier-1), the free twin's E attacks.
 /// Normal (couch S1): each twin attacks on its OWNING player's E (PlayerInputRouter.For) — per-twin,
@@ -12,7 +12,6 @@ public class TwinAttackDispatcher : MonoBehaviour
 {
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
-    [SerializeField] private SoulPlayer soulTwin;
     [SerializeField] private MonoBehaviour inputProviderObject;
     [SerializeField] private RescueEventController rescueEventController;
 
@@ -36,11 +35,12 @@ public class TwinAttackDispatcher : MonoBehaviour
 
     private void Update()
     {
-        // ── Soul active — E goes to soul ONLY (shared input; soul reworked in M3) ──
-        if (soulTwin != null && soulTwin.gameObject.activeSelf)
+        // ── Soul active — E goes to the soul ONLY, driven by the CASTER who deployed it (couch two-soul model) ──
+        var soul = rescueEventController?.ActiveSoul;
+        if (soul != null && soul.gameObject.activeSelf)
         {
-            if (_input != null && _input.GetAttackDown())
-                soulTwin.GetComponent<PlayerAttackController>()?.PerformAttack();
+            if (soul.Caster != null && (PlayerInputRouter.For(soul.Caster)?.GetAttackDown() ?? false))
+                soul.GetComponent<PlayerAttackController>()?.PerformAttack();
             return;
         }
 

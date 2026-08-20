@@ -2,8 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Per-player movement dispatch (couch M1.4). Each twin is driven by its OWNING player's input provider
-/// (<see cref="PlayerInputRouter.For"/>); twins are resolved from <see cref="PlayerRoster"/>. The soul
-/// (rescue/emergency, reworked in M3) still reads shared input.
+/// (<see cref="PlayerInputRouter.For"/>); twins are resolved from <see cref="PlayerRoster"/>. The rescue soul
+/// is driven by the CASTER who deployed it (couch two-soul model), resolved via RescueEventController.ActiveSoul.
 ///
 /// <para>The selection-based mirror is GONE — both twins move normally (MirroredMovementModifier deleted;
 /// a null movement modifier is normal movement). With P2's device unwired, <c>For(TwinB)</c> falls back to
@@ -14,8 +14,6 @@ using UnityEngine;
 /// </summary>
 public class TwinMovementDispatcher : MonoBehaviour
 {
-    [SerializeField] private Player soulTwin;
-
     [Tooltip("Source of OnMovementModeChanged event.")]
     [SerializeField] private CameraManager cameraManager;
 
@@ -54,12 +52,14 @@ public class TwinMovementDispatcher : MonoBehaviour
             MoveTwin(roster.TwinB);   // P2's provider (slot Two; falls back to P1 until wired)
         }
 
-        // Soul only when active — rescue/emergency entity, reworked in M3; reads shared input for now.
-        if (soulTwin != null && soulTwin.gameObject.activeSelf)
+        // Rescue soul — driven by the CASTER who deployed it (couch two-soul model). Active soul + its caster
+        // come from RescueEventController; null during the auto return trip, so the player only steers it outbound.
+        var soul = RescueEventController.Instance?.ActiveSoul;
+        if (soul != null && soul.gameObject.activeSelf && soul.Caster != null)
         {
-            var shared = PlayerInputRouter.SharedInput;
-            if (shared != null)
-                soulTwin.Movement?.ExecuteCommand(BuildCommand(shared.GetMovementInput()));
+            var input = PlayerInputRouter.For(soul.Caster);
+            if (input != null)
+                soul.Movement?.ExecuteCommand(BuildCommand(input.GetMovementInput()));
         }
     }
 

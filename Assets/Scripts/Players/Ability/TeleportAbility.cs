@@ -74,6 +74,9 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
     // leave the shared freeze flag stuck true.
     public bool IsSoulDeployed { get; private set; }
 
+    /// <summary>The soul this gate deploys — per-twin in the couch two-soul model.</summary>
+    public SoulPlayer Soul => _soul;
+
     // Fired to HUD when cancel window opens/closes
     public event Action OnCancelWindowOpened;
     public event Action OnCancelWindowClosed;

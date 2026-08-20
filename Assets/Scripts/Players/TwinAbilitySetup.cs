@@ -4,7 +4,10 @@ public class TwinAbilitySetup : MonoBehaviour
 {
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
-    [SerializeField] private Player soulTwin;
+    [Tooltip("Lyra's (leftTwin's) rescue soul — its OWN Weaver's Gate soul object (couch two-soul model).")]
+    [SerializeField] private SoulPlayer leftSoul;
+    [Tooltip("Kai's (rightTwin's) rescue soul — its OWN Weaver's Gate soul object (couch two-soul model).")]
+    [SerializeField] private SoulPlayer rightSoul;
 
     [SerializeField] private AbilityData stunAbilityData;
     [SerializeField] private AbilityData possessAbilityData;
@@ -83,11 +86,14 @@ public class TwinAbilitySetup : MonoBehaviour
         SetupLeftTwin();
         SetupRightTwin();
 
-        var soul = soulTwin as SoulPlayer;
-        soul?.ShouldSoulSleep(true);
+        leftSoul?.ShouldSoulSleep(true);
+        rightSoul?.ShouldSoulSleep(true);
 
-        if (soul != null && rescueEventController != null)
-            rescueEventController.RegisterSoulPlayer(soul);
+        if (rescueEventController != null)
+        {
+            if (leftSoul != null)  rescueEventController.RegisterSoulPlayer(leftSoul);
+            if (rightSoul != null) rescueEventController.RegisterSoulPlayer(rightSoul);
+        }
 
         if (rescueEventController != null)
         {
@@ -110,7 +116,7 @@ public class TwinAbilitySetup : MonoBehaviour
         PossessEvents = possess;
         _lyraOriginalQ = possess; // store for restore after Accord
         ability.SetPrimaryAbility(possess);
-        ability.SetTeleportAbility(BuildTeleportAbility(leftTwin, rightTwin));
+        ability.SetTeleportAbility(BuildTeleportAbility(leftTwin, rightTwin, leftSoul));
         ability.SetMinCastDistance(minCastDistanceFromBarrier);
     }
 
@@ -122,7 +128,7 @@ public class TwinAbilitySetup : MonoBehaviour
         StunEvents = stun;
         _kaiOriginalQ = stun; // store for restore after Accord
         ability.SetPrimaryAbility(stun);
-        ability.SetTeleportAbility(BuildTeleportAbility(rightTwin, leftTwin));
+        ability.SetTeleportAbility(BuildTeleportAbility(rightTwin, leftTwin, rightSoul));
         ability.SetMinCastDistance(minCastDistanceFromBarrier);
     }
 
@@ -140,11 +146,15 @@ public class TwinAbilitySetup : MonoBehaviour
         Debug.Log("[TwinAbilitySetup] Original Q abilities restored after Accord State.");
     }
 
-    private TeleportAbility BuildTeleportAbility(Player caster, Player target)
+    private TeleportAbility BuildTeleportAbility(Player caster, Player target, SoulPlayer soul)
     {
+        if (soul == null)
+            Debug.LogError($"[TwinAbilitySetup] No soul wired for {caster?.name}'s Weaver's Gate — rescue will " +
+                           "fail. Wire leftSoul / rightSoul in the Inspector.", this);
+
         var ta = new TeleportAbility(
             teleportAbilityData,
-            caster, target, soulTwin,
+            caster, target, soul,
             _timeFactorController,
             _coroutineRunner,
             rescueEventController);
@@ -159,7 +169,7 @@ public class TwinAbilitySetup : MonoBehaviour
         // Inject gate data into SoulPulseSystem so it can gate behind Node 3
         if (gateUpgradeData != null)
         {
-            var pulse = soulTwin.GetComponent<SoulPulseSystem>();
+            var pulse = soul != null ? soul.GetComponent<SoulPulseSystem>() : null;
             if (pulse != null)
                 pulse.SetGateData(gateUpgradeData);
         }
