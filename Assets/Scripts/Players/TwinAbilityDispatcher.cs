@@ -1,21 +1,18 @@
 using UnityEngine;
 
 /// <summary>
-/// Per-player ability dispatch (couch S2). Primary (Q) and emergency Teleport (C) are SHARED-cooldown:
-/// either twin's OWNING player triggers, and the slot is unavailable to BOTH until it replenishes.
+/// Per-player ability dispatch (couch). Primary (Q) and emergency Teleport (Weaver's Gate, C) are BOTH
+/// PER-TWIN: each player triggers their OWN ability, gated only by that ability's OWN cooldown — one twin
+/// never blocks the other. Kai=Stun/VoidStrike vs Lyra=Possess/RadiantSeeker are different abilities; the
+/// teleport is the same ability but still a per-twin instance. (Empower is the ONLY shared-cooldown ability —
+/// handled in EmpowerSystem, not here.)
 ///
-/// <para><b>Shared availability = both twins' primary/teleport are ready.</b> Casting either (Kai=Stun/
-/// VoidStrike, Lyra=Possess/RadiantSeeker) puts that ability on cooldown → the AND becomes false → the
-/// slot is locked for the used ability's own cooldown. A whiff (no target) never starts a cooldown, so it
-/// never false-locks. No coordinator / cooldown-syncing / HUD rewire needed — each ability keeps its own
-/// cooldown; the dispatcher just gates on both.</para>
+/// Selection is gone (dropped _currentAbilityController / OnTwinSelected). Each twin fires/cancels its own via
+/// <see cref="PlayerInputRouter.For"/>. Single-device (P2→P1) → both reads identical → both twins act together
+/// (matches Attack). The old selection/accord serialized slots were removed in the S5 TwinSelector teardown.
 ///
-/// Selection is gone (dropped _currentAbilityController / OnTwinSelected). Each twin fires its own ability
-/// and cancels its own teleport via <see cref="PlayerInputRouter.For"/>. Single-device (P2→P1) → both reads
-/// identical → unchanged. The old selection/accord serialized slots were removed in the S5 TwinSelector teardown.
-///
-/// Teleport flow (unchanged, now per-owner): hold C → preview; release C → launch (emergency + shared-ready);
-/// after the gate opens its cancel window, the OWNING player holds X → cancel accrues, releases X → resets.
+/// Teleport flow (per-owner): hold C → preview; release C → launch (emergency + that twin's own teleport ready);
+/// once the gate opens its cancel window, the OWNING player holds X → cancel accrues, releases X → resets.
 /// </summary>
 public class TwinAbilityDispatcher : MonoBehaviour
 {
@@ -38,48 +35,45 @@ public class TwinAbilityDispatcher : MonoBehaviour
         HandleTeleport();
     }
 
-    // ── Primary (Q) — shared-cooldown, per-player trigger ─────
+    // ── Primary (Q) — PER-TWIN, independent cooldown ──────────
     private void HandlePrimary()
     {
-        // Shared availability: castable only while BOTH primaries are ready. Casting either drops it.
-        if (!(_leftController?.IsPrimaryReady ?? false) || !(_rightController?.IsPrimaryReady ?? false))
-            return;
-
-        // First presser casts their OWN primary (left wins a same-frame tie). ActivatePrimary enforces
-        // that twin's own PrimaryLocked (bomb suppression) — a suppressed twin simply doesn't fire.
+        // Kai=Stun and Lyra=Possess are DIFFERENT abilities: each player casts their OWN primary independently,
+        // gated only by that ability's OWN cooldown — one caster never blocks the other (NOT shared-cooldown;
+        // that model is Empower-only). ActivatePrimary still enforces each twin's own PrimaryLocked (bomb).
         if (PlayerInputRouter.For(leftTwin)?.GetAbilityDown() ?? false)
             _leftController?.ActivatePrimary();
-        else if (PlayerInputRouter.For(rightTwin)?.GetAbilityDown() ?? false)
+        if (PlayerInputRouter.For(rightTwin)?.GetAbilityDown() ?? false)
             _rightController?.ActivatePrimary();
     }
 
-    // ── Teleport (C, emergency) — shared-cooldown, per-owner ──
+    // ── Teleport (Weaver's Gate, C, emergency) — PER-TWIN, per-owner ──
     private void HandleTeleport()
     {
         bool emergencyAvailable = emergencyMonitor != null && emergencyMonitor.IsEmergencyAvailable;
-        bool sharedReady = (_leftController?.IsTeleportReady ?? false)
-                        && (_rightController?.IsTeleportReady ?? false);
 
-        TeleportForTwin(leftTwin,  _leftController,  emergencyAvailable, sharedReady);
-        TeleportForTwin(rightTwin, _rightController, emergencyAvailable, sharedReady);
+        TeleportForTwin(leftTwin,  _leftController,  emergencyAvailable);
+        TeleportForTwin(rightTwin, _rightController, emergencyAvailable);
 
         // Cancel window (X) — each teleport is cancelled by its OWNING player's X.
         HandleTeleportCancel(leftTwin,  _leftController);
         HandleTeleportCancel(rightTwin, _rightController);
     }
 
-    private void TeleportForTwin(Player twin, AbilityController ctrl, bool emergencyAvailable, bool sharedReady)
+    private void TeleportForTwin(Player twin, AbilityController ctrl, bool emergencyAvailable)
     {
         var input = PlayerInputRouter.For(twin);
         if (input == null || ctrl == null) return;
 
+        bool ready = ctrl.IsTeleportReady;   // this twin's OWN Weaver's Gate cooldown/active state
+
         if (input.GetTeleportReleased())
         {
             ctrl.HideTeleportPreview();
-            if (emergencyAvailable && sharedReady) ctrl.ActivateTeleportEmergency();
+            if (emergencyAvailable && ready) ctrl.ActivateTeleportEmergency();
         }
 
-        if (input.GetTeleportHeld() && emergencyAvailable && sharedReady)
+        if (input.GetTeleportHeld() && emergencyAvailable && ready)
             ctrl.ShowTeleportPreview();
 
         // Force-hide preview if emergency ends mid-hold (e.g. health recovered above threshold).
