@@ -18,9 +18,9 @@ using UnityEngine.InputSystem;
 /// (front-end M2) can call <see cref="AssignCouch"/> / <see cref="SetSolo"/> explicitly instead. Editor-only F8
 /// (Trainer) toggles solo↔couch for quick two-device testing.</para>
 ///
-/// <para><b>Not yet couch-aware (follow-ups):</b> the tutorial gate + overview-cam freeze are applied to P1 only
-/// (<c>TwinInputReader.Instance</c>), so during the tutorial/overview the P2 twin is ungated/unfrozen — folded into
-/// the tutorial co-op rewrite (M4). Both-keyboard split needs a P2 arrow-key binding set in the asset (M1.6b).</para>
+/// <para><b>Couch M4:</b> the tutorial gate + overview-cam freeze are now SHARED across both readers (static
+/// policy on <see cref="TwinInputReader"/>) — a P1 lock/freeze applies to the P2 twin too. Remaining follow-up:
+/// the both-keyboard split needs a P2 arrow-key binding set in the asset (M1.6b).</para>
 /// </summary>
 [DisallowMultipleComponent]
 public class CouchDeviceManager : MonoBehaviour

@@ -12,6 +12,28 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Fixed — Couch co-op: tutorial gate + overview freeze now apply to BOTH twins (M4, part 1 — the "P2 gate") (2026-08-20, `couch-m1-ownership`)
+- **The P2 twin was ungated during the tutorial and unfrozen during the overview cam.** Root cause: both live-lock
+  states on [TwinInputReader.cs](Assets/Scripts/Players/TwinInputReader.cs) — `_gate` (`ITutorialGate`) and
+  `_gameplayFrozen` (overview-cam world stop) — were **instance fields set only on `Instance` (the P1 shared reader)**.
+  `TutorialInputGate` registers the gate on `Instance`; `OverviewCamController` freezes `SharedInput` (P1). The
+  non-shared **P2 reader** never saw either, so P2 could attack/ability/teleport/rescue before those were taught, and
+  kept moving while P1 held **B**.
+- **Fix:** both backing fields are now **`static`**. They are genuinely *global policy* — the tutorial unlocks a
+  mechanic for **both** twins at once (shared-progression tutorial), and the overview is a one-camera/one-world freeze —
+  **not** player-scoped state, so this is consistent with keep-clean-for-co-op, not a violation. Per-device *reading*
+  stays per-instance (each reader keeps its own cloned actions); only the allow/deny + freeze **policy** is shared. All
+  call sites are unchanged (`SetGate`/`SetGameplayFrozen` stay instance methods that now write the static).
+- **R3:** the shared/P1 reader clears both statics to their fail-open defaults in `Awake`, so a Restart (Bootstrap
+  reload, no domain reload in builds) never inherits a stale lock/freeze; re-established by `TutorialInputGate.Start`
+  and the overview B-hold.
+- **No step-detection change needed** (verified): every tutorial step advances on events/state — checkpoints
+  (already per-twin via `RequiredTwin`), overlay Continue, rescue state (two-soul/caster-fixed), the QTE watcher — none
+  read P1-only input. Shared progression already worked structurally; only the lock/freeze reach was missing.
+- **`CouchDeviceManager` header updated** — the "tutorial gate + overview freeze are P1-only" follow-up is resolved;
+  the remaining M1.6b both-keyboard split note stands. Compiles clean (0 errors). **Needs a 2-device tutorial
+  play-test** (P2 must be unable to act on a locked mechanic; both twins freeze on B).
+
 ### Added — Couch co-op: two-device input (M1.6 — device pairing / second player) (2026-08-19, `couch-m1-ownership`)
 - **Two players can now drive the two twins from separate devices** — the piece every M3/S-series change was
   degrading around (P2 always fell back to P1). Supports **2 gamepads**, **1 gamepad + 1 keyboard**, and solo.
