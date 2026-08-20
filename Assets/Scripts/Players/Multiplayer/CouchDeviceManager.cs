@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -96,23 +97,36 @@ public class CouchDeviceManager : MonoBehaviour
     /// otherwise solo (one device drives both twins).</summary>
     public void AssignAuto()
     {
-        var pads = Gamepad.all;
+        LogConnectedDevices();   // diagnostic — shows exactly what the Input System recognizes each device AS
+
+        var controllers = GetControllerDevices();   // Gamepads preferred; generic Joysticks as fallback
         var kb = Keyboard.current;
         var mouse = Mouse.current;
 
-        if (_p2Reader != null && pads.Count >= 2)
+        if (_p2Reader != null && controllers.Count >= 2)
         {
-            AssignCouch(new InputDevice[] { pads[0] }, new InputDevice[] { pads[1] });
+            AssignCouch(new[] { controllers[0] }, new[] { controllers[1] });
         }
-        else if (_p2Reader != null && pads.Count == 1 && kb != null)
+        else if (_p2Reader != null && controllers.Count >= 1 && kb != null)
         {
             var p1 = mouse != null ? new InputDevice[] { kb, mouse } : new InputDevice[] { kb };
-            AssignCouch(p1, new InputDevice[] { pads[0] });
+            AssignCouch(p1, new[] { controllers[0] });
         }
         else
         {
             SetSolo();
         }
+    }
+
+    // Player controllers: proper Gamepads first (match the asset's <Gamepad> bindings), else generic Joysticks
+    // (DirectInput pads) — those need the <Joystick> bindings applied in AssignCouch to actually drive input.
+    private static List<InputDevice> GetControllerDevices()
+    {
+        var list = new List<InputDevice>();
+        foreach (var g in Gamepad.all) list.Add(g);
+        if (list.Count == 0)
+            foreach (var j in Joystick.all) list.Add(j);
+        return list;
     }
 
     /// <summary>Explicit assignment (e.g. from Character Select): restrict P1 + P2 readers to their devices and
@@ -128,6 +142,13 @@ public class CouchDeviceManager : MonoBehaviour
 
         _p1Reader.SetPairedDevices(p1Devices);
         _p2Reader.SetPairedDevices(p2Devices);
+        // A generic Joystick has no <Gamepad> bindings — add <Joystick> ones (while the reader is still disabled,
+        // so AddBinding is legal) so it can actually drive P2. Dump its controls so we can map the buttons.
+        if (p2Devices != null && p2Devices.Length > 0 && p2Devices[0] is Joystick js)
+        {
+            DumpDeviceControls(js);
+            _p2Reader.ApplyJoystickBindings();
+        }
         _p2Reader.enabled = true;               // OnEnable enables the P2 action asset
         _router.SetP2Provider(_p2Reader);
         IsCouchActive = true;
@@ -149,6 +170,23 @@ public class CouchDeviceManager : MonoBehaviour
     private static string Describe(InputDevice[] d) =>
         d == null || d.Length == 0 ? "all" : string.Join("+", d.Select(x => x.displayName));
 
+    // Dumps every connected device with the TYPE the Input System classifies it as (Gamepad / Joystick /
+    // Keyboard / …). A controller that shows as 'Joystick' won't match the asset's <Gamepad> bindings — switch
+    // it to XInput/gamepad mode so it registers as 'Gamepad', or it needs dedicated <Joystick> bindings.
+    private static void LogConnectedDevices()
+    {
+        var names = InputSystem.devices.Select(d => $"{d.displayName}·{d.GetType().Name}");
+        Debug.Log($"[CouchDeviceManager] Connected devices → {string.Join(",  ", names)}");
+    }
+
+    // Dumps a device's full control paths — used to discover a generic Joystick's real button/stick control names
+    // so we can bind the actions to them (they vary per pad).
+    private static void DumpDeviceControls(InputDevice d)
+    {
+        var paths = d.allControls.Select(c => c.path);
+        Debug.Log($"[CouchDeviceManager] '{d.displayName}' controls → {string.Join("  |  ", paths)}");
+    }
+
 #if UNITY_EDITOR
     private void Update()
     {
@@ -161,6 +199,13 @@ public class CouchDeviceManager : MonoBehaviour
             if (IsCouchActive) SetSolo();
             else AssignAuto();
         }
+
+        // Joystick REMAP PROBE — press a physical button and its Unity control name prints, so we can map
+        // 'the button you call 1' → 'button2' etc. with zero guessing. Editor + Trainer only.
+        foreach (var js in Joystick.all)
+            foreach (var ctrl in js.allControls)
+                if (ctrl.parent == js && ctrl is UnityEngine.InputSystem.Controls.ButtonControl b && b.wasPressedThisFrame)
+                    Debug.Log($"[JoystickProbe] pressed → {b.name}");
     }
 #endif
 }

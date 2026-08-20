@@ -64,6 +64,9 @@ public static class SceneIntegrityChecker
         foreach (var mb in all)
         {
             if (mb == null) continue;
+            // Skip a deliberate non-singleton instance (e.g. the couch P2 TwinInputReader): its type still has a
+            // static Instance, but this object is intentionally not it — don't count it toward the duplicate check.
+            if (mb is ISingletonInstanceGuard guard && !guard.IsSingletonInstance) continue;
             var t = mb.GetType();
             if (flagged.Contains(t)) continue;
             if (seen.ContainsKey(t))
