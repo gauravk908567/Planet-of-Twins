@@ -18,9 +18,13 @@ using UnityEngine.InputSystem;
 /// SETUP: assign _actions = Assets/Settings/Input/PlanetOfTwins.inputactions
 /// (Gameplay + UI maps). Missing asset/actions ⇒ LogError + that input is dead (R4 fail-loud).
 /// </summary>
-public class TwinInputReader : MonoBehaviour, IInputProvider
+public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstanceGuard
 {
     public static TwinInputReader Instance { get; private set; }
+
+    // Couch M1.6: only the shared P1 reader is the singleton. The non-shared P2 reader opts out of the
+    // duplicate-singleton integrity check (SceneIntegrityChecker) — a second reader is deliberate, not an R3 bug.
+    public bool IsSingletonInstance => _isShared;
 
     [Header("Input System (P13)")]
     [Tooltip("PlanetOfTwins.inputactions — needs a 'Gameplay' and a 'UI' map. Fail-loud when missing.")]
@@ -132,6 +136,36 @@ public class TwinInputReader : MonoBehaviour, IInputProvider
             _actions.devices = null;          // no restriction — read every device
         else
             _actions.devices = devices;       // restrict to this player's device(s)
+    }
+
+    private bool _joystickBindingsApplied;
+
+    /// <summary>Couch M1.6b — add &lt;Joystick&gt; bindings so a generic DirectInput pad (which has NO &lt;Gamepad&gt;
+    /// bindings) can drive this reader. Call while the reader is DISABLED (AddBinding requires disabled actions),
+    /// before enabling; applied once (guarded) so re-assignment never stacks duplicates. stick→Move and
+    /// trigger→Attack are reliable; button2..8 are a sensible default — physical layout varies per pad, so the
+    /// player identifies which is which and we remap here. Bindings stay inert unless a Joystick is the paired device.</summary>
+    public void ApplyJoystickBindings()
+    {
+        if (_joystickBindingsApplied) return;
+        _joystickBindingsApplied = true;
+
+        // Reliable across pads
+        _move?.AddBinding("<Joystick>/stick");
+        _attack?.AddBinding("<Joystick>/trigger");     // button1
+        _struggle?.AddBinding("<Joystick>/trigger");   // E-share: struggle == attack key
+
+        // Default face/shoulder mapping (button2..button8) — tune once the player says which physical button is which.
+        _ability?.AddBinding("<Joystick>/button2");      // primary (Q)
+        _cancel?.AddBinding("<Joystick>/button3");       // cancel / Accord entry (X, hold)
+        _empower?.AddBinding("<Joystick>/button4");      // empower (R, hold)
+        _teleport?.AddBinding("<Joystick>/button5");     // emergency teleport (C, hold)
+        _soulBreak?.AddBinding("<Joystick>/button5");    // C-share: soul-break == teleport key
+        _interact?.AddBinding("<Joystick>/button6");     // rescue / interact (F)
+        _convergence?.AddBinding("<Joystick>/button6");  // F-share: convergence hold
+        _qteMash?.AddBinding("<Joystick>/button6");      // F-share: QTE mash
+        _switch?.AddBinding("<Joystick>/button7");       // partner-dash during Empower (was Shift)
+        _overview?.AddBinding("<Joystick>/button8");     // overview cam (B)
     }
 
     // ── Gate helpers (fail-open: null gate = everything allowed) ──
