@@ -52,6 +52,15 @@ public class CharacterSelectController : MonoBehaviour
     public bool HasConflict => _ready[0] && _ready[1] &&
                                !TryResolve(_pick[0], _pick[1], true, out _, out _);
 
+    // ── V2 (spatial select) queries — pick-based, independent of the ready-up flags ──
+    /// <summary>V2: the CURRENT picks resolve to two distinct twins — i.e. the explicit Start button is legal.
+    /// Unlike <see cref="CanStart"/> this does NOT require ready-up (V2 has no per-slot ready — markers move
+    /// freely until Start). Always true unless both markers sit on the SAME explicit twin.</summary>
+    public bool CanStartFromPicks => TryResolve(_pick[0], _pick[1], true, out _, out _);
+
+    /// <summary>V2: both markers on the SAME explicit twin — Start must refuse (need a Random or the other twin).</summary>
+    public bool HasConflictFromPicks => !CanStartFromPicks;
+
     // ── Commands (UI/input calls these) ────────────────────────
     /// <summary>Set a slot's pick. Ignored while that slot is readied (Back out first) or once complete.</summary>
     public void SetPick(PlayerSlot slot, CharacterPick pick)
@@ -94,17 +103,32 @@ public class CharacterSelectController : MonoBehaviour
         OnChanged?.Invoke();
     }
 
+    /// <summary>V2 (explicit Start button): launch from the CURRENT picks — resolve to distinct twins, write
+    /// ownership, raise <see cref="OnSelectionComplete"/>. Returns false (and flashes the UI) when the picks
+    /// conflict (both same explicit twin) or selection is already complete. Coin-flip decides both-Random.</summary>
+    public bool StartFromCurrentPicks()
+    {
+        if (IsComplete) return false;
+        return Finalize(UnityEngine.Random.value < 0.5f);
+    }
+
     // ── Finalize ───────────────────────────────────────────────
+    // Ready-up path (greybox / V1): finalize once BOTH slots are ready. Superseded by the V2 Start button.
     private void TryFinalize()
     {
         if (IsComplete || !_ready[0] || !_ready[1]) return;
+        Finalize(UnityEngine.Random.value < 0.5f);
+    }
 
-        bool coinPrefersLyraForP1 = UnityEngine.Random.value < 0.5f;
+    // Shared resolve → assign → complete. Returns false without side effects (beyond an OnChanged nudge) when
+    // the two picks are the same explicit twin, or when the roster is missing. The one place ownership is written.
+    private bool Finalize(bool coinPrefersLyraForP1)
+    {
         if (!TryResolve(_pick[0], _pick[1], coinPrefersLyraForP1, out var r1, out var r2))
         {
-            // Both ready on the same explicit twin — do NOT start; UI shows the conflict (HasConflict).
+            // Same explicit twin — do NOT start; UI shows the conflict (HasConflict / HasConflictFromPicks).
             OnChanged?.Invoke();
-            return;
+            return false;
         }
 
         var roster = PlayerRoster.Instance;
@@ -112,7 +136,7 @@ public class CharacterSelectController : MonoBehaviour
         {
             Debug.LogError("[CharacterSelectController] PlayerRoster.Instance is null at finalize — cannot " +
                            "assign ownership. Persistent must be loaded before character select completes.", this);
-            return;
+            return false;
         }
 
         roster.Assign(PlayerSlot.One, PlayerFor(r1, roster));
@@ -120,6 +144,7 @@ public class CharacterSelectController : MonoBehaviour
         IsComplete = true;
         OnChanged?.Invoke();
         OnSelectionComplete?.Invoke();
+        return true;
     }
 
     // Lyra → TwinA (left/Luminari), Kai → TwinB (right/Vethara). r1/r2 are always explicit here.

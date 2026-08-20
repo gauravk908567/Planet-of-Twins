@@ -12,6 +12,32 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op: Character Select V2 — spatial redesign + per-device input (M2.2) (2026-08-20, `couch-m1-ownership`)
+- **The cycle/ready greybox is replaced by the SPATIAL design:** three zones — **LEFT = Kai (Vethara)**,
+  **RIGHT = Lyra (Luminari)**, **CENTER-BOTTOM = Random** (default). Each player is an old-school **`1P`/`2P`
+  badge** that sits at the **top-middle of the box it occupies** and adopts that zone's clan hue (Random =
+  neutral). A single explicit **Start** button launches, enabled only when the two picks resolve to distinct
+  twins. (Functional greybox — visual styling is a later pass.)
+- **Backed by the SAME `CharacterSelectController`** — only the presentation changed. New controller surface
+  ([CharacterSelectController.cs](Assets/Scripts/Players/Multiplayer/CharacterSelectController.cs)):
+  `CanStartFromPicks` / `HasConflictFromPicks` (pick-based, independent of the old ready-up flags) and
+  `StartFromCurrentPicks()` for the explicit Start; `TryFinalize` + `StartFromCurrentPicks` now share one
+  private `Finalize()` (no duplicate resolve→assign logic). The ready-up path is retained but unused by V2.
+- **Per-device input:** each player drives THEIR slot via **new `PlayerInputRouter.ForSlot(PlayerSlot)`**
+  ([PlayerInputRouter.cs](Assets/Scripts/Players/Multiplayer/PlayerInputRouter.cs)) — needed because select runs
+  BEFORE roster ownership exists (so per-twin `For(twin)` can't route yet). Left → Kai, right → Lyra, down →
+  Random (edge-detected); Attack = press Start. Slot Two is polled only while couch is active
+  (`CouchDeviceManager.IsCouchActive`); solo → P2 falls back to P1, mouse covers P2. Mouse: click a box moves P1.
+- **`CharacterSelectScreen` rewritten** ([CharacterSelectScreen.cs](Assets/Scripts/Players/Multiplayer/CharacterSelectScreen.cs)) —
+  badges reparent to the occupied zone's top-middle anchor and are tinted by clan hue; `Show`/`Hide`/`BackRequested`
+  preserved so the scene + `FrontEndFlowController` refs survive.
+- **Scene (Persistent):** `CharacterSelectPanel` rebuilt via MCP — the 4 old cycle/ready buttons repurposed into
+  KaiBox / LyraBox / RandomBox / StartButton (+ each box a top-middle `BadgeRow` with a HorizontalLayoutGroup),
+  two `1P`/`2P` badges parented on the Random box, the 2 stale labels deactivated; all 12 serialized fields wired
+  and verified in the saved scene. Panel stays default-inactive (`FrontEndFlowController` shows it).
+- Compiles clean (0 errors); device→slot uses `CouchDeviceManager`'s existing binding (explicit "press to join"
+  is a later refinement). **Needs a play-test** (move markers → conflict blocks Start → distinct → Start → cutscene).
+
 ### Changed — Couch co-op: menu-first boot (M2 — front-end prepended to the untouched intro) (2026-08-20, `couch-m1-ownership`)
 - **The pre-game front-end (Main Menu → Character Select) now runs in the SHIPPED boot, before the intro.**
   Final order: **boot → Main Menu → New Game → Character Select → intro cutscene → game starts in the
