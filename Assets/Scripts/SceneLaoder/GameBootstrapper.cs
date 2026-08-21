@@ -58,6 +58,15 @@ public class GameBootstrapper : MonoBehaviour
              "default so the legacy intro / dev quick-boot paths are unaffected.")]
     [SerializeField] private bool useFrontEnd = false;
 
+    [Tooltip("Couch M2 — the FrontEnd scene (Main Menu + Save Slot + Character Select), loaded BETWEEN Bootstrap " +
+             "and the intro when useFrontEnd is on. Must be in Build Settings. Persistent is NOT loaded during the " +
+             "front-end (it loads under the intro), so the camera never goes live over the void.")]
+    [SerializeField] private string frontEndSceneName = "FrontEnd";
+
+    [Tooltip("The boot load cover (same scene, R1). Shown across the risky FrontEnd → Persistent/Intro hand-off " +
+             "so no camera-swap or over-the-void frame is ever visible.")]
+    [SerializeField] private LoadScreenController loadScreen;
+
     /// <summary>
     /// Fires after Persistent + first area are up (dev mode only).
     /// In intro mode, IntroController.OnIntroFinished is the equivalent hook.
@@ -75,42 +84,61 @@ public class GameBootstrapper : MonoBehaviour
         // Persistent isn't loaded yet — direct write; TimeScaleService takes over after.
         Time.timeScale = 1f;
 
+        // Fresh boot: clear any stale front-end selection (statics survive a Restart in builds) and raise the
+        // load cover over the initial load.
+        SessionSetup.Clear();
+        loadScreen?.Show();
+
         // Boot has three shapes:
-        //   • DEV-DIRECT (DevConfig.SkipTutorial + devStartArea): skip the intro/cutscene and jump straight to
-        //     a chosen area for fast iteration. LocalBoot() owns it (optionally showing the front-end first).
-        //   • SHIPPED (intro configured): the intro cutscene owns WHERE the game actually starts (its own
-        //     firstAreaLocation — the tutorial zone) and the tutorial start signal. We do NOT pick the start
-        //     area here. Menu-first (couch M2): when useFrontEnd is on we run the pre-game front-end (Main
-        //     Menu → Character Select) FIRST, then hand off to the untouched intro. Full order:
-        //     boot → menu → new game → character select → cutscene → game starts exactly where it always has.
-        //   • FALLBACK (no intro, no dev area): LocalBoot().
+        //   • DEV-DIRECT (DevConfig.SkipTutorial + devStartArea): skip the front-end + intro and jump straight
+        //     to a chosen area for fast iteration. LocalBoot() owns it.
+        //   • MENU-FIRST (couch M2, useFrontEnd): load the FrontEnd SCENE (menu + save-slot + character-select)
+        //     between Bootstrap and the intro. Persistent is NOT loaded during the front-end — it loads under
+        //     the intro (New Game), so the camera never goes live over the void (the old camera glitch). The
+        //     front-end records its choice into SessionSetup; PlayerRoster applies it when Persistent loads.
+        //   • LEGACY (intro only, no front-end): straight to the intro. FALLBACK: LocalBoot().
         bool devDirect = DevConfig.SkipTutorial && devStartArea.IsValid;
-        bool useIntro  = introScene.IsValid && !devDirect;
+        bool menuFirst = useFrontEnd && !devDirect && !string.IsNullOrEmpty(frontEndSceneName);
 
         if (devDirect)
         {
             yield return LocalBoot();
         }
-        else if (useIntro)
+        else if (menuFirst)
         {
-            // Menu-first: the menu lives in Persistent, so load Persistent in the foreground BEFORE the menu,
-            // run the front-end, THEN hand off to the intro. IntroController re-guards the Persistent load
-            // (won't double-load) and owns the real start-area load + cutscene + tutorial start — untouched.
-            if (useFrontEnd)
-            {
-                if (!IsLoaded(persistentScene.Name))
-                    yield return LoadAdditive(persistentScene.Name);
-                SetTwinsMovementLocked(true);   // twins sit in Persistent over the void while the menu shows
-                yield return RunFrontEnd();
-            }
+            // The FrontEnd scene owns its own camera / EventSystem / input stack — Persistent stays unloaded.
+            yield return LoadAdditive(frontEndSceneName);
+            loadScreen?.Hide();                        // reveal the menu
+            yield return RunFrontEnd();                 // menu → (save-slot) → character-select → writes SessionSetup
+            loadScreen?.Show();                         // cover the hand-off to the game
 
+            // Free the FrontEnd scene (and its input / EventSystem / AudioListener singletons) BEFORE Persistent
+            // loads under the intro, so nothing collides.
+            yield return UnloadIfLoaded(frontEndSceneName);
+
+            // New Game → the intro (IntroController loads Persistent + first area + cutscene, exactly as it always
+            // did). Continue is dormant while the save system is inert (SessionSetup.Mode stays NewGame); when
+            // saves are re-enabled, this branch will instead load Persistent + LoadGamePath here.
+            if (introScene.IsValid)
+            {
+                yield return LoadAdditive(introScene.Name);
+                Debug.Log("[GameBootstrapper] Front-end complete — handed off to the intro.");
+            }
+            else
+            {
+                yield return LocalBoot();               // no intro configured — dev fallback
+            }
+        }
+        else if (introScene.IsValid)
+        {
             yield return LoadAdditive(introScene.Name);
-            Debug.Log("[GameBootstrapper] Intro scene loaded — handing off to IntroController.");
         }
         else
         {
             yield return LocalBoot();
         }
+
+        loadScreen?.Hide();   // boot done — the intro / area owns the screen now
 
         // Unload Bootstrap (this GameObject lives here, so do it last)
         if (unloadBootstrapWhenDone)
@@ -137,11 +165,6 @@ public class GameBootstrapper : MonoBehaviour
         // Persistent has no floor — lock twin movement so they don't fall during the area-scene load. Gravity
         // only applies inside ExecuteCommand, so SetMovementLocked(true) is sufficient (no CC disable needed).
         SetTwinsMovementLocked(true);
-
-        // Front-end (couch M2): Main Menu → Character Select (writes PlayerRoster). Persistent is up so the
-        // roster exists; the area isn't loaded yet (the full-screen menu covers the void). Twins stay locked.
-        if (useFrontEnd)
-            yield return RunFrontEnd();
 
         if (devStartArea.IsValid && !IsLoaded(devStartArea.Name))
             yield return LoadAdditive(devStartArea.Name);
@@ -186,6 +209,47 @@ public class GameBootstrapper : MonoBehaviour
             Debug.LogWarning("[GameBootstrapper] useFrontEnd is on but no FrontEndFlowController in " +
                              "Persistent — skipping the front-end.");
         }
+    }
+
+    /// <summary>Continue (couch M2): boot straight into a saved area with saved progress — NO intro cutscene.
+    /// Persistent + the front-end have already run and the twins are locked. Streams the saved area, places the
+    /// twins at their saved positions, seeds occupancy, applies skills/points/sword, unfreezes. The tutorial is
+    /// skipped by the area's TutorialDirector (it reads <see cref="SaveService.IsResumingSave"/>). Falls back to
+    /// the intro if the saved area id can't be resolved.</summary>
+    private IEnumerator LoadGamePath(GameSaveData save)
+    {
+        var sfm = SceneFlowManager.Instance;
+        var area = sfm != null ? sfm.GetLocationById(save.areaId) : null;
+        if (area == null || !area.IsValid)
+        {
+            Debug.LogError($"[GameBootstrapper] Continue: saved area '{save.areaId}' unresolved — falling back to intro.");
+            yield return LoadAdditive(introScene.Name);
+            yield break;
+        }
+
+        string areaName = area.scene.Name;
+        if (!IsLoaded(areaName))
+            yield return LoadAdditive(areaName);
+
+        var roster = PlayerRoster.Instance;
+        PlaceTwin(roster?.TwinA, save.leftTwinPosition);
+        PlaceTwin(roster?.TwinB, save.rightTwinPosition);
+        SetTwinsMovementLocked(false);
+
+        // Seed occupancy — triggers never see teleports (3.7b).
+        sfm.NotifyTeleported(roster?.TwinA, area);
+        sfm.NotifyTeleported(roster?.TwinB, area);
+
+        var scene = SceneManager.GetSceneByName(areaName);
+        if (scene.IsValid() && scene.isLoaded)
+            SceneManager.SetActiveScene(scene);
+
+        // Apply saved progress (skills / points / sword) — positions were placed above.
+        SaveService.Instance?.ApplyProgress(save);
+        SaveService.Instance?.ClearPendingLoad();
+
+        OnBootstrapComplete?.Invoke();
+        Debug.Log($"[GameBootstrapper] Continue complete — area '{areaName}', progress applied.");
     }
 
     private void SetTwinsMovementLocked(bool locked)
@@ -241,5 +305,14 @@ public class GameBootstrapper : MonoBehaviour
     {
         var s = SceneManager.GetSceneByName(sceneName);
         return s.IsValid() && s.isLoaded;
+    }
+
+    /// <summary>Unload a scene if (and only if) it is currently loaded. Used to free the FrontEnd scene — with its
+    /// own EventSystem / AudioListener / input singletons — before Persistent loads, so nothing collides.</summary>
+    private static IEnumerator UnloadIfLoaded(string sceneName)
+    {
+        var s = SceneManager.GetSceneByName(sceneName);
+        if (s.IsValid() && s.isLoaded)
+            yield return SceneManager.UnloadSceneAsync(s);
     }
 }
