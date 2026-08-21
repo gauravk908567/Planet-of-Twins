@@ -64,6 +64,23 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
     /// <summary>The current active location (selected twin's), or null. Set by UpdateActiveScene.</summary>
     public WorldLocationSO ActiveLocation { get; private set; }
 
+    // ── Save-system resolvers (couch M2) — WorldLocationSO ids are asset names; a save stores ids and
+    //    resolves them back here (locations can't be JSON-serialized). ──
+    /// <summary>The asset-name ids of every currently-loaded location (occupancy seed for a save).</summary>
+    public IEnumerable<string> LoadedLocationIds
+    {
+        get { foreach (var l in _loadedLocations) if (l != null) yield return l.name; }
+    }
+
+    /// <summary>Resolve a location by its asset-name id (from a save), or null if unknown. Searches the
+    /// authored <see cref="allLocations"/> registry — the same list streaming already relies on.</summary>
+    public WorldLocationSO GetLocationById(string id)
+    {
+        if (string.IsNullOrEmpty(id) || allLocations == null) return null;
+        foreach (var l in allLocations) if (l != null && l.name == id) return l;
+        return null;
+    }
+
     // ── State ───────────────────────────────────────────────────────────────────
     // Per-actor current location (transition model). Key = any Player subtype incl. SoulPlayer.
     private readonly Dictionary<Player, WorldLocationSO> _currentLocation = new();

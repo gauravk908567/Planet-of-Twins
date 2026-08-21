@@ -34,6 +34,16 @@ public class TutorialDirector : MonoBehaviour
         // timeline rig (the timeline never runs to do it).
         if (DevConfig.SkipTutorial) { SkipTutorial(ownsLevelGos: true); return; }
 
+        // Couch M2 — Continue (resumed save): a load boots straight into gameplay past the tutorial, even when
+        // the saved area IS the tutorial area (L2_Streets). Same bypass as the dev skip: the cutscene/timeline
+        // was never run (GameBootstrapper.LoadGamePath loaded the area directly), so we own the level GOs.
+        if (SaveService.Instance != null && SaveService.Instance.IsResumingSave)
+        {
+            Debug.Log("[TutorialDirector] Resuming a save — skipping the tutorial.");
+            SkipTutorial(ownsLevelGos: true);
+            return;
+        }
+
         context.inputGate?.LockAll();
     }
 

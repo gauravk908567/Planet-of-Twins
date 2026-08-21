@@ -120,8 +120,8 @@ public class CharacterSelectController : MonoBehaviour
         Finalize(UnityEngine.Random.value < 0.5f);
     }
 
-    // Shared resolve → assign → complete. Returns false without side effects (beyond an OnChanged nudge) when
-    // the two picks are the same explicit twin, or when the roster is missing. The one place ownership is written.
+    // Shared resolve → record → complete. Returns false without side effects (beyond an OnChanged nudge) when
+    // the two picks are the same explicit twin. The one place the twin ownership choice is written.
     private bool Finalize(bool coinPrefersLyraForP1)
     {
         if (!TryResolve(_pick[0], _pick[1], coinPrefersLyraForP1, out var r1, out var r2))
@@ -131,16 +131,19 @@ public class CharacterSelectController : MonoBehaviour
             return false;
         }
 
+        // Record the choice into the boot carrier — the front-end now runs in its OWN scene, BEFORE Persistent
+        // exists, so the roster can't be written here. PlayerRoster applies this on load. (r1 = slot One's twin.)
+        SessionSetup.SetSelection(r1 == CharacterPick.Lyra);
+
+        // If the roster IS already present (front-end running inside Persistent — the legacy in-Persistent path),
+        // assign directly too, so that path keeps working unchanged.
         var roster = PlayerRoster.Instance;
-        if (roster == null)
+        if (roster != null)
         {
-            Debug.LogError("[CharacterSelectController] PlayerRoster.Instance is null at finalize — cannot " +
-                           "assign ownership. Persistent must be loaded before character select completes.", this);
-            return false;
+            roster.Assign(PlayerSlot.One, PlayerFor(r1, roster));
+            roster.Assign(PlayerSlot.Two, PlayerFor(r2, roster));
         }
 
-        roster.Assign(PlayerSlot.One, PlayerFor(r1, roster));
-        roster.Assign(PlayerSlot.Two, PlayerFor(r2, roster));
         IsComplete = true;
         OnChanged?.Invoke();
         OnSelectionComplete?.Invoke();

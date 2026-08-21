@@ -80,9 +80,19 @@ public class PlayerRoster : MonoBehaviour
             return;
         }
 
-        // M1 default ownership — character select (M2) rewrites this via Assign().
+        // M1 default ownership — P1→TwinA (Lyra), P2→TwinB (Kai).
         _bySlot[(int)PlayerSlot.One] = twinA;
         _bySlot[(int)PlayerSlot.Two] = twinB;
+
+        // Couch M2 — apply the front-end's character-select choice, carried from the FrontEnd scene (which runs
+        // before Persistent exists, so it couldn't call Assign() directly). Absent selection = keep the default.
+        if (SessionSetup.HasSelection)
+        {
+            _bySlot[(int)PlayerSlot.One] = SessionSetup.P1GetsLyra ? twinA : twinB;
+            _bySlot[(int)PlayerSlot.Two] = SessionSetup.P1GetsLyra ? twinB : twinA;
+            Debug.Log($"[PlayerRoster] Applied character-select ownership — slot One = " +
+                      $"{(SessionSetup.P1GetsLyra ? "Lyra (TwinA)" : "Kai (TwinB)")}.");
+        }
     }
 
     private void OnDestroy()

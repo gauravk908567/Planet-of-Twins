@@ -52,6 +52,11 @@ public class CheckpointManager : MonoBehaviour
         };
 
         HasCheckpoint = true;
+
+        // Couch M2: checkpoints are the save points — persist to the active slot (no-op if no slot chosen,
+        // e.g. dev-direct boot). Disk write is fail-soft inside SaveSystem.
+        SaveService.Instance?.AutoSave(_saved);
+
         flashUI?.Flash("Checkpoint saved");
         Debug.Log($"[CheckpointManager] Saved at L={leftPos} R={rightPos} " +
                   $"pts={_saved.skillPoints} " +

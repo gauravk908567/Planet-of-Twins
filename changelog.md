@@ -12,6 +12,96 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Changed — Couch co-op: front-end moved to its own scene; fixes the boot camera glitch (2026-08-21, `couch-m1-ownership`)
+- **The whole front-end (Main Menu + Save Slot + Character Select) now lives in a new `FrontEnd.unity` scene
+  between Bootstrap and the intro — Persistent no longer loads while the main screen is up.** The menu-first boot
+  had loaded Persistent in the foreground *before* the menu (so the in-Persistent menu could show), which put
+  Persistent's MainCamera/CinemachineBrain live over the void during the menu and collided with the intro
+  cutscene's camera takeover — the intermittent camera glitch. New order:
+  **Bootstrap → FrontEnd → New Game → Intro (loads Persistent underneath, as it always did) → gameplay.**
+- **`SessionSetup`** ([SessionSetup.cs](Assets/Scripts/Players/Multiplayer/SessionSetup.cs)) — the FrontEnd→Persistent
+  carrier. Only the tiny result crosses (one bit: does slot One get Lyra, + mode + slot); device→slot pairing does
+  NOT cross (`CouchDeviceManager.AssignAuto` is deterministic, so Persistent re-derives it). `CharacterSelectController`
+  records into it (and no longer errors when the roster is absent — that's now normal); `PlayerRoster.Awake` applies it.
+- **`LoadScreenController`** ([LoadScreenController.cs](Assets/Scripts/SceneLaoder/LoadScreenController.cs)) — an opaque
+  Bootstrap-hosted overlay (sort 32000) raised across the FrontEnd→Persistent/Intro hand-off so no camera-swap or
+  over-the-void frame is ever visible, whatever the async timing.
+- **`GameBootstrapper`** ([GameBootstrapper.cs](Assets/Scripts/SceneLaoder/GameBootstrapper.cs)) — rewired: clears
+  `SessionSetup`, shows the load cover, loads the **FrontEnd scene** (not Persistent), runs the front-end, then
+  **unloads FrontEnd before** loading the intro (so its EventSystem/AudioListener/input singletons don't collide with
+  Persistent's). Dev-direct boot no longer runs the front-end.
+- **Scenes:** new `FrontEnd.unity` (own Camera + EventSystem + a couch input stack — CouchDeviceManager +
+  PlayerInputRouter + P1/P2 TwinInputReaders — mirroring Persistent's, for the spatial character-select); the front-end
+  subtree **removed from Persistent**; `LoadScreenCanvas` added to Bootstrap; `FrontEnd.unity` added to Build Settings
+  (index 1). All compiles clean (0 errors). **Needs a full 4-entry-path play-test.** *(Side effect to undo: the
+  build-scenes tool re-enabled the disabled `SampleScene` — re-uncheck it in Build Settings.)*
+
+### Fixed — Couch co-op: Gate QTE works from both devices (M7 — input fix) (2026-08-21, `couch-m1-ownership`)
+- **The Gate QTE could not be entered with a controller, and only P1's mashing counted.** Root cause: the mash
+  was already routed (Input System), but the world-space lock-in/cancel was the last raw-keyboard read in the QTE
+  stack, and the mash summed only P1's device.
+- **Entry routed per-occupant** ([QTETriggerPoint.cs](Assets/Scripts/QuickTimeEvents/QTETriggerPoint.cs)) — the
+  "Press F" lock-in now reads the **`Interact`** action and the "Hold X" cancel reads the **`Cancel`** action
+  through **`PlayerInputRouter.For(occupant)`** — the device that owns the twin standing on that trigger point.
+  (Was raw `Input.GetKeyDown(KeyCode.F)` / `Input.GetKey(KeyCode.X)` — the banned raw-`Input.*` pattern that
+  bypassed the Input System, so no gamepad could ever enter. The `Interact`/`Cancel` actions + provider methods
+  already existed from P13; the trigger just never got migrated.) `_playerInRange`/`LockedPlayer` logic unchanged.
+- **Mash takes BOTH players** ([QTEManager.cs](Assets/Scripts/QuickTimeEvents/QTEManager.cs)) — new
+  `CountMashThisFrame()` advances the shared bar once per frame **per distinct input device** among the locked-in
+  twins. Solo (both twins → P1) = one distinct device → **byte-identical** to the old single-reader path; couch
+  (P1 + P2) = both mashing fills the bar ~2× faster (the two-device "acceleration"). Defensive shared-reader
+  fallback if no occupants resolve. Compiles clean (0 errors); needs a two-device play-test.
+- Scope note: the deprecated `QTEController` shares `QTETriggerPoint`, so it inherits the entry fix; its own mash
+  stays single-device (obsolete, slated for deletion once anchors fully replace it). The richer co-op **puzzle**
+  system (relay/handoff + hold-and-reach + per-twin roles) is a separate, larger scope — deferred, design parked.
+
+### Added — Couch co-op: save-slot UI + Continue wired (M2 — slice 4, completes save persistence) (2026-08-21, `couch-m1-ownership`)
+- **The save-slot screen makes the backend live.** Front-end flow is now
+  **Main Menu → (New Game | Continue) → Save-Slot select → Character Select → game**, with the boot path branching
+  on the staged save (New Game → intro cutscene; Continue → `LoadGamePath` into the saved area).
+- **`SaveSlotScreen`** ([SaveSlotScreen.cs](Assets/Scripts/Players/Multiplayer/SaveSlotScreen.cs), greybox) — 3 slot
+  cards showing `area · timestamp` (or *Empty*), a **Mode** (New Game vs Continue). New Game: every slot pickable,
+  an occupied slot needs a **two-press overwrite guard** (no confirm-dialog GO); Continue: only occupied slots
+  pickable. On pick → `SaveService.BeginNewGame`/`BeginContinue`, then hands back to the flow. Input mirrors
+  `CharacterSelectScreen`: mouse clicks the cards; P1's paired device navigates (stick up/down) + Attack confirms;
+  Back is button-only. (Slot cards are 3 explicit fields, not a serialized array — reference-arrays don't wire
+  cleanly through the scene tooling.)
+- **`FrontEndFlowController`** ([FrontEndFlowController.cs](Assets/Scripts/Players/Multiplayer/FrontEndFlowController.cs)) —
+  inserts the save-slot step between the menu and character-select for BOTH modes; Back from the slot screen or
+  character-select returns to the menu. The save-slot screen is optional (unwired → skip straight to select, fail-open).
+- **`MainMenuController`** ([MainMenuController.cs](Assets/Scripts/Players/Multiplayer/MainMenuController.cs)) — new
+  `ContinueRequested` event; the **Continue button now enables** iff any slot has a save (re-checked each time the
+  menu shows), replacing the hard-disabled stub.
+- **Scene (Persistent):** new **`SaveService`** GO (the component that was missing — the backend was dormant
+  without it) + a new **`SaveSlotPanel`** under `FrontEndCanvas` (title, 3 slot buttons + labels, Back, status),
+  default-inactive; all 12 `SaveSlotScreen` fields + `FrontEndFlowController.saveSlots` wired and verified in the
+  saved scene. Compiles clean (0 errors). **Needs a full round-trip play-test** (New Game → checkpoint auto-saves →
+  relaunch → Continue → loads saved area/progress, no tutorial) before the M2-save commit.
+
+### Added — Couch co-op: save persistence BACKEND (M2 — slices 1–3) (2026-08-21, `couch-m1-ownership`)
+- **Disk save system — the layer that makes Continue possible** (no save system existed before; `CheckpointData`
+  was in-memory only, died with the session). Backend complete + self-tested (14/14); the save-slot UI is the
+  remaining slice.
+- **`GameSaveData`** ([GameSaveData.cs](Assets/Scripts/SaveSystem/GameSaveData.cs)) — JSON-serializable slot
+  snapshot mirroring `CheckpointData`, with every ScriptableObject ref replaced by a stable **string id (asset
+  name)** so `JsonUtility` can round-trip it (positions, points, sword flags, `{treeId,level}` skill list,
+  area id + active-area ids). **`SaveSystem`** ([SaveSystem.cs](Assets/Scripts/SaveSystem/SaveSystem.cs)) — 3
+  slots, one fail-soft JSON file each under `persistentDataPath` (`Write`/`Read`/`HasSave`/`Delete`/`Peek`).
+- **`SaveService`** ([SaveService.cs](Assets/Scripts/SaveSystem/SaveService.cs), Persistent R3) — owns the
+  ACTIVE slot + `PendingLoad` + `IsResumingSave`; `BeginNewGame(slot)` / `BeginContinue(slot)` for the front-end;
+  `AutoSave(cp)` writes the active slot; `ApplyProgress(save)` restores skills/points/sword on load (reuses
+  SoftResetController's exact idioms — drain+add points, `SetHasWeapon`, sword-pickup re-arm). Id resolution via
+  **new `SceneFlowManager.GetLocationById` / `LoadedLocationIds`** and `SkillTreeManager.AllTrees`.
+- **Auto-save = checkpoints:** `CheckpointManager.SaveCheckpoint` now also calls `SaveService.AutoSave` (no-op
+  when no slot is active, e.g. dev-direct boot).
+- **Continue boot path:** `GameBootstrapper.LoadGamePath` — when the front-end staged a save, boots straight
+  into the saved area (streams it, places twins at saved positions, seeds occupancy, applies progress) with **no
+  intro cutscene**. `TutorialDirector` skips the tutorial on a resumed save (`SaveService.IsResumingSave`), so a
+  Continue into the tutorial area (L2_Streets) doesn't replay it.
+- Round-trip self-test: *Planet of Twins Tools ▸ Couch ▸ Test Save Round-Trip* (14/14). Compiles clean (0 errors).
+  (Slice 4 — the save-slot screen, the Continue button, and the `SaveService` GO in Persistent — landed the same
+  day; see the entry above.)
+
 ### Added — Couch co-op: Character Select V2 — spatial redesign + per-device input (M2.2) (2026-08-20, `couch-m1-ownership`)
 - **The cycle/ready greybox is replaced by the SPATIAL design:** three zones — **LEFT = Kai (Vethara)**,
   **RIGHT = Lyra (Luminari)**, **CENTER-BOTTOM = Random** (default). Each player is an old-school **`1P`/`2P`
