@@ -50,12 +50,20 @@ public class QTETriggerPoint : MonoBehaviour
 
         if (!IsOccupied)
         {
-            if (_playerInRange != null && Input.GetKeyDown(KeyCode.F))
+            // Lock-in reads the Interact action (F / pad) through the DEVICE that owns the twin standing here:
+            // couch → each trigger point answers only to its own occupant's controller; solo → both twins route
+            // to P1. (Was raw Input.GetKeyDown(KeyCode.F), which bypassed the Input System entirely — no gamepad
+            // could ever enter the QTE. Raw Input.* outside TwinInputReader is banned.)
+            var input = _playerInRange != null ? PlayerInputRouter.For(_playerInRange) : null;
+            if (input != null && input.GetInteractDown())
                 LockPlayer(_playerInRange);
         }
         else
         {
-            if (Input.GetKey(KeyCode.X))
+            // Cancel (hold) reads the Cancel action (X / pad) through the LOCKED twin's own device. LockedPlayer
+            // is non-null here (IsOccupied). (Was raw Input.GetKey(KeyCode.X).)
+            var input = PlayerInputRouter.For(LockedPlayer);
+            if (input != null && input.GetCancelHeld())
             {
                 _cancelHoldTimer += Time.deltaTime;
                 if (_cancelHoldTimer >= cancelHoldDuration)

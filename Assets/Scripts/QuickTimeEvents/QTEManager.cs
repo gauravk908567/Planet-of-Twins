@@ -72,6 +72,9 @@ public class QTEManager : MonoBehaviour
     private IEnemyFreezeService _freezeService;
     private ICameraController   _cameraController;
     private IInputProvider      _input;   // P13: mash via Input System — raw Input.* is banned
+    // Reused each frame by CountMashThisFrame — the DISTINCT devices among the locked-in twins (≤2). A field
+    // (not a local) to avoid a per-frame allocation during the mash phase.
+    private readonly System.Collections.Generic.List<IInputProvider> _mashProviders = new();
     private int   _mashCount;
     private float _mashTimer;
     private float _windowTimer;
@@ -173,10 +176,11 @@ public class QTEManager : MonoBehaviour
             case QTEPhase.Mashing:
                 _mashTimer -= Time.unscaledDeltaTime;
 
-                // P13: mash reads the QTEMash action (F). QTEDefinitionSO.mashKey is legacy
-                // display data now — per-QTE distinct mash keys were never used (all assets = F).
-                if (ActiveDef != null && _input != null && _input.GetQTEMashDown())
-                    _mashCount++;
+                // P13: mash reads the QTEMash action (F). QTEDefinitionSO.mashKey is legacy display data now.
+                // Couch (M7): BOTH twins' devices feed this ONE QTE — see CountMashThisFrame (distinct-device
+                // sum; solo stays single, couch accelerates).
+                if (ActiveDef != null)
+                    _mashCount += CountMashThisFrame();
 
                 int required = ActiveDef?.mashCountRequired ?? 20;
                 float mashDur = ActiveDef?.mashDuration ?? 5f;
@@ -303,6 +307,36 @@ public class QTEManager : MonoBehaviour
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    // Combined co-op mash: advance the shared bar once per frame per DISTINCT input device among the twins
+    // currently locked into the trigger points — so BOTH players' input is taken and relayed to the one QTE.
+    // Solo (one player, both twins) → both resolve to P1 → one distinct device → counts once = byte-identical
+    // to the old single-reader path. Couch (two devices) → P1 + P2 → both mashing advances the bar twice a
+    // frame (the two-device "acceleration"). Defensive shared-reader fallback if no occupants resolve, so the
+    // mash never goes dead mid-QTE.
+    private int CountMashThisFrame()
+    {
+        _mashProviders.Clear();
+        if (_activeAnchor?.TriggerPoints != null)
+        {
+            foreach (var tp in _activeAnchor.TriggerPoints)
+            {
+                var player = tp != null ? tp.LockedPlayer : null;
+                if (player == null) continue;
+                var prov = PlayerInputRouter.For(player);
+                if (prov != null && !_mashProviders.Contains(prov))
+                    _mashProviders.Add(prov);   // distinct devices only — solo's shared P1 is added once
+            }
+        }
+
+        if (_mashProviders.Count == 0)   // no occupants resolved — defensive shared-reader fallback
+            return _input != null && _input.GetQTEMashDown() ? 1 : 0;
+
+        int count = 0;
+        foreach (var prov in _mashProviders)
+            if (prov.GetQTEMashDown()) count++;
+        return count;
+    }
 
     private void UnsubscribeTriggerPoints()
     {
