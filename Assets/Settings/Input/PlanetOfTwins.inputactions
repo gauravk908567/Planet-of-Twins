@@ -270,7 +270,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-00000000000e",
-                    "path": "<Gamepad>/buttonWest",
+                    "path": "<Gamepad>/buttonNorth",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -292,7 +292,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-000000000010",
-                    "path": "<Gamepad>/leftShoulder",
+                    "path": "<Gamepad>/leftTrigger",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -325,7 +325,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-000000000013",
-                    "path": "<Gamepad>/buttonNorth",
+                    "path": "<Gamepad>/buttonEast",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -347,7 +347,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-000000000015",
-                    "path": "<Gamepad>/buttonEast",
+                    "path": "<Gamepad>/buttonWest",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -413,7 +413,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-00000000001b",
-                    "path": "<Gamepad>/leftTrigger",
+                    "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -435,7 +435,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-00000000001d",
-                    "path": "<Gamepad>/buttonWest",
+                    "path": "<Gamepad>/buttonNorth",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -457,7 +457,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-00000000001f",
-                    "path": "<Gamepad>/buttonEast",
+                    "path": "<Gamepad>/buttonWest",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -611,7 +611,7 @@
                 {
                     "name": "",
                     "id": "c2c2c2c2-0000-4000-8000-000000000104",
-                    "path": "<Gamepad>/select",
+                    "path": "<Gamepad>/rightTrigger",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
