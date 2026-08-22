@@ -146,10 +146,21 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     public void SetPairedDevices(params InputDevice[] devices)
     {
         if (_actions == null) return;
+
+        // Toggle the asset around the change so bindings RE-RESOLVE against the new device set. Assigning
+        // `.devices` on a live (enabled) asset does not reliably re-pick the active controls, which left BOTH
+        // readers still bound to every gamepad — the couch symptom where both players follow one pad.
+        // Disable → set → enable forces a clean re-resolution. (A reader that's currently disabled — e.g. P2
+        // before CouchDeviceManager enables it — is left disabled; it resolves correctly when enabled.)
+        bool wasEnabled = _actions.FindActionMap("Gameplay")?.enabled ?? false;
+        if (wasEnabled) _actions.Disable();
+
         if (devices == null || devices.Length == 0)
             _actions.devices = null;          // no restriction — read every device
         else
             _actions.devices = devices;       // restrict to this player's device(s)
+
+        if (wasEnabled) _actions.Enable();
     }
 
     private bool _joystickBindingsApplied;

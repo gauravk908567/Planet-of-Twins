@@ -12,6 +12,38 @@ how each system works, see [game.md](game.md); for working in the repo, see [CLA
 
 ## [Unreleased]
 
+### Added — Couch co-op: universal controller support — any USB gamepad via SDL_GameControllerDB (2026-08-22, `couch-m1-ownership`)
+- **Any generic USB / DirectInput gamepad now works as a first-class `Gamepad`.** Unity exposes non-XInput HID
+  pads as a generic `Joystick` (the HID descriptor is too ambiguous to know which button is "South"), so they never
+  matched the game's `<Gamepad>` bindings. At runtime each unrecognized pad is now looked up in the bundled
+  **SDL_GameControllerDB** and a `Gamepad`-extending Unity layout is generated from its published mapping + the
+  pad's own HID report offsets — so it drives the couch pipeline (`CouchDeviceManager` → `Gamepad.all`) with **zero
+  per-pad wiring or input-asset changes**. Xbox / PS pads (already native `Gamepad`s) are untouched.
+- **New — `Assets/Scripts/Players/Multiplayer/ControllerDb/`:** `SdlControllerDb` (loads + indexes
+  `Assets/Settings/Input/Resources/gamecontrollerdb.txt`, 1240 pad mappings, by VID/PID);
+  `HidGamepadLayoutBuilder` (HID descriptor → `Gamepad` layout JSON — buttons/axes/hat, SDL grammar b/a/±a/~/h);
+  `UniversalGamepadRegistrar` (`[RuntimeInitializeOnLoadMethod]`; acts **only** on generic `Joystick`s = zero
+  regression; registers the layout so its VID/PID matcher recreates the pad as a `Gamepad`). Editor regression
+  check: `ControllerDbSelfTest` (`Planet of Twins Tools ▸ Input ▸ Controller DB Self-Test`) — registers +
+  instantiates the generated layout and asserts the offsets.
+- **Verified** on two DragonRise "Generic USB" pads (VID 0079 / PID 0006): both promote to `DBGamepad_0079_0006`
+  and are assigned couch P1 / P2 (0 errors). The earlier hand-authored `DragonRiseGamepadHID` layout is **retired**
+  — the pads now ride the generic DB path as its first proof.
+- Two bugs fixed en route: axes are ordered by SDL / DirectInput **usage slot** (dedup duplicate usages — the
+  DragonRise reports Z twice) rather than raw report order; and composite layout controls (sticks / dpad) must give
+  the **parent an explicit offset with children relative**, or Unity's offset resolver recurses (a `RegisterLayout`
+  stack overflow).
+
+### Changed — Couch co-op: gamepad control scheme remapped to the pad layout (2026-08-22, `couch-m1-ownership`)
+- `PlanetOfTwins.inputactions` gamepad bindings remapped to the intended pad layout (the device / SDL layer is left
+  pristine): Attack→buttonNorth, Ability→buttonEast, Teleport (+SoulBreak)→buttonWest, Empower→leftShoulder,
+  Switch→leftTrigger, SkillTree→rightTrigger; Interact = buttonSouth; Cancel / Pause / Overview unchanged.
+
+### Fixed — Couch co-op: two paired pads now route to two players (2026-08-22, `couch-m1-ownership`)
+- `TwinInputReader.SetPairedDevices` now toggles the action asset (disable → set `.devices` → enable) so bindings
+  re-resolve against the new device set. Assigning `.devices` on a live/enabled asset didn't re-pick the active
+  controls, so both readers kept following whichever pad moved (the "both players on one pad" symptom).
+
 ### Changed — Couch co-op: front-end moved to its own scene; fixes the boot camera glitch (2026-08-21, `couch-m1-ownership`)
 - **The whole front-end (Main Menu + Save Slot + Character Select) now lives in a new `FrontEnd.unity` scene
   between Bootstrap and the intro — Persistent no longer loads while the main screen is up.** The menu-first boot
