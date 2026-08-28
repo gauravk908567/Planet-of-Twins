@@ -5,7 +5,8 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 [RequireComponent(typeof(Button))]
-public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
+                               IPointerClickHandler
 {
     [Header("Scene assignment — set per button in Inspector")]
     [SerializeField] public AbilityUpgradeData NodeData;
@@ -23,8 +24,8 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
     [SerializeField] private RawImage _thumbnailStrip;
     [SerializeField] private Image _lockedOverlay;
 
-    [Header("Hover threshold to open video zoom (seconds)")]
-    [SerializeField] private float HoverThreshold = 1.2f;
+    [Header("Hover threshold to open video zoom (seconds) — MOUSE only; controller focus does NOT hover")]
+    [SerializeField] private float HoverThreshold = 2.0f;
 
     // ── Colours ───────────────────────────────────────────────
     static readonly Color BgPurchased = new Color(0.08f, 0.20f, 0.12f);
@@ -102,7 +103,7 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
         {
             _isHovered = false;
             _hoverTimer = 0f;
-            OpenVideoModal();
+            OpenPreview();
         }
     }
 
@@ -123,16 +124,24 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
         if (_btn == null) _btn = GetComponent<Button>();
 
+        // Item 4 (controller nav): mouse-click instant-buys via IPointerClickHandler and Submit (A/South)
+        // opens the preview via ISubmitHandler — the two must NOT share Button.onClick (Submit routes to
+        // onClick, which would purchase directly). Leave onClick empty; the handlers below own both paths.
         _btn.onClick.RemoveAllListeners();
-        _btn.onClick.AddListener(OnCardClicked);
+
+        // The node is a controller navigation stop + gets a visible focus tint (interim — the glowing-outline
+        // highlight is tracked as separate polish, see UINavStyle).
+        UINavStyle.Style(_btn);
 
         if (_thumbnailStrip != null)
         {
             var videoBtn = _thumbnailStrip.GetComponent<Button>()
                         ?? _thumbnailStrip.gameObject.AddComponent<Button>();
             videoBtn.transition = Selectable.Transition.None;
+            // Click-only target — must not become a controller navigation stop of its own.
+            var vn = videoBtn.navigation; vn.mode = Navigation.Mode.None; videoBtn.navigation = vn;
             videoBtn.onClick.RemoveAllListeners();
-            videoBtn.onClick.AddListener(OpenVideoModal);
+            videoBtn.onClick.AddListener(OpenPreview);
         }
 
         _pointBank.OnPointsChanged -= OnPointsChanged;
@@ -193,8 +202,10 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
             _videoPlayer.Play();
     }
 
-    // ── Card click → direct purchase ──────────────────────────
-    private void OnCardClicked()
+    // ── Purchase (mouse left-click = instant buy; controller Y/North via SkillTreeUI) ──
+    /// <summary>Instant-buy this node's next level (guarded — no-op if locked/purchased/maxed/unaffordable).
+    /// Reached by a mouse left-click on the card and by the controller's instant-buy button (Y/North).</summary>
+    public void RequestPurchase()
     {
         if (_purchaser == null || _data == null) return;
 
@@ -212,9 +223,24 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
             if (btn._data == _data) btn.Refresh();
     }
 
+    // Mouse left-click on the card → instant purchase (unchanged from the pre-controller behaviour).
+    public void OnPointerClick(PointerEventData e)
+    {
+        if (e != null && e.button != PointerEventData.InputButton.Left) return;
+        RequestPurchase();
+    }
+
+    /// <summary>P-B — the affordable frontier node (the next one you can actually buy). All nodes are navigable
+    /// now; this only marks which is buyable right now, so the tree can land the controller's initial focus on
+    /// something purchasable (falls back to the first node when nothing is buyable).</summary>
+    public bool IsBuyable => _data != null && _purchaser != null && GetState() == State.NextAffordable;
+
     // ── Hover ─────────────────────────────────────────────────
     public void OnPointerEnter(PointerEventData _)
     {
+        // Hover-zoom is the MOUSE affordance for video nodes only; text-only nodes open via click/Submit.
+        // Controller focus is ISelectHandler (not IPointerEnter), so a highlighted node never auto-hovers.
+        if (_data == null || _data.nodes[_nodeIndex].previewClip == null) return;
         _isHovered = true;
         _hoverTimer = 0f;
     }
@@ -225,11 +251,13 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
         _hoverTimer = 0f;
     }
 
-    // ── Open video modal ──────────────────────────────────────
-    private void OpenVideoModal()
+    // ── Open the preview modal ────────────────────────────────
+    // Opens even when this node has no preview clip — the modal shows text + Buy and hides the video frame, so
+    // text-only nodes are still previewable/buyable. Called by mouse hover, the thumbnail button, and (for the
+    // controller) SkillTreeUI polling button 1 / North over the focused node.
+    public void OpenPreview()
     {
-        var node = _data?.nodes[_nodeIndex];
-        if (node == null || node.previewClip == null) return;
+        if (_data == null) return;
 
         if (SkillPreviewModal.Instance == null)
         {
@@ -250,9 +278,11 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
         if (NodeLabel) NodeLabel.text = node.label;
 
-        _btn.interactable = state != State.Locked
-                         && state != State.Purchased
-                         && state != State.Maxed;
+        // P-B: EVERY node stays navigable so the cursor can move through the WHOLE tree and preview any node
+        // (locked / purchased / maxed included). Purchase is guarded separately (RequestPurchase + the state
+        // check), so a selectable locked/purchased node can never be illegally bought. The locked/purchased
+        // LOOK comes from Background.color / LockIcon / _lockedOverlay below — not from the Button's disabled tint.
+        _btn.interactable = true;
 
         if (Background) Background.color = state switch
         {

@@ -55,6 +55,22 @@ public class SettingsMenuController : MonoBehaviour
         StartCoroutine(InitialiseAfterLocalisation());
     }
 
+    // Item 1 (controller nav): when the settings panel opens, land focus on its first control so a pad can
+    // drive it. Runs every time the panel is re-activated (OnEnable), not just first show.
+    private void OnEnable()
+    {
+        UINavFocus.Focus(FirstControl());
+    }
+
+    private Selectable FirstControl()
+    {
+        if (_languageDropdown != null) return _languageDropdown;
+        if (_resolutionDropdown != null) return _resolutionDropdown;
+        if (_masterSlider != null) return _masterSlider;
+        if (_applyButton != null) return _applyButton;
+        return _backButton;
+    }
+
     private IEnumerator InitialiseAfterLocalisation()
     {
         // Wait until LanguageManager is ready

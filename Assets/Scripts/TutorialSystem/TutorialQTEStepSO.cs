@@ -23,6 +23,11 @@ public class TutorialQTEStepSO : TutorialStepBase
         ctx.overlay?.Show(t, b, promptClip, () => promptDone = true);
         yield return new WaitUntil(() => promptDone);
 
+        // Unlock Interact (F / pad South) BEFORE arming the QTE. Lock-in reads GetInteractDown, which is a
+        // SEPARATE gate category from Rescue — without this the "Press F" prompt shows but F is gated off, so
+        // the trigger points never lock in and the QTE can't start (the "QTE press F not working" bug, all devices).
+        ctx.inputGate?.AllowInteract(true);
+
         // Start the QTE — camera switches here, trigger points activate
         ctx.qteAnchor?.BeginQTE();
 

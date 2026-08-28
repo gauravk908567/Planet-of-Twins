@@ -54,6 +54,8 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
                         _overview, _qteMash;
     // UI map
     private InputAction _pause, _skillTree, _anySkip, _toggleHints;
+    // UI map — Item 4 (skill-tree controller nav): LB/RB tab switch + instant-buy + B/East back + open-preview
+    private InputAction _uiTabLeft, _uiTabRight, _instantBuy, _uiCancel, _uiPreview;
 
     private void Awake()
     {
@@ -106,6 +108,11 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         _skillTree   = Find("UI/SkillTree");
         _anySkip     = Find("UI/AnySkip");
         _toggleHints = Find("UI/ToggleHints");
+        _uiTabLeft   = Find("UI/TabLeft");
+        _uiTabRight  = Find("UI/TabRight");
+        _instantBuy  = Find("UI/InstantBuy");
+        _uiCancel    = Find("UI/UICancel");
+        _uiPreview   = Find("UI/UIPreview");
     }
 
     private InputAction Find(string path)
@@ -266,11 +273,51 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     // QTE mash — F (QTEManager + world-space QTEController; ungated — a QTE is already scripted)
     public bool GetQTEMashDown() => !_gameplayFrozen && Down(_qteMash);
 
-    // "Press any key" — intro skip (keyboard anyKey + mouse buttons + gamepad South/Start)
-    public bool GetAnySkipDown() => Down(_anySkip);
+    // "Press ANY key / button" — intro skip / tutorial-prompt dismiss. The AnySkip action only carries the
+    // clean bindings (mouse + gamepad South/Start); its <Keyboard>/anyKey binding is inert through
+    // WasPressedThisFrame (anyKey is a synthetic control, no clean Button "performed" edge), and a South-only
+    // pad binding misses the rest of the pad. So beyond the action we poll this reader's OWN devices for any
+    // key / top-level button this frame — so a keyboard-only AND a gamepad-only player can dismiss with
+    // literally anything — honouring couch pairing (a device-restricted reader only skips on its own devices).
+    public bool GetAnySkipDown()
+    {
+        if (Down(_anySkip)) return true;
+
+        if (_actions != null && _actions.devices.HasValue)
+        {
+            foreach (var d in _actions.devices.Value)
+                if (AnySkipFromDevice(d)) return true;
+            return false;
+        }
+        // Unrestricted (solo / single-device): check the current keyboard + gamepad.
+        return AnySkipFromDevice(Keyboard.current) || AnySkipFromDevice(Gamepad.current);
+    }
+
+    // Any key (keyboard) or any TOP-LEVEL button (pad/joystick: face/shoulder/trigger/stick-press/start/select)
+    // pressed this frame. Top-level only (parent == device) so stick / dpad directional drift never auto-dismisses.
+    private static bool AnySkipFromDevice(InputDevice device)
+    {
+        if (device == null) return false;
+        if (device is Keyboard kb) return kb.anyKey.wasPressedThisFrame;
+
+        var controls = device.allControls;
+        for (int i = 0; i < controls.Count; i++)
+            if (controls[i] is UnityEngine.InputSystem.Controls.ButtonControl b &&
+                ReferenceEquals(b.parent, device) && b.wasPressedThisFrame)
+                return true;
+        return false;
+    }
 
     // Hints panel show/hide — H (ControlHintsVisibility; ungated, works while frozen/paused)
     public bool GetHintsToggleDown() => Down(_toggleHints);
+
+    // Item 4 — skill-tree tab switch (LB/RB) + instant-buy (Y/North). Ungated menu reads; only the
+    // skill-tree UI acts on them, and only while its panel is open (game already frozen at timeScale 0).
+    public bool GetUITabLeftDown() => Down(_uiTabLeft);
+    public bool GetUITabRightDown() => Down(_uiTabRight);
+    public bool GetInstantBuyDown() => Down(_instantBuy);
+    public bool GetUICancelDown() => Down(_uiCancel);
+    public bool GetUIPreviewDown() => Down(_uiPreview);
 
     // ── F5 (Button HUDs) — live binding display ────────────────────────
     // Reads the actual bound control from the action asset via GetBindingDisplayString,

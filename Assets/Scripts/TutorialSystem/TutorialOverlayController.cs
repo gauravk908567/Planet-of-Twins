@@ -54,6 +54,7 @@ public class TutorialOverlayController : MonoBehaviour
     private Coroutine _animCoroutine;
     private VideoClip _pendingClip;
     private bool _isOpen;
+    private float _openUnscaledTime;   // guard so an "any key" can't insta-dismiss the frame the prompt opens
 
     public bool IsOpen => _isOpen;
 
@@ -86,6 +87,23 @@ public class TutorialOverlayController : MonoBehaviour
         _continueButton?.onClick.AddListener(OnContinueClicked);
 
         _dimPanelButton?.onClick.AddListener(OnContinueClicked);
+
+        // Item 2 (universal dismissal): make Continue controller-focusable + visibly highlighted so A/South
+        // (Submit) closes the popup — from either pad, since the UI module hears all devices, and ungated by
+        // the tutorial input gate (that gate only touches the gameplay reader, not the UI module's Submit).
+        UINavStyle.Apply(_root);
+    }
+
+    private void Update()
+    {
+        // "Press any key" — dismiss the tutorial prompt on ANY confirm/skip press, from EITHER device (the P-A
+        // shared aggregator: keyboard anyKey/mouse + pad South/Start). Reads WasPressedThisFrame under the hood
+        // so a held key can't insta-dismiss, and a short guard ignores the frames right after it opens. This
+        // complements Continue (A/South via the EventSystem module), the dim-panel click, and the ESC arbiter.
+        if (!_isOpen) return;
+        if (Time.unscaledTime - _openUnscaledTime < 0.2f) return;
+        var input = PlayerInputRouter.SharedInput;
+        if (input != null && input.GetAnySkipDown()) OnContinueClicked();
     }
 
     /// <summary>
@@ -97,6 +115,7 @@ public class TutorialOverlayController : MonoBehaviour
     {
         _onContinue = onContinue;
         _isOpen = true;
+        _openUnscaledTime = Time.unscaledTime;
 
         if (_titleText) _titleText.text = title;
         if (_bodyText) _bodyText.text = body;
@@ -105,6 +124,9 @@ public class TutorialOverlayController : MonoBehaviour
         // Activate before Prepare so VP fires callback
         _root.SetActive(true);
         TimeScaleService.Instance?.Request(this, 0f);
+
+        // Item 2: land controller focus on Continue so A/South dismisses (either pad), alongside mouse + Start.
+        UINavFocus.Focus(_continueButton);
 
         PlayVideo(clip);
 

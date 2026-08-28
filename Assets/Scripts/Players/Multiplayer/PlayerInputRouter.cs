@@ -61,9 +61,15 @@ public class PlayerInputRouter : MonoBehaviour, IPlayerInputRouter
     private IInputProvider P2 => _p2 ??= (_inputProviderObjectP2 as IInputProvider) ?? P1;
 
     // ── IPlayerInputRouter ─────────────────────────────────────
-    /// <summary>Shared-UI input (pause / skill tree / overview / intro / QTE / hints). Uses P1 for now;
-    /// a future any-of aggregator (either player drives shared UI) is a follow-up.</summary>
-    public IInputProvider Shared => P1;
+    // P-A (couch, 2026-08-28): the any-of aggregator that used to be "a follow-up". Built once, reflects live
+    // pairing (asks for P1/P2 each call), holds no state.
+    private AnyPlayerInputProvider _any;
+
+    /// <summary>Shared-UI input (pause / skill-tree tabs+buy+back / overview / intro-skip / hints / popup
+    /// dismissal / QTE mash fallback): EITHER player drives it. Aggregates P1+P2, P1 winning a same-frame tie;
+    /// in solo P2 falls back to P1 so every read collapses to P1 → byte-identical to the old single-reader path.
+    /// Per-twin gameplay is UNAFFECTED — it stays on <see cref="ProviderFor"/>/<see cref="For"/> (concrete P1/P2).</summary>
+    public IInputProvider Shared => _any ??= new AnyPlayerInputProvider(() => P1, () => P2);
 
     /// <summary>The provider that drives <paramref name="twin"/>, by its owning <see cref="PlayerSlot"/>.
     /// Slot Two → P2 (falls back to P1 if unwired); everything else → P1.</summary>

@@ -71,6 +71,7 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     private float _cooldownTimer = 0f;
     private float _dashCooldownTimer = 0f;
     private float _cancelProgress = 0f;
+    private bool _empoweredEmpowerHeldLast;   // couch: buffed twin dashes on a fresh R-press (edge), not a hold
 
     private Player _anchoringTwin;
     private Player _empoweredTwin;
@@ -257,13 +258,18 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
             _cancelProgress = 0f;
         }
 
-        // Couch M3.4: the buffed PARTNER dashes with their own Shift (GetSwitchDown), read from the
-        // empowered twin's provider. Twin-switching no longer exists (S5 teardown), so Shift is purely dash.
-        if ((PlayerInputRouter.For(_empoweredTwin)?.GetSwitchDown() ?? false) && _dashCooldownTimer <= 0f)
+        // Couch (2026-08-28): the buffed PARTNER dashes by TAPPING the EMPOWER key (R / button 5), read from the
+        // empowered twin's provider — this retires the separate Switch/dash button. Safe to reuse R here: Empower
+        // is single-instance (no re-charge while Active) and Accord Spirits only listens during Accord State
+        // (never during Empower), so R does nothing else for the partner right now. Rising-edge (held && !last)
+        // so holding R doesn't repeat-dash every frame.
+        bool empHeld = PlayerInputRouter.For(_empoweredTwin)?.GetEmpowerHeld() ?? false;
+        if (empHeld && !_empoweredEmpowerHeldLast && _dashCooldownTimer <= 0f)
         {
             _empoweredTwin.Movement.StartDash(_dashSpeed, _dashDuration);
             _dashCooldownTimer = _dashCooldown;
         }
+        _empoweredEmpowerHeldLast = empHeld;
 
         if (_activeTimer >= ActiveDuration)
             EndAbility();
@@ -299,6 +305,9 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
         _chargeProgress = 0f;
         _cancelProgress = 0f;
         _dashCooldownTimer = 0f;
+        // Seed the dash edge-tracker with the partner's current R state, so an already-held R (bleed from the
+        // caster's charge) can't fire an instant dash — the partner must tap R fresh.
+        _empoweredEmpowerHeldLast = PlayerInputRouter.For(_empoweredTwin)?.GetEmpowerHeld() ?? false;
 
         _anchoringTwin.Movement.SetMovementLocked(true);
         _anchoringTwin.GetComponent<AbilityController>()?.LockAbilities();

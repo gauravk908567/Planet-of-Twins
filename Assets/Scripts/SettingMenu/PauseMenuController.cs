@@ -60,6 +60,10 @@ public class PauseMenuController : MonoBehaviour
         _settingsButton?.onClick.AddListener(OpenSettings);
         _exitButton?.onClick.AddListener(ExitGame);
         _restoreKeybindsButton?.onClick.AddListener(RestoreDefaultKeybinds);
+
+        // Item 1 (controller nav): pad-traversable + visible focus highlight for the pause menu AND the
+        // settings panel (it lives under _pauseRoot), in one pass.
+        UINavStyle.Apply(_pauseRoot);
     }
 
     // P13: ESC comes through IInputProvider (Input System) — raw Input.* is banned. Same-scene
@@ -122,6 +126,9 @@ public class PauseMenuController : MonoBehaviour
         AudioManager.Instance?.RequestSnapshot(this, AudioSnapshotId.Paused, PauseSnapshotPriority);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
+
+        // Item 1 (controller nav): land focus on Resume so either pad drives the pause menu immediately.
+        UINavFocus.Focus(_resumeButton);
     }
 
     public void Resume()
@@ -138,11 +145,14 @@ public class PauseMenuController : MonoBehaviour
     public void OpenSettings()
     {
         _settingsPanel?.SetActive(true);
+        // Focus is set by SettingsMenuController.OnEnable (it owns its own first control).
     }
 
     public void CloseSettings()
     {
         _settingsPanel?.SetActive(false);
+        // Item 1 (controller nav): return focus to the Settings button we came from.
+        UINavFocus.Focus(_settingsButton);
     }
 
     // F7 — Restore Default Keybinds. Clears all binding overrides on the shared action asset

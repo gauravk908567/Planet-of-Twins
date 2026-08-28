@@ -8,6 +8,9 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     [Header("Twin References")]
     [SerializeField] private Player leftTwin;
     [SerializeField] private Player rightTwin;
+    // LEGACY (pre-couch single-soul). Proximity/mash-range now track the DEPLOYED soul via
+    // ActiveSoulTransform (couch two-soul model, ba9c88e). No longer read — kept so the Persistent
+    // scene reference isn't orphaned; delete in a dedicated scene-touching cleanup commit.
     [SerializeField] private Transform soulTransform;
 
     [Header("Coordinators")]
@@ -162,6 +165,16 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             return null;
         }
     }
+
+    /// <summary>The transform the proximity / mash-range checks measure against — the DEPLOYED soul in the
+    /// couch two-soul model (each twin's Weaver's Gate owns its own soul, ba9c88e), NOT the legacy single
+    /// serialized <see cref="soulTransform"/>. That fixed field references only ONE of the two per-twin
+    /// souls, so a rescue driven by the OTHER twin's soul measured distance to the wrong (resting) soul
+    /// (~10 m) and never reached Triggered — the "Press F never appears" bug. Null when no soul is deployed,
+    /// so the proximity checks correctly do NOT trigger (you cannot rescue without a soul out; a fallback to
+    /// soulTransform here would false-trigger whenever a resting soul sits on the grabbed twin).</summary>
+    private Transform ActiveSoulTransform => ActiveSoul != null ? ActiveSoul.transform : null;
+
     // BUG-082: both twins' Gate abilities register here (left+right caster). Polled via
     // IsAnySoulDeployed to keep enemies frozen until the rescue soul is home. Distinct from
     // _activeSoulAbility, which CleanupRescueEvent nulls at Success — too early for the return trip.
@@ -442,9 +455,11 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         OnSoulArrived?.Invoke(); // fire regardless of state — Siphon listens here
         if (_state != RescueState.Idle && _state != RescueState.SoulDied) return;
         if (_activeTarget?.GrabbedPlayerTransform == null) return;
+        var soul = ActiveSoulTransform;
+        if (soul == null) return;   // no soul deployed → nothing to have arrived
 
         float dist = Vector3.Distance(
-            soulTransform.position,
+            soul.position,
             _activeTarget.GrabbedPlayerTransform.position);
 
         if (_debugRescue)
@@ -521,12 +536,13 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                     TransitionTo(RescueState.Mashing);
                 }
                 else if (!IsSoulInMashRange() &&
-                         soulTransform != null &&
                          _activeTarget?.GrabbedPlayerTransform != null)
                 {
-                    float dist = Vector3.Distance(
-                        soulTransform.position,
-                        _activeTarget.GrabbedPlayerTransform.position);
+                    // ActiveSoulTransform null == deployed soul is gone (returned / died) → treat as "far".
+                    var soul = ActiveSoulTransform;
+                    float dist = soul != null
+                        ? Vector3.Distance(soul.position, _activeTarget.GrabbedPlayerTransform.position)
+                        : float.PositiveInfinity;
                     // SoulDied preserves _activeTarget â Idle causes immediate re-trigger loop
                     if (dist > rescueProximityRadius * 2f)
                         TransitionTo(RescueState.SoulDied);
@@ -546,10 +562,11 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     private void CheckProximityForTrigger()
     {
         if (_activeTarget?.GrabbedPlayerTransform == null) return;
-        if (soulTransform == null) return;
+        var soul = ActiveSoulTransform;
+        if (soul == null) return;   // no soul deployed yet → nothing to trigger against
 
         float dist = Vector3.Distance(
-            soulTransform.position,
+            soul.position,
             _activeTarget.GrabbedPlayerTransform.position);
 
         if (dist <= rescueProximityRadius)
@@ -726,11 +743,12 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
 
     private bool IsSoulInMashRange()
     {
-        if (soulTransform == null) return false;
+        var soul = ActiveSoulTransform;
+        if (soul == null) return false;
         if (_activeTarget?.GrabbedPlayerTransform == null) return false;
 
         float dist = Vector3.Distance(
-            soulTransform.position,
+            soul.position,
             _activeTarget.GrabbedPlayerTransform.position);
 
         return dist <= mashProximityRadius;

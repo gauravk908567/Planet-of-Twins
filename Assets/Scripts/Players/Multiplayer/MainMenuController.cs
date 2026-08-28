@@ -33,6 +33,9 @@ public class MainMenuController : MonoBehaviour
         if (continueButton != null) continueButton.onClick.AddListener(RaiseContinue);
         if (optionsButton  != null) optionsButton.onClick.AddListener(RaiseOptions);
         if (exitButton     != null) exitButton.onClick.AddListener(Quit);
+
+        // Item 1 (controller nav): make the menu buttons pad-traversable + give them a visible focus highlight.
+        UINavStyle.Apply(panel);
     }
 
     private void OnDestroy()
@@ -48,6 +51,10 @@ public class MainMenuController : MonoBehaviour
         // Re-evaluate Continue each time the menu shows — a save may have been written since the last visit.
         if (continueButton != null) continueButton.interactable = AnySaveExists();
         if (panel != null) panel.SetActive(true);
+
+        // Item 1 (controller nav): land the controller focus on New Game so either pad can drive the menu
+        // immediately. Mouse is unaffected (null-safe no-op if no EventSystem). See UINavFocus.
+        UINavFocus.Focus(newGameButton);
     }
 
     public void Hide() { if (panel != null) panel.SetActive(false); }

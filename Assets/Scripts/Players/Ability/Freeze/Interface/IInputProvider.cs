@@ -46,6 +46,22 @@ public interface IInputProvider
     /// <summary>Press H — show/hide the control-hints panel (ControlHintsVisibility). Ungated.</summary>
     bool GetHintsToggleDown();
 
+    // ── Item 4 (skill-tree controller nav) — UI-map reads, polled by SkillTreeUI / SkillPreviewModal
+    //    while the tree is open (menu context, ungated). Any other IInputProvider impl must add these. ──
+    /// <summary>Press LB (left shoulder) — cycle the skill-tree tab left (Kai ← Lyra ← Shared).</summary>
+    bool GetUITabLeftDown();
+    /// <summary>Press RB (right shoulder) — cycle the skill-tree tab right.</summary>
+    bool GetUITabRightDown();
+    /// <summary>Press Y/North — instant-buy the focused skill node (no preview). Also buys while the
+    /// preview modal is open. Separate from Submit (A/South = open preview → 2nd press buys).</summary>
+    bool GetInstantBuyDown();
+    /// <summary>Press B/East — "back" in menus/modals (close the skill preview, back out a panel). Polled
+    /// alongside the EventSystem's own Cancel; the menu that owns the layer decides what "back" does.</summary>
+    bool GetUICancelDown();
+    /// <summary>Press button 1 / North — skill-tree "open preview" over the focused node (1st press), and
+    /// "buy" inside the preview modal (2nd press). Separate from InstantBuy (button 3 / South = direct buy).</summary>
+    bool GetUIPreviewDown();
+
     // ── F5 (Button HUDs) — live binding display for on-screen prompts ──
     /// <summary>
     /// Human-readable key/button label for an action, read live from the Input System

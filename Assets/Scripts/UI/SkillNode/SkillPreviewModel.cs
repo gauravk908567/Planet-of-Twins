@@ -70,11 +70,15 @@ public class SkillPreviewModal : MonoBehaviour
 
     private List<SkillNodeButton> _tabButtons = new List<SkillNodeButton>();
     private int _cycleIndex;
+    private SkillNodeButton _sourceButton;   // P-C: the node that opened us — cursor returns here on close
 
     // Guards against stale prepare callbacks after close
     private bool _isOpen = false;
     public bool IsOpen => _isOpen;
     private VideoClip _pendingClip = null;
+
+    // Item 4 (controller nav): shared-UI input for North=buy / B=back / LB-RB=prev-next while the modal is up.
+    private IInputProvider _input;
 
     // ── Lifecycle ─────────────────────────────────────────────
     private void Awake()
@@ -101,12 +105,26 @@ public class SkillPreviewModal : MonoBehaviour
         _buyButton?.onClick.AddListener(OnBuyClicked);
         _prevButton?.onClick.AddListener(OnPrev);
         _nextButton?.onClick.AddListener(OnNext);
+
+        // Item 4 (controller nav): Buy / Prev / Next / Close become pad-traversable + get a visible focus tint.
+        UINavStyle.Apply(_root);
+        // The full-screen dim panel is a click-to-close target, not a navigation stop — keep the pad off it.
+        if (_dimPanel != null) { var n = _dimPanel.navigation; n.mode = Navigation.Mode.None; _dimPanel.navigation = n; }
     }
 
     private void Update()
     {
         if (!_root.activeSelf) return;
-        if (Input.GetMouseButtonDown(1)) Close();
+        if (Input.GetMouseButtonDown(1)) { Close(); return; }   // legacy mouse right-click closes (unchanged)
+
+        // Item 4 — controller controls while the modal owns the screen. SkillTreeUI defers to us while open.
+        var input = _input ??= PlayerInputRouter.SharedInput;
+        if (input == null) return;
+
+        if (input.GetUICancelDown())    { Close();  return; }   // B/East = back
+        if (input.GetUIPreviewDown())   { OnBuyClicked(); return; } // button 1 / North = buy (the 2nd press). Button 3 / South also buys, via the focused Buy button (Submit) — not polled here, to avoid a double-buy.
+        if (input.GetUITabLeftDown())   { OnPrev();  return; }  // LB = previous ability
+        if (input.GetUITabRightDown())  { OnNext();  return; }  // RB = next ability
     }
 
     // ── Show ──────────────────────────────────────────────────
@@ -118,6 +136,7 @@ public class SkillPreviewModal : MonoBehaviour
         _pointBank = pointBank;
         _isOpen = true;
 
+        _sourceButton = sourceButton;
         if (sourceButton != null)
             BuildCycleList(sourceButton);
 
@@ -208,6 +227,17 @@ public class SkillPreviewModal : MonoBehaviour
 
         RefreshBuyButton(data, nodeIndex);
         PlayVideo(node.previewClip);
+
+        // Item 4 — land the controller on Buy (so A/South buys) whenever it's purchasable, else on Close.
+        FocusModalDefault();
+    }
+
+    /// <summary>Put controller focus on Buy when it's buyable (A/South = 2nd-press purchase), otherwise on
+    /// Close so the pad always has a live target and B/East isn't the only way out.</summary>
+    private void FocusModalDefault()
+    {
+        if (_buyButton != null && _buyButton.interactable) UINavFocus.Focus(_buyButton.gameObject);
+        else if (_closeButton != null) UINavFocus.Focus(_closeButton.gameObject);
     }
 
     // ── Video ─────────────────────────────────────────────────
@@ -301,12 +331,21 @@ public class SkillPreviewModal : MonoBehaviour
             _skillPointsText.text = $"Skill Points: {_pointBank?.CurrentPoints ?? 0}";
 
         RefreshBuyButton(_currentData, _currentNodeIndex);
+
+        // After a purchase Buy usually goes non-interactable — move the pad to a live target (Close).
+        FocusModalDefault();
     }
 
     // ── Close ─────────────────────────────────────────────────
     public void Close()
     {
         if (!_root.activeSelf) return;
+
+        // P-C: return the tree cursor to the ability we were previewing (or the node that opened us), so the
+        // highlight isn't lost when Back is pressed. Done before state is cleared, while the cycle list is valid.
+        var refocus = (_tabButtons != null && _cycleIndex >= 0 && _cycleIndex < _tabButtons.Count)
+                      ? _tabButtons[_cycleIndex] : _sourceButton;
+        if (refocus != null) UINavFocus.Focus(refocus.gameObject);
 
         _isOpen = false;
         _pendingClip = null;

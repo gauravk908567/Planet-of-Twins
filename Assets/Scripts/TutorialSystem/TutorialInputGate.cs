@@ -100,6 +100,13 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
     public bool GetAnySkipDown() => _real?.GetAnySkipDown() ?? false;
     public bool GetHintsToggleDown() => _real?.GetHintsToggleDown() ?? false;
 
+    // Item 4 — skill-tree controller nav reads; device-config/menu context, ungated passthrough.
+    public bool GetUITabLeftDown() => _real?.GetUITabLeftDown() ?? false;
+    public bool GetUITabRightDown() => _real?.GetUITabRightDown() ?? false;
+    public bool GetInstantBuyDown() => _real?.GetInstantBuyDown() ?? false;
+    public bool GetUICancelDown() => _real?.GetUICancelDown() ?? false;
+    public bool GetUIPreviewDown() => _real?.GetUIPreviewDown() ?? false;
+
     // F5 — binding display is device-config, not gated; passthrough to the real reader.
     public string GetBindingDisplay(string actionName, bool preferGamepad = false)
         => _real?.GetBindingDisplay(actionName, preferGamepad) ?? "?";
