@@ -38,8 +38,14 @@ public class InputPromptView : MonoBehaviour
     [SerializeField] private string _label = "";
 
     [Header("Behaviour")]
-    [Tooltip("Prefer the glyph SPRITE over text when one exists (needs _keyIcon wired).")]
+    [Tooltip("Prefer the glyph SPRITE over text when one exists.")]
     [SerializeField] private bool _preferSprite = true;
+    [Tooltip("If no _keyIcon is wired, auto-create one at runtime the first time a glyph resolves (so existing " +
+             "text-only prompt rows become device-aware with no per-row scene wiring). The created Image is " +
+             "runtime-only — never saved to the scene.")]
+    [SerializeField] private bool _autoCreateIcon = true;
+    [Tooltip("Size (px) of the auto-created glyph Image (used only when _autoCreateIcon provisions one).")]
+    [SerializeField] private float _autoIconSize = 30f;
     [SerializeField] private bool _visibleOnStart = true;
 
     // Interface-typed (R4/SOLID) — concrete singleton only on the resolve line.
@@ -75,6 +81,11 @@ public class InputPromptView : MonoBehaviour
         if (_input == null) return;
 
         Sprite sprite = _preferSprite ? InputGlyphResolver.ResolveSprite(_input, _actionName, out _) : null;
+
+        // Auto-provision the glyph Image the first time one resolves, so text-only prompt rows (the control-hints
+        // legend: every InputPromptView has _keyText but no _keyIcon) become device-aware with zero scene edits.
+        if (sprite != null && _keyIcon == null && _autoCreateIcon) EnsureKeyIcon();
+
         bool useSprite = sprite != null && _keyIcon != null;
 
         if (_keyIcon != null)
@@ -88,6 +99,32 @@ public class InputPromptView : MonoBehaviour
             if (!useSprite) _keyText.text = _input.GetBindingDisplay(_actionName, _preferGamepad);
         }
         if (_actionLabel != null) _actionLabel.text = _label;
+    }
+
+    /// <summary>Runtime-only: build a glyph Image in the key slot (before <see cref="_keyText"/>) so a text-only
+    /// prompt row can show a sprite without any scene wiring. Sized via <see cref="_autoIconSize"/> and given a
+    /// LayoutElement so a parent LayoutGroup lays it out; never persisted to the scene.</summary>
+    private void EnsureKeyIcon()
+    {
+        if (_keyIcon != null) return;
+        Transform parent = _keyText != null ? _keyText.transform.parent : transform;
+        var go = new GameObject("KeyIcon (auto)", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        var rt = (RectTransform)go.transform;
+        rt.SetParent(parent, false);
+        if (_keyText != null) rt.SetSiblingIndex(_keyText.transform.GetSiblingIndex());   // sit where the text was
+        // Explicit sizeDelta (not just a LayoutElement): the key container may have no LayoutGroup to honour the
+        // LayoutElement, so pin a concrete pixel size + centre it. The LayoutElement still helps when one exists.
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(_autoIconSize, _autoIconSize);
+        rt.anchoredPosition = Vector2.zero;
+        var img = go.GetComponent<Image>();
+        img.raycastTarget = false;
+        img.preserveAspect = true;
+        var le = go.GetComponent<LayoutElement>();
+        le.preferredWidth = _autoIconSize;
+        le.preferredHeight = _autoIconSize;
+        _keyIcon = img;
     }
 
     /// <summary>Change which action this prompt reflects at runtime, then refresh.</summary>
