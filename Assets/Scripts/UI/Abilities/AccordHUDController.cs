@@ -20,13 +20,26 @@ public class AccordHUDController : MonoBehaviour
     [Header("Skill tree unlock events")]
     [SerializeField] private MonoBehaviour skillUnlockStateMono;
 
-    [Header("Slots — in order left to right")]
+    // Couch M5 — bar is regrouped into per-twin [Gate → Primary] pairs with the joint powers between them:
+    //   [slotGate (Lyra)] [slotPossess (Lyra)]  [slotSC] [slotCoalesce] [slotEmpower]  [slotKaiGate] [slotStun (Kai)]
+    // Field names are LOGICAL (what each binds), not positional — the left→right order lives in the scene
+    // RectTransforms and in GetOrderedSlots() (stagger ripple). slotKaiGate surfaces Kai's own teleport, which
+    // exists (TwinAbilitySetup builds a Weaver's Gate for BOTH twins) but was never shown before.
+    [Header("Slots — logical bindings (visual order set in scene)")]
     [SerializeField] private AccordIconSlot slotPossess;
     [SerializeField] private AccordIconSlot slotGate;
     [SerializeField] private AccordIconSlot slotSC;
     [SerializeField] private AccordIconSlot slotCoalesce;
     [SerializeField] private AccordIconSlot slotEmpower;
+    [SerializeField] private AccordIconSlot slotKaiGate;   // couch M5 — Kai's Weaver's Gate (was off-HUD)
     [SerializeField] private AccordIconSlot slotStun;
+
+    // Couch M5 — clan owner-frame colours (ArtStyle §10, locked): Lyra/Luminari LEFT = antique gold #FFCE52,
+    // Kai/Vethara RIGHT = royal violet #A874F0. Serialized so the designer can match final art; these are the
+    // authored defaults. A JOINT slot gets left=lyra, right=kai (a split frame reads "both twins").
+    [Header("Clan owner-frame colours (couch M5 — ArtStyle §10)")]
+    [SerializeField] private Color lyraColour = new Color(1f, 0.808f, 0.322f, 1f);   // #FFCE52
+    [SerializeField] private Color kaiColour  = new Color(0.659f, 0.455f, 0.941f, 1f); // #A874F0
 
     [Header("Stagger timing")]
     [SerializeField] private float staggerInterval = 0.05f;
@@ -101,6 +114,7 @@ public class AccordHUDController : MonoBehaviour
 
         BindNormalSources();
         BindAccordSources();
+        ApplyOwnerTints();
     }
 
     // ── Unlock events — show slot when purchased ──────────────
@@ -123,7 +137,11 @@ public class AccordHUDController : MonoBehaviour
             slotGate?.BindNormal(lyraController.GetTeleportHUDSource());
         }
         if (kaiController != null)
+        {
             slotStun?.BindNormal(kaiController.GetPrimaryHUDSource());
+            // Couch M5 — surface Kai's own teleport (both twins have one; Kai's was never on the bar).
+            slotKaiGate?.BindNormal(kaiController.GetTeleportHUDSource());
+        }
 
         // Locked until purchased — bind source now, visibility controlled by _startLocked
         slotCoalesce?.BindNormal(new PassiveHUDSource());
@@ -147,11 +165,33 @@ public class AccordHUDController : MonoBehaviour
 
         slotSC?.BindAccord(new EnhancedHUDSource(), null);
         slotGate?.BindAccord(new EnhancedHUDSource(), null);
+        slotKaiGate?.BindAccord(new EnhancedHUDSource(), null);   // couch M5 — Kai's gate mirrors Lyra's in Accord
         slotCoalesce?.BindAccord(new EnhancedHUDSource(), null);
         // Empower accord slot = Accord Spirits (same R button, different mode)
         // If not wired or not unlocked, slot stays hidden — no locked text shown
         if (accordSystem != null)
             slotEmpower?.BindAccord(accordSystem.AccordSpiritHUDSource, null);
+    }
+
+    // ── Owner tints (couch M5) ────────────────────────────────
+    // Paint each slot's clan-owner frame once, from its FIXED owner (the slot's identity is the same in normal
+    // and accord — Lyra's Possess→RadiantSeeker, Kai's Stun→VoidStrike). Twin-owned slots = a solid clan frame;
+    // the three joint powers = a gold↔violet split (owned by neither). Owner is per-slot-ROLE (structural), not a
+    // behavior fork on twin identity, so this stays keep-clean-for-co-op: a UI colour lookup, no `if (isKai)`.
+    private void ApplyOwnerTints()
+    {
+        // Lyra (LEFT = gold)
+        slotGate?.SetOwnerTint(lyraColour, lyraColour);
+        slotPossess?.SetOwnerTint(lyraColour, lyraColour);
+
+        // Joint powers (split: Lyra gold ↔ Kai violet)
+        slotSC?.SetOwnerTint(lyraColour, kaiColour);
+        slotCoalesce?.SetOwnerTint(lyraColour, kaiColour);
+        slotEmpower?.SetOwnerTint(lyraColour, kaiColour);
+
+        // Kai (RIGHT = violet)
+        slotKaiGate?.SetOwnerTint(kaiColour, kaiColour);
+        slotStun?.SetOwnerTint(kaiColour, kaiColour);
     }
 
     // ── Accord slot animation ─────────────────────────────────
@@ -169,10 +209,12 @@ public class AccordHUDController : MonoBehaviour
             slots[i]?.AnimateToNormal();
     }
 
+    // Couch M5 — visual left→right order for the accord stagger ripple: Lyra pair, joints, Kai pair.
     private AccordIconSlot[] GetOrderedSlots() => new[]
     {
-        slotPossess, slotGate, slotSC,
-        slotCoalesce, slotEmpower, slotStun
+        slotGate, slotPossess,
+        slotSC, slotCoalesce, slotEmpower,
+        slotKaiGate, slotStun
     };
 
     // ── HUD source helpers ────────────────────────────────────

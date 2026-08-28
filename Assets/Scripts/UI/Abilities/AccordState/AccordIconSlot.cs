@@ -33,6 +33,15 @@ public class AccordIconSlot : MonoBehaviour
     [SerializeField] private Color vfxColourMax = new Color(0.5f, 0.3f, 1f, 0.6f);
     [SerializeField] private float vfxPulseSpeed = 1.8f;
 
+    [Header("Owner tint — clan identity frame (couch M5)")]
+    [Tooltip("Left/right halves of the slot's owner frame — the couch co-op ownership signal. " +
+             "Single-owner slot: SetOwnerTint paints both halves the clan colour (a solid frame). " +
+             "Joint slot (SC/Coalesce/Empower): left = Lyra gold, right = Kai violet (a split frame). " +
+             "Lives on the SLOT (static — never slides with the accord panels); the cooldown ring stays " +
+             "STATE-only, so identity and cooldown never share a channel. Either image may be left null.")]
+    [SerializeField] private Image ownerFrameLeft;
+    [SerializeField] private Image ownerFrameRight;
+
     [Header("Animation")]
     [SerializeField] private float slotHeight = 80f;
     [SerializeField] private float animDuration = 0.18f;
@@ -53,6 +62,19 @@ public class AccordIconSlot : MonoBehaviour
     {
         accordIconUI?.Bind(source);
         _accordAbilityState = activeState;
+    }
+
+    /// <summary>Couch M5 — paint the slot's clan-owner frame. Same colour twice = a solid frame (one twin owns
+    /// this slot); gold + violet = a split frame for a JOINT power (SC/Coalesce/Empower — owned by neither).
+    /// Only the HUE is driven — each frame's own ALPHA is preserved, so the frame's opacity/shape stays a
+    /// scene + UI-shader concern (a dedicated border-frame material can own the look; this only says "whose").
+    /// Null frame images are skipped, so a slot without a frame is a no-op.</summary>
+    public void SetOwnerTint(Color left, Color right)
+    {
+        if (ownerFrameLeft != null)
+            ownerFrameLeft.color = new Color(left.r, left.g, left.b, ownerFrameLeft.color.a);
+        if (ownerFrameRight != null)
+            ownerFrameRight.color = new Color(right.r, right.g, right.b, ownerFrameRight.color.a);
     }
 
     public void SetNormalUnlocked(bool unlocked)
