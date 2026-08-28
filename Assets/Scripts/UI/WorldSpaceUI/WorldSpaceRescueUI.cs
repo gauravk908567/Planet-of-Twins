@@ -64,6 +64,12 @@ public class WorldSpaceRescueUI : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private float splitDuration = 0.3f;
 
+    // ── Button-glyph prompts (item 5 / P2b) ────────────────────
+    // The F prompt reflects the PARTNER's device (they mash Interact); the E prompt reflects the GRABBED twin's
+    // (they mash Struggle). Providers come from the controller so the glyph matches exactly what the mash reads.
+    private const string RescueMashTemplate = "{Interact}";
+    private const string StruggleTemplate = "{Struggle}";
+
     // ── Runtime ────────────────────────────────────────────────
     private RescueState _state;
     private IRescueTarget _activeTarget;
@@ -86,6 +92,10 @@ public class WorldSpaceRescueUI : MonoBehaviour
 
     private void OnEnable()
     {
+        // Item 5/P2b: re-resolve the F/E button glyphs when the active device flips (keyboard↔pad). Independent of
+        // the controller subscription below, so it arms even before the controller resolves.
+        LastUsedDeviceTracker.OnLastUsedChanged += OnDeviceSwitched;
+
         if (rescueEventController == null) return;
         rescueEventController.OnRescueStateChanged += HandleStateChanged;
         rescueEventController.OnMashProgressUpdated += HandleMashProgress;
@@ -99,6 +109,8 @@ public class WorldSpaceRescueUI : MonoBehaviour
 
     private void OnDisable()
     {
+        LastUsedDeviceTracker.OnLastUsedChanged -= OnDeviceSwitched;
+
         if (rescueEventController == null) return;
         rescueEventController.OnRescueStateChanged -= HandleStateChanged;
         rescueEventController.OnMashProgressUpdated -= HandleMashProgress;
@@ -310,7 +322,11 @@ public class WorldSpaceRescueUI : MonoBehaviour
         if (struggleRing == null) return;
         struggleRing.gameObject.SetActive(visible);
         if (struggleRing.fillAmount <= 0f) struggleRing.fillAmount = 0f;
-        if (pressEText != null) pressEText.gameObject.SetActive(visible);
+        if (pressEText != null)
+        {
+            pressEText.gameObject.SetActive(visible);
+            if (visible) ApplyStrugglePrompt();
+        }
     }
 
     // ── Mash progress → F-key ring fill ───────────────────────
@@ -339,7 +355,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
         fKeyRing?.gameObject.SetActive(true);
         if (_fKeyRect) _fKeyRect.anchoredPosition = Vector2.zero;
         if (fKeyRing) { fKeyRing.fillAmount = 1f; fKeyRing.color = fKeyColour; }
-        if (pressFText) pressFText.gameObject.SetActive(true);
+        if (pressFText) { pressFText.gameObject.SetActive(true); ApplyRescuePrompt(); }
 
         float elapsed = 0f;
         Vector2 ttkStart = _ttkRect != null ? _ttkRect.anchoredPosition : ttkCentrePos;
@@ -404,5 +420,26 @@ public class WorldSpaceRescueUI : MonoBehaviour
     private void HandleActiveTargetChanged(IRescueTarget target)
     {
         _activeTarget = target;
+    }
+
+    // ── Button glyphs (item 5 / P2b) ───────────────────────────
+    private void OnDeviceSwitched(InputDeviceKind kind)
+    {
+        ApplyRescuePrompt();
+        ApplyStrugglePrompt();
+    }
+
+    /// <summary>Set the F prompt to the PARTNER's device glyph for Interact (only while it's shown).</summary>
+    private void ApplyRescuePrompt()
+    {
+        if (pressFText == null || rescueEventController == null || !pressFText.gameObject.activeSelf) return;
+        InputGlyphText.Apply(pressFText, RescueMashTemplate, rescueEventController.RescueMashInput);
+    }
+
+    /// <summary>Set the E prompt to the GRABBED twin's device glyph for Struggle (only while it's shown).</summary>
+    private void ApplyStrugglePrompt()
+    {
+        if (pressEText == null || rescueEventController == null || !pressEText.gameObject.activeSelf) return;
+        InputGlyphText.Apply(pressEText, StruggleTemplate, rescueEventController.StruggleInput);
     }
 }

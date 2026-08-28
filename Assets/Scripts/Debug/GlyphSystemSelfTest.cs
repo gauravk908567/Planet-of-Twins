@@ -23,6 +23,7 @@ public class GlyphSystemSelfTest : MonoBehaviour
 
     private readonly List<(string action, Image icon, TMP_Text label)> _rows = new();
     private TMP_Text _header;
+    private TMP_Text _inlineLabel;   // P2b proof: <sprite …> inline in a real TMP string
     private IInputProvider _input;
     private InputDeviceKind? _lastLoggedKind;
 
@@ -47,7 +48,18 @@ public class GlyphSystemSelfTest : MonoBehaviour
     {
         var canvasGo = new GameObject("GlyphSelfTestCanvas");
         var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        // ScreenSpaceCamera (not Overlay) so the MCP camera-based screenshot captures it; Overlay is excluded there.
+        var cam = Camera.main;
+        if (cam != null)
+        {
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = cam;
+            canvas.planeDistance = 1f;
+        }
+        else
+        {
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        }
         canvas.sortingOrder = 5000;
         var scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -98,6 +110,23 @@ public class GlyphSystemSelfTest : MonoBehaviour
 
             _rows.Add((_actions[i], icon, label));
         }
+
+        // P2b: inline-glyph proof strip above the icon row — the SAME glyphs drawn inside a TMP sentence via
+        // <sprite …> tags (InputGlyphText.Format), which is how the real surfaces (rescue/QTE/HUD) will show them.
+        var strip = NewRect("InlineStrip", canvasGo.transform);
+        strip.anchorMin = strip.anchorMax = new Vector2(0.5f, 0f);
+        strip.pivot = new Vector2(0.5f, 0f);
+        strip.sizeDelta = new Vector2(_actions.Length * Step + 40f, 64f);
+        strip.anchoredPosition = new Vector2(0, 250);
+        var stripBg = strip.gameObject.AddComponent<Image>();
+        stripBg.color = new Color(0f, 0f, 0f, 0.65f);
+        _inlineLabel = NewText("InlineLabel", strip, 28);
+        var ilrt = _inlineLabel.rectTransform;
+        ilrt.anchorMin = Vector2.zero;
+        ilrt.anchorMax = Vector2.one;
+        ilrt.offsetMin = new Vector2(12, 6);
+        ilrt.offsetMax = new Vector2(-12, -6);
+        _inlineLabel.alignment = TextAlignmentOptions.Center;
     }
 
     private void RefreshAll()
@@ -107,6 +136,14 @@ public class GlyphSystemSelfTest : MonoBehaviour
         var kind = InputGlyphResolver.ResolveKind(_input);
         if (_header != null)
             _header.text = $"Glyph self-test — device: {kind}   (press a key / a pad button to switch)";
+
+        if (_inlineLabel != null)
+        {
+            // Build "Interact {Interact}  Attack {Attack}  …" then Apply → inline sprites (or [key] fallback).
+            var sb = new System.Text.StringBuilder("Inline: ");
+            foreach (var (action, _, _) in _rows) sb.Append(action).Append(" {").Append(action).Append("}   ");
+            InputGlyphText.Apply(_inlineLabel, sb.ToString(), _input);
+        }
 
         bool logThisKind = _lastLoggedKind != kind;
         _lastLoggedKind = kind;
@@ -151,6 +188,7 @@ public class GlyphSystemSelfTest : MonoBehaviour
         var t = go.AddComponent<TextMeshProUGUI>();
         t.fontSize = size;
         t.color = Color.white;
+        t.richText = true;   // parse <sprite …> tags (P2b inline proof)
         return t;
     }
 }

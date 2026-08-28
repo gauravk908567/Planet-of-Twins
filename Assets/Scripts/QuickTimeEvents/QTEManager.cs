@@ -100,6 +100,9 @@ public class QTEManager : MonoBehaviour
         _input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance), R4 line
         if (_input == null)
             Debug.LogError("[QTEManager] PlayerInputRouter.SharedInput unresolved — QTE mash dead.", this);
+
+        // Item 5/P2b: shared prompt follows the last-used device (both twins mash this one QTE) — re-resolve on flip.
+        LastUsedDeviceTracker.OnLastUsedChanged += OnMashDeviceSwitched;
     }
 
     // ── Public API ─────────────────────────────────────────────────────────
@@ -237,7 +240,7 @@ public class QTEManager : MonoBehaviour
         if (_fillBar != null) _fillBar.fillAmount = 0f;
         if (_timerRingView != null) _timerRingView.SetProgress(1f);
         else if (_timerRing != null) { _timerRing.fillAmount = 1f; _timerRing.color = activeColour; }
-        if (_instructionLabel != null) _instructionLabel.text = ActiveDef?.instructionText ?? "Press F!";
+        ApplyInstruction();
         if (_countdownLabel != null) _countdownLabel.gameObject.SetActive(false);
 
         SetPanelVisible(true);
@@ -360,6 +363,20 @@ public class QTEManager : MonoBehaviour
         cameraSwitcher?.SuppressAutoSwitch(false);
     }
 
+    // ── Instruction glyph (item 5 / P2b) ───────────────────────
+    // instructionText is a TEMPLATE: {QTEMash} → the device-aware glyph for the mash button. Provider = shared/
+    // last-used (both twins mash this single QTE). Re-applied while mashing when the active device flips.
+    private void ApplyInstruction()
+    {
+        if (_instructionLabel != null)
+            InputGlyphText.Apply(_instructionLabel, ActiveDef?.instructionText ?? "{QTEMash}", _input);
+    }
+
+    private void OnMashDeviceSwitched(InputDeviceKind kind)
+    {
+        if (_phase == QTEPhase.Mashing) ApplyInstruction();
+    }
+
     private void SetPanelVisible(bool visible) => _rootPanel?.SetActive(visible);
 
     private void ClearUIRefs()
@@ -368,5 +385,9 @@ public class QTEManager : MonoBehaviour
         _instructionLabel = null; _countdownLabel = null;
     }
 
-    private void OnDestroy() => cameraSwitcher?.SuppressAutoSwitch(false);
+    private void OnDestroy()
+    {
+        LastUsedDeviceTracker.OnLastUsedChanged -= OnMashDeviceSwitched;
+        cameraSwitcher?.SuppressAutoSwitch(false);
+    }
 }

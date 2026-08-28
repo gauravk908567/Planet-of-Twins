@@ -482,21 +482,24 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         return grabbed == leftTwin ? rightTwin : leftTwin;
     }
 
-    /// <summary>F (rescue mash) read from the PARTNER — the owner of the non-grabbed twin.</summary>
-    private bool PartnerRescueMash()
+    /// <summary>The provider the F (rescue-mash) prompt should reflect — the PARTNER (non-grabbed twin), i.e. the
+    /// device that actually mashes F. The button-glyph HUD reads this so the shown glyph matches the read input.</summary>
+    public IInputProvider RescueMashInput
     {
-        var partner = PartnerOfGrabbed();
-        var provider = partner != null ? PlayerInputRouter.For(partner) : _input;
-        return (provider ?? _input)?.GetRescueMash() ?? false;
+        get { var partner = PartnerOfGrabbed(); return partner != null ? PlayerInputRouter.For(partner) : _input; }
     }
 
-    /// <summary>E (struggle) read from the GRABBED twin's own owner (buys time; tier-1 traps).</summary>
-    private bool GrabbedStruggleMash()
+    /// <summary>The provider the E (struggle) prompt should reflect — the GRABBED twin's own device.</summary>
+    public IInputProvider StruggleInput
     {
-        var grabbed = _activeTarget?.GrabbedPlayer;
-        var provider = grabbed != null ? PlayerInputRouter.For(grabbed) : _input;
-        return (provider ?? _input)?.GetStruggleMash() ?? false;
+        get { var grabbed = _activeTarget?.GrabbedPlayer; return grabbed != null ? PlayerInputRouter.For(grabbed) : _input; }
     }
+
+    /// <summary>F (rescue mash) read from the PARTNER — the owner of the non-grabbed twin.</summary>
+    private bool PartnerRescueMash() => (RescueMashInput ?? _input)?.GetRescueMash() ?? false;
+
+    /// <summary>E (struggle) read from the GRABBED twin's own owner (buys time; tier-1 traps).</summary>
+    private bool GrabbedStruggleMash() => (StruggleInput ?? _input)?.GetStruggleMash() ?? false;
 
     private void Update()
     {
