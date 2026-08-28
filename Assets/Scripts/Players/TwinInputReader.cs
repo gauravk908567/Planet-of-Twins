@@ -346,6 +346,44 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         return string.IsNullOrEmpty(display) ? "?" : display;
     }
 
+    // ── Item 5 (button glyphs) — control-PATH resolution ───────────────────────────────
+    // Unlike GetBindingDisplay (human TEXT: "E", "Button South"), this yields the stable CONTROL PATH the
+    // glyph atlas keys on ("f", "buttonSouth", "leftShoulder"). Resolves the binding for the requested device
+    // kind; false when the action or a binding for that kind is missing (caller falls back to text).
+    public bool TryGetBindingControlPath(string actionName, InputDeviceKind kind,
+                                         out string controlPath, out string deviceLayout)
+    {
+        controlPath = null;
+        deviceLayout = null;
+        if (_actions == null || string.IsNullOrEmpty(actionName)) return false;
+
+        var action = _actions.FindAction(actionName, throwIfNotFound: false);
+        if (action == null) return false;
+
+        int chosen = FindBindingIndex(action, kind == InputDeviceKind.Gamepad);
+        if (chosen < 0) return false;
+
+        // The out-param overload yields the resolved layout-relative control path (no device prefix),
+        // e.g. "buttonSouth" / "f" — exactly the glyph key. Rebinding-safe (reads effective bindings).
+        action.GetBindingDisplayString(chosen, out deviceLayout, out controlPath,
+            InputBinding.DisplayStringOptions.DontUseShortDisplayNames);
+        return !string.IsNullOrEmpty(controlPath);
+    }
+
+    // This reader's paired device family (couch per-occupant): Gamepad if it is restricted to a Gamepad
+    // device (SetPairedDevices), else KeyboardMouse. Null when UNRESTRICTED (solo / single-device) — the
+    // caller then resolves the family from the last-used-device tracker (P1.2) instead.
+    public InputDeviceKind? PairedDeviceKind
+    {
+        get
+        {
+            if (_actions == null || !_actions.devices.HasValue) return null; // unrestricted
+            foreach (var d in _actions.devices.Value)
+                if (d is Gamepad) return InputDeviceKind.Gamepad;
+            return InputDeviceKind.KeyboardMouse;
+        }
+    }
+
     // ── F7 — restore default keybinds ──────────────────────────────────
     // Clears every runtime binding override on the whole asset, returning to the authored
     // defaults. No-op today (no rebinding UI exists yet — F6); the pause "Restore Default

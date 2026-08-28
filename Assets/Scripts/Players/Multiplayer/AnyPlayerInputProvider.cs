@@ -93,4 +93,15 @@ public sealed class AnyPlayerInputProvider : IInputProvider
     public string GetBindingDisplay(string actionName, bool preferGamepad = false)
         => P1?.GetBindingDisplay(actionName, preferGamepad) ?? "?";
     public void ResetBindingsToDefault() => P1?.ResetBindingsToDefault();
+
+    // Item 5 (glyphs): the shared aggregator isn't a single device, so PairedDeviceKind is null → the resolver
+    // uses LastUsedDeviceTracker for the shared cursor. Control-path lookup delegates to P1 (both readers share
+    // the same action asset / bindings, so P1's resolved path is correct for either device kind).
+    public bool TryGetBindingControlPath(string actionName, InputDeviceKind kind, out string controlPath, out string deviceLayout)
+    {
+        controlPath = null; deviceLayout = null;
+        var a = P1;
+        return a != null && a.TryGetBindingControlPath(actionName, kind, out controlPath, out deviceLayout);
+    }
+    public InputDeviceKind? PairedDeviceKind => null;
 }

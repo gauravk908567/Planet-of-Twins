@@ -111,6 +111,14 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
     public string GetBindingDisplay(string actionName, bool preferGamepad = false)
         => _real?.GetBindingDisplay(actionName, preferGamepad) ?? "?";
 
+    // Item 5 — glyph resolution (control path + paired device kind); device-config, ungated passthrough.
+    public bool TryGetBindingControlPath(string actionName, InputDeviceKind kind, out string controlPath, out string deviceLayout)
+    {
+        controlPath = null; deviceLayout = null;
+        return _real != null && _real.TryGetBindingControlPath(actionName, kind, out controlPath, out deviceLayout);
+    }
+    public InputDeviceKind? PairedDeviceKind => _real?.PairedDeviceKind;
+
     // F7 — binding reset is device-config, not gated; passthrough to the real reader.
     public void ResetBindingsToDefault() => _real?.ResetBindingsToDefault();
 }

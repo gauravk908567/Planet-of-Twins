@@ -72,6 +72,16 @@ public interface IInputProvider
     /// </summary>
     string GetBindingDisplay(string actionName, bool preferGamepad = false);
 
+    // ── Item 5 (button glyphs) — the control PATH (not display text) is the glyph key ──
+    /// <summary>The resolved CONTROL PATH for an action's binding of the given device kind (e.g. "buttonSouth",
+    /// "f", "leftButton") — the stable key the glyph atlas is indexed by, unlike <see cref="GetBindingDisplay"/>'s
+    /// human text. False when the action or a binding for that kind is missing (caller falls back to text).</summary>
+    bool TryGetBindingControlPath(string actionName, InputDeviceKind kind, out string controlPath, out string deviceLayout);
+
+    /// <summary>This provider's paired device family (couch per-occupant): Gamepad if restricted to a pad, else
+    /// KeyboardMouse; null when UNRESTRICTED (solo / shared) — the caller then uses <see cref="LastUsedDeviceTracker"/>.</summary>
+    InputDeviceKind? PairedDeviceKind { get; }
+
     /// <summary>
     /// F7 — clear all runtime binding overrides on the action asset, restoring the authored
     /// defaults (Assets/Settings/Input/PlanetOfTwins.inputactions). Safe no-op today (no

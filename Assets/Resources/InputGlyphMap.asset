@@ -1,0 +1,167 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a161c47075bf234aa0a26614265642b, type: 3}
+  m_Name: InputGlyphMap
+  m_EditorClassIdentifier: Assembly-CSharp::InputGlyphMap
+  entries:
+  - kind: 0
+    controlPath: w
+    sprite: {fileID: 21300000, guid: f550bd002dd4672419e370ee87e255f0, type: 3}
+    tmpSpriteName: keyboard_w
+  - kind: 0
+    controlPath: a
+    sprite: {fileID: 21300000, guid: a10805ddc31584e4db0398f9f1da5033, type: 3}
+    tmpSpriteName: keyboard_a
+  - kind: 0
+    controlPath: s
+    sprite: {fileID: 21300000, guid: d4dd72ecffa27ec4caa938b700316e2c, type: 3}
+    tmpSpriteName: keyboard_s
+  - kind: 0
+    controlPath: d
+    sprite: {fileID: 21300000, guid: 8efed36311f942247bf71cc9a0184ae5, type: 3}
+    tmpSpriteName: keyboard_d
+  - kind: 0
+    controlPath: e
+    sprite: {fileID: 21300000, guid: e3bf15deb9b6dd54d87bee96bb958a82, type: 3}
+    tmpSpriteName: keyboard_e
+  - kind: 0
+    controlPath: q
+    sprite: {fileID: 21300000, guid: 2f94da0a5b075ed499dde91e5fdffd5b, type: 3}
+    tmpSpriteName: keyboard_q
+  - kind: 0
+    controlPath: c
+    sprite: {fileID: 21300000, guid: d704bde140932344a8bb9aa340e7b74e, type: 3}
+    tmpSpriteName: keyboard_c
+  - kind: 0
+    controlPath: r
+    sprite: {fileID: 21300000, guid: 78f5457ce4d46dc46bd7f5e8aea39205, type: 3}
+    tmpSpriteName: keyboard_r
+  - kind: 0
+    controlPath: f
+    sprite: {fileID: 21300000, guid: a74a78dc657badb4ca4a85fb425c996c, type: 3}
+    tmpSpriteName: keyboard_f
+  - kind: 0
+    controlPath: x
+    sprite: {fileID: 21300000, guid: c8aedb86c60afce47810643a35dd0c3a, type: 3}
+    tmpSpriteName: keyboard_x
+  - kind: 0
+    controlPath: b
+    sprite: {fileID: 21300000, guid: 309652a62c2aa364a87c53b3becb78d2, type: 3}
+    tmpSpriteName: keyboard_b
+  - kind: 0
+    controlPath: h
+    sprite: {fileID: 21300000, guid: 0d5441531794abe40a8fe1e64e546c2a, type: 3}
+    tmpSpriteName: keyboard_h
+  - kind: 0
+    controlPath: leftShift
+    sprite: {fileID: 21300000, guid: 636cc9afaae4dad40b66d01871e2010e, type: 3}
+    tmpSpriteName: keyboard_shift
+  - kind: 0
+    controlPath: tab
+    sprite: {fileID: 21300000, guid: 316767fffa7ec78428dd5bf283888f2b, type: 3}
+    tmpSpriteName: keyboard_tab
+  - kind: 0
+    controlPath: escape
+    sprite: {fileID: 21300000, guid: 53c8822a52e5f4c4d8e5694bc5fd1ab4, type: 3}
+    tmpSpriteName: keyboard_escape
+  - kind: 0
+    controlPath: space
+    sprite: {fileID: 21300000, guid: b61ce0147335f2b4bb0c15807a2637b1, type: 3}
+    tmpSpriteName: keyboard_space
+  - kind: 0
+    controlPath: enter
+    sprite: {fileID: 21300000, guid: 76581c865b4dffc4483d28e83228f0e2, type: 3}
+    tmpSpriteName: keyboard_enter
+  - kind: 0
+    controlPath: upArrow
+    sprite: {fileID: 21300000, guid: 91052816a6c970142acae887a1382755, type: 3}
+    tmpSpriteName: keyboard_arrow_up
+  - kind: 0
+    controlPath: downArrow
+    sprite: {fileID: 21300000, guid: 119b2bcb7a581db4f8ef3e8971cdb35e, type: 3}
+    tmpSpriteName: keyboard_arrow_down
+  - kind: 0
+    controlPath: leftArrow
+    sprite: {fileID: 21300000, guid: 66bdb92c7e9ca4d48b67affcdd683445, type: 3}
+    tmpSpriteName: keyboard_arrow_left
+  - kind: 0
+    controlPath: rightArrow
+    sprite: {fileID: 21300000, guid: addd6f36ccc1cc54c94e74093b0c64f6, type: 3}
+    tmpSpriteName: keyboard_arrow_right
+  - kind: 0
+    controlPath: leftButton
+    sprite: {fileID: 21300000, guid: 26df5e56c1c337c4b944a86df9f20840, type: 3}
+    tmpSpriteName: mouse_left
+  - kind: 0
+    controlPath: rightButton
+    sprite: {fileID: 21300000, guid: 562d823c7952de34d93d063f00f61d67, type: 3}
+    tmpSpriteName: mouse_right
+  - kind: 1
+    controlPath: buttonSouth
+    sprite: {fileID: 21300000, guid: f9df2e93bf4805b43939969d0c1adc22, type: 3}
+    tmpSpriteName: xbox_button_a
+  - kind: 1
+    controlPath: buttonEast
+    sprite: {fileID: 21300000, guid: fc8d30457e2ea7a4885be01a5ecc76e1, type: 3}
+    tmpSpriteName: xbox_button_b
+  - kind: 1
+    controlPath: buttonWest
+    sprite: {fileID: 21300000, guid: d9ab9fb43deb2a54d94f28a057c3df35, type: 3}
+    tmpSpriteName: xbox_button_x
+  - kind: 1
+    controlPath: buttonNorth
+    sprite: {fileID: 21300000, guid: bb297c7083a4ca7459c32fb3c5bbe48b, type: 3}
+    tmpSpriteName: xbox_button_y
+  - kind: 1
+    controlPath: leftShoulder
+    sprite: {fileID: 21300000, guid: b9025f485aacc8f45a2ffb746d2698d8, type: 3}
+    tmpSpriteName: xbox_lb
+  - kind: 1
+    controlPath: rightShoulder
+    sprite: {fileID: 21300000, guid: 201c15ca8847ad84386c04f692f9b6e7, type: 3}
+    tmpSpriteName: xbox_rb
+  - kind: 1
+    controlPath: leftTrigger
+    sprite: {fileID: 21300000, guid: 8bfbfe149a4724c4ca2f4c38e54fb811, type: 3}
+    tmpSpriteName: xbox_lt
+  - kind: 1
+    controlPath: rightTrigger
+    sprite: {fileID: 21300000, guid: adc57fda818b44448b7d7767d7221961, type: 3}
+    tmpSpriteName: xbox_rt
+  - kind: 1
+    controlPath: start
+    sprite: {fileID: 21300000, guid: 2c4294159fe028f4a97fbf41ccadce20, type: 3}
+    tmpSpriteName: xbox_button_menu
+  - kind: 1
+    controlPath: select
+    sprite: {fileID: 21300000, guid: 0c8b4863a5171fd4683a4883b2f56f04, type: 3}
+    tmpSpriteName: xbox_button_view
+  - kind: 1
+    controlPath: leftStick
+    sprite: {fileID: 21300000, guid: 731c3b154631e46498bd494b652bbf2e, type: 3}
+    tmpSpriteName: xbox_stick_l
+  - kind: 1
+    controlPath: rightStick
+    sprite: {fileID: 21300000, guid: 6f5fb774f59d7524d86056fad0140719, type: 3}
+    tmpSpriteName: xbox_stick_r
+  - kind: 1
+    controlPath: leftStickPress
+    sprite: {fileID: 21300000, guid: 99fd894a67833244c8b1e075f53c25c7, type: 3}
+    tmpSpriteName: xbox_ls
+  - kind: 1
+    controlPath: rightStickPress
+    sprite: {fileID: 21300000, guid: caec3375944a03f4d98bfe2d362499aa, type: 3}
+    tmpSpriteName: xbox_rs
+  - kind: 1
+    controlPath: dpad
+    sprite: {fileID: 21300000, guid: 6db0d633ecac5db47b2edaabdcd1c899, type: 3}
+    tmpSpriteName: xbox_dpad
