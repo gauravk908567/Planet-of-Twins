@@ -99,7 +99,7 @@ public class TimelineBindingResolver : MonoBehaviour
             if (go == null)
             {
                 Debug.LogError($"[TimelineBindingResolver] role {b.role} (track '{b.track.name}') " +
-                               "did not resolve — is its registry field / TwinSelector wired?", this);
+                               "did not resolve — is its TimelineTargetRegistry field wired?", this);
                 continue;
             }
 

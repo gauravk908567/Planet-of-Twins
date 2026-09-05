@@ -128,6 +128,15 @@ public class SkillTreeUI : MonoBehaviour
 
     void Update()
     {
+        // BUG (couch, pad) — while the pause menu (or its Settings) owns the screen, the skill tree must be
+        // INERT. Otherwise pressing the skill-tree toggle here opens the tree ON TOP of the pause menu, and
+        // ShowTab(0) steals the EventSystem selection — stranding a pad player behind the pause menu with no
+        // way back (the pad can't re-focus a menu it never sees). Pause is the higher-priority layer; its
+        // ESC/Start arbiter owns close order. So suspend ALL skill-tree input (toggle + nav) while it's open.
+        if (PauseMenuController.Instance != null &&
+            (PauseMenuController.Instance.IsPauseOpen || PauseMenuController.Instance.IsSettingsOpen))
+            return;
+
         // Tab key toggles the skill tree open/closed. ESC is handled by PauseMenuController (central arbiter).
         if (_input != null && _input.GetSkillTreeToggleDown())
         {
@@ -158,6 +167,11 @@ public class SkillTreeUI : MonoBehaviour
             return;
         }
         if (_input == null) return;
+
+        // Back / Cancel (B / East — the UICancel action) closes the skill tree: "Back" everywhere. The preview
+        // modal, when open, already consumed its own B in the block above, so this only closes the panel itself.
+        // This is the same button the EventSystem's default UI "Cancel" uses (buttonEast), so it works on any pad.
+        if (_input.GetUICancelDown()) { Close(); return; }
 
         UpdateLastMover();   // who's driving the shared cursor right now
         UpdateBadge();       // pin the P1/P2 badge to the selected node

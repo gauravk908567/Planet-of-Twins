@@ -364,12 +364,14 @@ public class QTEManager : MonoBehaviour
     }
 
     // ── Instruction glyph (item 5 / P2b) ───────────────────────
-    // instructionText is a TEMPLATE: {QTEMash} → the device-aware glyph for the mash button. Provider = shared/
-    // last-used (both twins mash this single QTE). Re-applied while mashing when the active device flips.
+    // instructionText is a TEMPLATE: {QTEMash} → the mash-button glyph(s). This is a SHARED prompt (either/both
+    // twins mash this single on-screen QTE, mash = distinct-device sum), so it shows EVERY active device family:
+    // keyboard-only → "F"; keyboard + pad → "F | (pad)"; two pads → one pad glyph. Re-applied while mashing when
+    // the active device flips.
     private void ApplyInstruction()
     {
         if (_instructionLabel != null)
-            InputGlyphText.Apply(_instructionLabel, ActiveDef?.instructionText ?? "{QTEMash}", _input);
+            InputGlyphText.ApplyShared(_instructionLabel, ActiveDef?.instructionText ?? "{QTEMash}");
     }
 
     private void OnMashDeviceSwitched(InputDeviceKind kind)

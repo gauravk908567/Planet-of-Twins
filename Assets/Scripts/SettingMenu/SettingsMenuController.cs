@@ -59,6 +59,9 @@ public class SettingsMenuController : MonoBehaviour
     // drive it. Runs every time the panel is re-activated (OnEnable), not just first show.
     private void OnEnable()
     {
+        // P-C (controller nav): wrap-around down the settings column (dropdowns/sliders/toggle/Apply/Back);
+        // Down past Back wraps to the top control. Left/Right stay free so sliders adjust their value.
+        UINavStyle.WireWrap(gameObject);
         UINavFocus.Focus(FirstControl());
     }
 

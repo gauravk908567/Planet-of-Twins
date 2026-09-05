@@ -52,6 +52,10 @@ public class MainMenuController : MonoBehaviour
         if (continueButton != null) continueButton.interactable = AnySaveExists();
         if (panel != null) panel.SetActive(true);
 
+        // P-C (controller nav): wire wrap-around AFTER Continue's interactable is set this showing, so a
+        // disabled Continue is skipped and the cycle is New Game↕Options↕Exit (Down past Exit → New Game).
+        UINavStyle.WireWrap(panel);
+
         // Item 1 (controller nav): land the controller focus on New Game so either pad can drive the menu
         // immediately. Mouse is unaffected (null-safe no-op if no EventSystem). See UINavFocus.
         UINavFocus.Focus(newGameButton);

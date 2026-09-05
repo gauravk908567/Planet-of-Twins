@@ -44,8 +44,9 @@ public class InputPromptView : MonoBehaviour
              "text-only prompt rows become device-aware with no per-row scene wiring). The created Image is " +
              "runtime-only — never saved to the scene.")]
     [SerializeField] private bool _autoCreateIcon = true;
-    [Tooltip("Size (px) of the auto-created glyph Image (used only when _autoCreateIcon provisions one).")]
-    [SerializeField] private float _autoIconSize = 30f;
+    [Tooltip("Size (px) of the auto-created glyph Image (used only when _autoCreateIcon provisions one). " +
+             "Tune this to make the legend glyphs bigger/smaller.")]
+    [SerializeField] private float _autoIconSize = 46f;
     [SerializeField] private bool _visibleOnStart = true;
 
     // Interface-typed (R4/SOLID) — concrete singleton only on the resolve line.

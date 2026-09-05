@@ -31,6 +31,13 @@ public class QTETriggerPoint : MonoBehaviour
     public event System.Action<QTETriggerPoint, Player> OnPlayerLockedIn;
     public event System.Action<QTETriggerPoint, Player> OnPlayerReleased;
 
+    // P2b (button glyphs) — the world prompt follows the last-used device in solo (couch occupants are
+    // device-fixed, so this is a no-op there). Named handler, unsubscribed OnDisable (R8); the tracker's event
+    // spans scene loads.
+    private void OnEnable()  => LastUsedDeviceTracker.OnLastUsedChanged += OnDeviceSwitched;
+    private void OnDisable() => LastUsedDeviceTracker.OnLastUsedChanged -= OnDeviceSwitched;
+    private void OnDeviceSwitched(InputDeviceKind kind) => RefreshPrompt();
+
     public void SetActive(bool active)
     {
         _isActive = active;
@@ -140,10 +147,14 @@ public class QTETriggerPoint : MonoBehaviour
 
         if (promptText == null) return;
 
+        // P2b — device-aware glyph on the WORLD prompt (was hard-coded "Press F" / "Hold X to cancel"). PER-OWNER:
+        // show the button on the exact twin standing here — Interact to lock in, Cancel to release — so a keyboard
+        // twin sees F and a pad twin sees its own button, and a rebind updates it (the glyph reads the live
+        // binding). InputGlyphText falls back to a bracketed key if a glyph is missing, so it's never blank.
         if (IsOccupied)
-            promptText.text = "Hold X to cancel";
+            InputGlyphText.Apply(promptText, "Hold {Cancel} to cancel", PlayerInputRouter.For(LockedPlayer));
         else if (_playerInRange != null)
-            promptText.text = "Press F";
+            InputGlyphText.Apply(promptText, "Press {Interact}", PlayerInputRouter.For(_playerInRange));
         else
             promptText.text = "";
     }

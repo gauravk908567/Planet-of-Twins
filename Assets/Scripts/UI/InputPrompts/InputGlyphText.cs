@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -80,5 +81,87 @@ public static class InputGlyphText
         var asset = SpriteAsset;
         if (asset != null && label.spriteAsset != asset) label.spriteAsset = asset;
         label.text = Format(template, provider);
+    }
+
+    /// <summary>Joint/shared-ability key-cap (couch): show ONE glyph when both players are on the same device
+    /// KIND (both pads → one pad icon; both keyboard / solo P2→P1 → one), or BOTH glyphs side by side when the
+    /// kinds differ (1 keyboard + 1 pad → the keyboard key then the pad button — "half and half"). Left glyph is
+    /// <paramref name="providerA"/>'s (e.g. Lyra), right is <paramref name="providerB"/>'s (e.g. Kai). Assigns the
+    /// packed sprite asset like <see cref="Apply"/>. The kind (not the stem) is compared so two identical pads
+    /// never split — matching the stated rule exactly.</summary>
+    public static void ApplyJoint(TMP_Text label, IInputProvider providerA, IInputProvider providerB, string actionName)
+    {
+        if (label == null) return;
+        var asset = SpriteAsset;
+        if (asset != null && label.spriteAsset != asset) label.spriteAsset = asset;
+
+        bool sameKind = providerB == null ||
+                        InputGlyphResolver.ResolveKind(providerA) == InputGlyphResolver.ResolveKind(providerB);
+        label.text = sameKind
+            ? Glyph(providerA, actionName)                              // one icon (both share a device kind)
+            : Glyph(providerA, actionName) + Glyph(providerB, actionName); // half-half (keyboard + pad)
+    }
+
+    // ── Shared multi-device prompt (couch, one screen) ────────────────────────────────────────────────────────
+    private const string SharedSeparator = "  |  ";
+
+    /// <summary>Inline markup for one action across EVERY active device family, joined by " | " — for a SHARED
+    /// prompt that either/both players can act on, on one screen (QTE combined-mash). Keyboard-only → one glyph;
+    /// keyboard + pad → "F | (pad)"; two pads → one pad glyph (same family). Per-OWNER prompts (rescue F/E — one
+    /// twin) must NOT use this; they stay single-device via <see cref="Glyph"/>/<see cref="Apply"/>.</summary>
+    public static string GlyphShared(string actionName)
+    {
+        if (string.IsNullOrEmpty(actionName)) return actionName;
+
+        var provider = PlayerInputRouter.SharedInput;   // path source only — kind is forced per family below
+        var parts = new List<string>();
+        foreach (var kind in ActiveDeviceKinds())
+        {
+            string stem = InputGlyphResolver.ResolveTmpSpriteNameForKind(provider, actionName, kind, out string fallback);
+            if (!string.IsNullOrEmpty(stem)) parts.Add($"<sprite name=\"{stem}\">");
+            else if (!string.IsNullOrEmpty(fallback)) parts.Add($"[{fallback}]");
+        }
+        if (parts.Count == 0) return actionName;
+        return string.Join(SharedSeparator, parts);
+    }
+
+    /// <summary>Like <see cref="Format"/> but each <c>{Action}</c> token expands to ALL active device families
+    /// (" | "-joined) — for shared/both-player prompts.</summary>
+    public static string FormatShared(string template)
+    {
+        if (string.IsNullOrEmpty(template)) return template;
+        return TokenPattern.Replace(template, m => GlyphShared(m.Groups[1].Value));
+    }
+
+    /// <summary>Shared-prompt entry point: assign the sprite asset once, then set the label to
+    /// <paramref name="template"/> with every <c>{Action}</c> expanded across all active devices.</summary>
+    public static void ApplyShared(TMP_Text label, string template)
+    {
+        if (label == null) return;
+        var asset = SpriteAsset;
+        if (asset != null && label.spriteAsset != asset) label.spriteAsset = asset;
+        label.text = FormatShared(template);
+    }
+
+    // The distinct input-device families in play right now: each couch player's paired kind (P1 + P2 readers),
+    // deduped and ordered keyboard-first so "F | (pad)" reads naturally. Solo / single-device (both unrestricted →
+    // null) collapses to the live last-used family. Mirrors CouchDeviceManager's pairing (both readers get
+    // SetPairedDevices in couch, so both report a non-null PairedDeviceKind).
+    private static readonly List<InputDeviceKind> _kindBuffer = new List<InputDeviceKind>(2);
+    private static IReadOnlyList<InputDeviceKind> ActiveDeviceKinds()
+    {
+        _kindBuffer.Clear();
+        AddKind(PlayerInputRouter.ForSlot(PlayerSlot.One)?.PairedDeviceKind);
+        AddKind(PlayerInputRouter.ForSlot(PlayerSlot.Two)?.PairedDeviceKind);
+        if (_kindBuffer.Count == 0) _kindBuffer.Add(LastUsedDeviceTracker.LastUsed);   // solo → last-used
+        // Keyboard before Gamepad (F | pad).
+        if (_kindBuffer.Count == 2 && _kindBuffer[0] == InputDeviceKind.Gamepad)
+            (_kindBuffer[0], _kindBuffer[1]) = (_kindBuffer[1], _kindBuffer[0]);
+        return _kindBuffer;
+    }
+
+    private static void AddKind(InputDeviceKind? kind)
+    {
+        if (kind.HasValue && !_kindBuffer.Contains(kind.Value)) _kindBuffer.Add(kind.Value);
     }
 }

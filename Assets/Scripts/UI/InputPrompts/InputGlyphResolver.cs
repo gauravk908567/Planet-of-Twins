@@ -75,4 +75,23 @@ public static class InputGlyphResolver
         return _lookup.TryGetValue((kind, path), out var e) && !string.IsNullOrEmpty(e.tmpSpriteName)
             ? e.tmpSpriteName : null;
     }
+
+    /// <summary>Inline TMP sprite name for an EXPLICIT device kind (shared multi-device prompts that show every
+    /// active family — QTE combined-mash on one screen — not just the resolved one). <paramref name="provider"/>
+    /// is only read for the binding PATH (bindings are global on the action asset, so any live provider works);
+    /// the KIND is forced. Null when no glyph for that kind; <paramref name="fallbackText"/> is always set.</summary>
+    public static string ResolveTmpSpriteNameForKind(IInputProvider provider, string actionName,
+                                                     InputDeviceKind kind, out string fallbackText)
+    {
+        fallbackText = null;
+        if (provider == null || string.IsNullOrEmpty(actionName)) return null;
+
+        fallbackText = provider.GetBindingDisplay(actionName, kind == InputDeviceKind.Gamepad);
+
+        if (!provider.TryGetBindingControlPath(actionName, kind, out var path, out _)) return null;
+
+        EnsureLoaded();
+        return _lookup.TryGetValue((kind, path), out var e) && !string.IsNullOrEmpty(e.tmpSpriteName)
+            ? e.tmpSpriteName : null;
+    }
 }

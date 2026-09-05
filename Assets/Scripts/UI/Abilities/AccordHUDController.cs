@@ -46,6 +46,19 @@ public class AccordHUDController : MonoBehaviour
 
     private ISkillUnlockState _unlockState;
 
+    // Button-glyph system (P2b) — input action names per slot. Structural per-slot-role (like ApplyOwnerTints),
+    // NOT a twin-identity fork: same "Ability"/"Teleport" for both twins, resolved through each twin's OWN
+    // provider so the glyph reflects that player's device. Coalesce is a PASSIVE (auto on Stun/Possess) → no key.
+    private const string ActionAbility     = "Ability";      // Possess (Lyra) / Stun (Kai) — GetAbilityDown
+    private const string ActionTeleport    = "Teleport";     // Weaver's Gate (both twins) — GetTeleportHeld
+    private const string ActionConvergence = "Convergence";  // Soul Convergence (joint hold) — GetConvergenceHeld
+    private const string ActionEmpower     = "Empower";      // Empower (joint, single-caster) — GetEmpowerHeld
+
+    // Resolved in Start from the controllers (AbilityController shares the twin's GameObject) so per-twin glyphs
+    // route via PlayerInputRouter.For(twin). Null → ApplyKeyGlyphs falls back to SharedInput (still shows a glyph).
+    private Player _lyraTwin;
+    private Player _kaiTwin;
+
     // ── Lifecycle ─────────────────────────────────────────────
     private void Awake()
     {
@@ -66,10 +79,16 @@ public class AccordHUDController : MonoBehaviour
             accordSystem.OnAccordActivated += HandleAccordActivated;
             accordSystem.OnAccordDeactivated += HandleAccordDeactivated;
         }
+
+        // Button-glyph system (P2b) — re-paint key-caps when a player swaps keyboard↔pad (Overwatch-style).
+        // Named handler, unsubscribed in OnDisable (R8); the tracker's event spans scene loads.
+        LastUsedDeviceTracker.OnLastUsedChanged += OnDeviceSwitched;
     }
 
     private void OnDisable()
     {
+        LastUsedDeviceTracker.OnLastUsedChanged -= OnDeviceSwitched;
+
         if (_unlockState != null)
         {
             _unlockState.OnCoalesceUnlocked -= OnCoalesceUnlocked;
@@ -112,9 +131,15 @@ public class AccordHUDController : MonoBehaviour
             accordSystem.OnAccordDeactivated += HandleAccordDeactivated;
         }
 
+        // Button-glyph system (P2b) — the twin behind each controller (AbilityController shares the twin's
+        // GameObject), so per-twin key-caps can route via PlayerInputRouter.For(twin).
+        if (lyraController != null) _lyraTwin = lyraController.GetComponent<Player>();
+        if (kaiController  != null) _kaiTwin  = kaiController.GetComponent<Player>();
+
         BindNormalSources();
         BindAccordSources();
         ApplyOwnerTints();
+        ApplyKeyGlyphs();
     }
 
     // ── Unlock events — show slot when purchased ──────────────
@@ -193,6 +218,31 @@ public class AccordHUDController : MonoBehaviour
         slotKaiGate?.SetOwnerTint(kaiColour, kaiColour);
         slotStun?.SetOwnerTint(kaiColour, kaiColour);
     }
+
+    // ── Button-glyph key-caps (P2b) ───────────────────────────
+    // Replace each ability icon's static keybind letter with a device-aware input glyph. Single-owner slots use
+    // that twin's provider; joint slots (SC/Empower) resolve BOTH twins' providers → one glyph if the players
+    // share a device kind, or both glyphs (kb + pad) when they differ. Coalesce is a passive → no key-cap.
+    private void ApplyKeyGlyphs()
+    {
+        var lyra = _lyraTwin != null ? PlayerInputRouter.For(_lyraTwin) : PlayerInputRouter.SharedInput;
+        var kai  = _kaiTwin  != null ? PlayerInputRouter.For(_kaiTwin)  : PlayerInputRouter.SharedInput;
+
+        // Single-owner → that twin's device glyph.
+        slotPossess?.ApplyKeyGlyph(lyra, ActionAbility);
+        slotGate?.ApplyKeyGlyph(lyra, ActionTeleport);
+        slotStun?.ApplyKeyGlyph(kai, ActionAbility);
+        slotKaiGate?.ApplyKeyGlyph(kai, ActionTeleport);
+
+        // Joint → one glyph if both share a device kind, else half-half (kb + pad).
+        slotSC?.ApplyKeyGlyphJoint(lyra, kai, ActionConvergence);
+        slotEmpower?.ApplyKeyGlyphJoint(lyra, kai, ActionEmpower);
+
+        // Passive (no button) → clear.
+        slotCoalesce?.ClearKeyGlyph();
+    }
+
+    private void OnDeviceSwitched(InputDeviceKind kind) => ApplyKeyGlyphs();
 
     // ── Accord slot animation ─────────────────────────────────
     private void HandleAccordActivated()

@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -75,6 +76,38 @@ public class AccordIconSlot : MonoBehaviour
             ownerFrameLeft.color = new Color(left.r, left.g, left.b, ownerFrameLeft.color.a);
         if (ownerFrameRight != null)
             ownerFrameRight.color = new Color(right.r, right.g, right.b, ownerFrameRight.color.a);
+    }
+
+    // ── Button-glyph key-cap (P2b refine) ─────────────────────
+    // Paint BOTH panels' ButtonLabel (AbilityIconUI's dedicated `ButtonText` child) with a device-aware input
+    // glyph. The accord ability is triggered by the SAME button as its normal form (Possess/RadiantSeeker →
+    // Ability, gate → Teleport, …) so the same action glyph is correct on the accord panel too. REFINE: the glyph
+    // moved OFF NameText onto ButtonText — NameText now reverts to the ability name, ButtonText shows the button
+    // glyph (was a static designer letter). Null-safe when a panel has no ButtonText child.
+    private TMP_Text NormalKeyLabel => normalIconUI != null ? normalIconUI.ButtonLabel : null;
+    private TMP_Text AccordKeyLabel => accordIconUI != null ? accordIconUI.ButtonLabel : null;
+
+    /// <summary>Single-owner ability: paint the key-cap with the owner's device glyph for
+    /// <paramref name="actionName"/> (follows the paired/last-used device, Overwatch-style).</summary>
+    public void ApplyKeyGlyph(IInputProvider provider, string actionName)
+    {
+        string template = "{" + actionName + "}";
+        InputGlyphText.Apply(NormalKeyLabel, template, provider);
+        InputGlyphText.Apply(AccordKeyLabel, template, provider);
+    }
+
+    /// <summary>Joint ability: ONE glyph when both players share a device kind, else BOTH glyphs (kb + pad).</summary>
+    public void ApplyKeyGlyphJoint(IInputProvider a, IInputProvider b, string actionName)
+    {
+        InputGlyphText.ApplyJoint(NormalKeyLabel, a, b, actionName);
+        InputGlyphText.ApplyJoint(AccordKeyLabel, a, b, actionName);
+    }
+
+    /// <summary>Passive ability (no keybind — e.g. Coalesce auto-triggers) → clear the key-cap.</summary>
+    public void ClearKeyGlyph()
+    {
+        if (NormalKeyLabel != null) NormalKeyLabel.text = "";
+        if (AccordKeyLabel != null) AccordKeyLabel.text = "";
     }
 
     public void SetNormalUnlocked(bool unlocked)

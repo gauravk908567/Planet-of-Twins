@@ -127,6 +127,10 @@ public class PauseMenuController : MonoBehaviour
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
+        // P-C (controller nav): wrap-around for the pause card (Resume↕Settings↕Exit → Down past Exit wraps
+        // to Resume). Settings panel is still inactive here, so includeInactive:false scopes this to the card.
+        UINavStyle.WireWrap(_pauseRoot);
+
         // Item 1 (controller nav): land focus on Resume so either pad drives the pause menu immediately.
         UINavFocus.Focus(_resumeButton);
     }

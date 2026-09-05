@@ -61,6 +61,12 @@ public class WorldSpacePickupPrompt : MonoBehaviour
             _billboardTarget = _panelRoot != null ? _panelRoot.transform : transform;
     }
 
+    // P2b — the pickup's action key follows the active device (Overwatch-style). Named handler, unsubscribed
+    // OnDisable (R8); the tracker's event spans scene loads.
+    private void OnEnable()  => LastUsedDeviceTracker.OnLastUsedChanged += OnDeviceSwitched;
+    private void OnDisable() => LastUsedDeviceTracker.OnLastUsedChanged -= OnDeviceSwitched;
+    private void OnDeviceSwitched(InputDeviceKind kind) => ApplyKeyPrompt();
+
     private void Start()
     {
         // Area-resident: Camera.main is the single Persistent MainCamera (R9). No serialized
@@ -68,12 +74,7 @@ public class WorldSpacePickupPrompt : MonoBehaviour
         if (Camera.main != null) _cam = Camera.main.transform;
         else Debug.LogWarning("[WorldSpacePickupPrompt] No Main Camera found — billboard disabled.", this);
 
-        if (_showKeyGlyph && _keyText != null)
-        {
-            var input = PlayerInputRouter.SharedInput;   // M0: shared-UI seam (falls back to TwinInputReader.Instance)
-            if (input != null) _keyText.text = input.GetBindingDisplay(_actionName);
-            else Debug.LogWarning("[WorldSpacePickupPrompt] PlayerInputRouter.SharedInput null — key glyph blank.", this);
-        }
+        ApplyKeyPrompt();
 
         if (_labelText != null) _labelText.text = _label;
 
@@ -101,6 +102,16 @@ public class WorldSpacePickupPrompt : MonoBehaviour
         if (!other.CompareTag("Player")) return false;
         var player = other.GetComponentInParent<Player>();
         return player != null && !(player is SoulPlayer);
+    }
+
+    // F9 + P2b — the pickup's action key as a device-aware glyph (or bracketed text fallback). A pickup is
+    // grabbable by EITHER twin on one screen, so it's a SHARED prompt: shows every active device family
+    // ("F | (pad)" in kb+pad couch). Only when _showKeyGlyph is on (button-activated pickups) — auto-walk-over
+    // pickups leave it off, so this is a no-op there.
+    private void ApplyKeyPrompt()
+    {
+        if (_showKeyGlyph && _keyText != null)
+            InputGlyphText.ApplyShared(_keyText, "{" + _actionName + "}");
     }
 
     private void Evaluate() => SetVisible(_twinsInside > 0);

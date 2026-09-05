@@ -26,7 +26,7 @@ public static class InputGlyphTmpBaker
     private const string OutDir          = "Assets/Resources/Sprites";
     private const string OutAssetPath    = OutDir + "/InputGlyphs.asset";   // <sprite="InputGlyphs" name="…">
     private const int    PointSize       = 128;                             // em reference for sprite scaling
-    private const float  RenderEm        = 1.5f;                            // glyph height in em (bumped: reads ~text-height)
+    private const float  RenderEm        = 2.0f;                            // glyph height in em (bigger — reads clearly next to text)
     private const float  BaselineFrac    = 0.78f;                           // top-of-glyph above baseline as a fraction of its height (centers it on the line)
     private const int    Padding         = 2;
     private const int    MaxAtlasSize    = 2048;

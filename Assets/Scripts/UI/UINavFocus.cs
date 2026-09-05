@@ -23,10 +23,13 @@ public static class UINavFocus
         if (target == null || !target.activeInHierarchy) return;
         var es = EventSystem.current;
         if (es == null) return;
-        // P-C: ensure this EventSystem carries the focus-guardian, so a highlight lost to a mouse click on empty
-        // space comes back on the next nav press (auto-attached once — no scene wiring).
+        // P-C: ensure this EventSystem carries the focus-guardian (recovers a highlight lost to a mouse click on
+        // empty space) AND the glow highlighter (the outline focus cue that follows the selection). Both are
+        // auto-attached once — no scene wiring; they live and die with this scene's EventSystem.
         if (es.GetComponent<UINavFocusGuardian>() == null)
             es.gameObject.AddComponent<UINavFocusGuardian>();
+        if (es.GetComponent<UINavHighlighter>() == null)
+            es.gameObject.AddComponent<UINavHighlighter>();
         es.SetSelectedGameObject(null);
         es.SetSelectedGameObject(target);
     }
