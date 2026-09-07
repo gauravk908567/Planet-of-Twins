@@ -33,6 +33,7 @@ public class VoidStrikeAbility : IAbility, IAbilityHUDSource, IAbilityActiveStat
 
     private float _lastUseTime = -999f;
     private bool _isActive;
+    private float _activeElapsed;   // seconds into the active void-field window (drives the card drain)
 
     // ── IAbility ──────────────────────────────────────────────
     public void Initialize(GameObject owner) { }
@@ -52,6 +53,14 @@ public class VoidStrikeAbility : IAbility, IAbilityHUDSource, IAbilityActiveStat
             return _cooldown > 0f ? Mathf.Clamp01(elapsed / _cooldown) : 1f;
         }
     }
+
+    // Border-as-timer (Track D): the void field runs for _duration — surface that as the active DRAIN so the
+    // card empties over the window (like Setsuna's slow-mo). 0 = just cast (full), 1 = window elapsed. Press-to-fire
+    // (no hold). Only read while IsActive, so the 1f default when idle is inert.
+    public float ActiveProgress =>
+        _isActive && _duration > 0f ? Mathf.Clamp01(_activeElapsed / _duration) : 1f;
+    public bool IsHolding => false;
+    public float HoldProgress => 0f;
 
     // ── IAbilityActiveState ───────────────────────────────────
     public bool IsAbilityActive => _isActive;
@@ -97,6 +106,7 @@ public class VoidStrikeAbility : IAbility, IAbilityHUDSource, IAbilityActiveStat
     private IEnumerator RunAbility()
     {
         _isActive = true;
+        _activeElapsed = 0f;
         _cueBook ??= VfxLibraryProvider.Instance?.Player?.VoidStrike;  // R4 — book from PlayerVfxLibrary
 
         // Track active point positions + held cue handles for cleanup
@@ -157,6 +167,7 @@ public class VoidStrikeAbility : IAbility, IAbilityHUDSource, IAbilityActiveStat
             }
 
             elapsed += Time.deltaTime;
+            _activeElapsed = elapsed;   // surfaced as ActiveProgress → the card drains over the window
             yield return null;
         }
 

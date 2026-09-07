@@ -9,7 +9,7 @@ using UnityEngine;
 /// IsAbilityActive = true only during EmpowerState.Active.
 /// Charging, cooldown, and idle all return false.
 /// </summary>
-public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSource
+public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSource, ICasterClanSource
 {
     [Header("Twins")]
     [SerializeField] private Player _leftTwin;
@@ -44,6 +44,9 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     [SerializeField] private UnityEngine.UI.Slider _dashSlider;
     [SerializeField] private Color _dashReadyColour = new Color(0.4f, 0.8f, 1f, 1f);
     [SerializeField] private Color _dashCooldownColour = new Color(0.3f, 0.3f, 0.4f, 1f);
+    [Tooltip("The dash (LShift) bar takes the EMPOWERED (opposite-of-caster) twin's clan — Lyra gold / Kai violet.")]
+    [SerializeField] private Color _lyraClan = new Color(1f, 0.808f, 0.322f, 1f);
+    [SerializeField] private Color _kaiClan  = new Color(0.659f, 0.455f, 0.941f, 1f);
 
     [Header("Enemy layer")]
     [SerializeField] private LayerMask _enemyLayer;
@@ -126,12 +129,38 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
     public bool IsActive => _state == EmpowerState.Active;
     public bool IsCharging => _state == EmpowerState.Charging;
     public float ChargeProgress => _chargeProgress;
+    // Border-as-timer (Track D) interface members — thin aliases over the existing charge state.
+    public bool IsHolding => _state == EmpowerState.Charging;
+    public float HoldProgress => _chargeProgress;
     public float ActiveTimeRemaining => Mathf.Max(0f, ActiveDuration - _activeTimer);
     public float ActiveProgress => ActiveDuration > 0f
                                         ? Mathf.Clamp01(_activeTimer / ActiveDuration) : 1f;
     public float CancelProgress => _cancelThreshold > 0f
                                         ? Mathf.Clamp01(_cancelProgress / _cancelThreshold) : 0f;
     public bool DashReady => _dashCooldownTimer <= 0f;
+
+    // ── ICasterClanSource (Track D) — Empower is single-caster; the card's glow/hold/pulse take the caster's clan.
+    // -1 = none, 0 = LEFT (Lyra/gold), 1 = RIGHT (Kai/violet). Valid while charging (_pendingCaster) or active
+    // (_anchoringTwin); the border keeps its dual split as the joint identity.
+    public int CasterSide
+    {
+        get
+        {
+            Player c = _anchoringTwin ?? _pendingCaster;
+            if (c == null) return -1;
+            return c == _leftTwin ? 0 : 1;
+        }
+    }
+
+    // The dash belongs to the EMPOWERED twin (opposite of the caster) — its bar glows that twin's clan.
+    private Color EmpoweredClanColour()
+    {
+        Player e = _empoweredTwin;
+        if (e == null && _pendingCaster != null)
+            e = _pendingCaster == _leftTwin ? _rightTwin : _leftTwin;
+        if (e == null) return _dashReadyColour;   // no empower context yet — keep the default
+        return e == _leftTwin ? _lyraClan : _kaiClan;
+    }
 
     public event Action OnEmpowerStarted;
     public static EmpowerSystem Instance { get; private set; }
@@ -168,12 +197,13 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
         {
             _dashSlider.value = DashCooldownProgress;
 
-            // Change fill colour based on state
+            // Dash bar takes the EMPOWERED (opposite-of-caster) twin's clan — bright when ready, dimmed on cooldown.
             var fill = _dashSlider.fillRect?.GetComponent<UnityEngine.UI.Image>();
             if (fill != null)
-                fill.color = DashReady
-                    ? _dashReadyColour   // blue — ready
-                    : _dashCooldownColour; // grey — on cooldown
+            {
+                Color clan = EmpoweredClanColour();
+                fill.color = DashReady ? clan : new Color(clan.r * 0.4f, clan.g * 0.4f, clan.b * 0.4f, clan.a);
+            }
         }
 
         switch (_state)

@@ -12,7 +12,7 @@ using UnityEngine;
 //
 // No static events.
 // ─────────────────────────────────────────────────────────────────────────────
-public class CoalesceSystem : MonoBehaviour
+public class CoalesceSystem : MonoBehaviour, IAbilityHUDSource
 {
     [Header("Inject")]
     [SerializeField] private MonoBehaviour _unlockStateMono;   // → ISkillUnlockState (SkillTreeManager)
@@ -34,6 +34,21 @@ public class CoalesceSystem : MonoBehaviour
 
     private readonly Dictionary<GameObject, CoalesceAura> _activeAuras
         = new Dictionary<GameObject, CoalesceAura>();
+
+    // ── IAbilityHUDSource (Track D) — Coalesce is PASSIVE (auto on Stun/Possess). The border card runs in
+    // passive-pulse mode: it PULSES while any aura is live, dim static otherwise. Explicit impl: this class
+    // already has an IsActive() METHOD. No cooldown / hold / drain — those channels report "n/a".
+    string IAbilityHUDSource.AbilityName => "";
+    int IAbilityHUDSource.CurrentCharges => 1;
+    int IAbilityHUDSource.MaxCharges => 1;
+    float IAbilityHUDSource.CooldownProgress => 1f;
+    float IAbilityHUDSource.ActiveProgress => 1f;
+    bool IAbilityHUDSource.IsHolding => false;
+    float IAbilityHUDSource.HoldProgress => 0f;
+    bool IAbilityHUDSource.IsActive
+    {
+        get { foreach (var a in _activeAuras.Values) if (a != null) return true; return false; }
+    }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()

@@ -13,6 +13,14 @@ public class AccordHUDController : MonoBehaviour
     [SerializeField] private AbilityController lyraController;
     [SerializeField] private AbilityController kaiController;
     [SerializeField] private EmpowerSystem empowerSystem;
+    [Tooltip("Soul Convergence — drives its own border (souls→charge→window). Optional; falls back to " +
+             "SoulConvergenceSystem.Instance, then to a passive dummy.")]
+    [SerializeField] private SoulConvergenceSystem soulConvergenceSystem;
+    [Tooltip("Coalesce — passive; the border pulses while an aura is live. Optional; falls back to a passive dummy.")]
+    [SerializeField] private CoalesceSystem coalesceSystem;
+    [Tooltip("Setsuna — the SC slot's ACCORD form. Drives the SC card while Accord is active " +
+             "(souls→charge→7s slow-window). Optional; falls back to SetsunaSystem.Instance, then a passive dummy.")]
+    [SerializeField] private SetsunaSystem setsunaSystem;
 
     [Header("Accord System")]
     [SerializeField] private AccordStateSystem accordSystem;
@@ -168,9 +176,18 @@ public class AccordHUDController : MonoBehaviour
             slotKaiGate?.BindNormal(kaiController.GetTeleportHUDSource());
         }
 
-        // Locked until purchased — bind source now, visibility controlled by _startLocked
-        slotCoalesce?.BindNormal(new PassiveHUDSource());
-        slotSC?.BindNormal(new PassiveHUDSource());
+        // Locked until purchased — bind source now, visibility controlled by _startLocked.
+        // Coalesce is passive — bind the real system so the border can pulse while an aura is live.
+        slotCoalesce?.BindNormal(coalesceSystem != null
+            ? (IAbilityHUDSource)coalesceSystem
+            : new PassiveHUDSource());
+
+        // Soul Convergence drives its OWN border (souls meter → charge → 7s window). Bind the real system so the
+        // card shows its state; fall back to the passive dummy if it's somehow unresolved.
+        soulConvergenceSystem ??= SoulConvergenceSystem.Instance;
+        slotSC?.BindNormal(soulConvergenceSystem != null
+            ? (IAbilityHUDSource)soulConvergenceSystem
+            : new PassiveHUDSource());
 
         if (empowerSystem != null)
             slotEmpower?.BindNormal(empowerSystem);
@@ -188,7 +205,13 @@ public class AccordHUDController : MonoBehaviour
         slotPossess?.BindAccord(accordSystem.RadiantSeekerHUDSource, accordSystem.RadiantSeekerActiveState);
         slotStun?.BindAccord(accordSystem.VoidStrikeHUDSource, accordSystem.VoidStrikeActiveState);
 
-        slotSC?.BindAccord(new EnhancedHUDSource(), null);
+        // SC's accord form = Setsuna (souls→charge→7s slow-window). Bind the real system so the SC card reads
+        // Setsuna while Accord is up; pass it as the active-state so the slot defers returning to the normal SC
+        // view until Setsuna's window (and rewind) finishes. Falls back to a passive dummy if unresolved.
+        setsunaSystem ??= SetsunaSystem.Instance;
+        slotSC?.BindAccord(
+            setsunaSystem != null ? (IAbilityHUDSource)setsunaSystem : new EnhancedHUDSource(),
+            setsunaSystem as IAbilityActiveState);
         slotGate?.BindAccord(new EnhancedHUDSource(), null);
         slotKaiGate?.BindAccord(new EnhancedHUDSource(), null);   // couch M5 — Kai's gate mirrors Lyra's in Accord
         slotCoalesce?.BindAccord(new EnhancedHUDSource(), null);
@@ -276,6 +299,9 @@ public class AccordHUDController : MonoBehaviour
         public int CurrentCharges => 1;
         public int MaxCharges => 1;
         public bool IsActive => true;
+        public float ActiveProgress => 1f;   // passive/always-on — no drain
+        public bool IsHolding => false;
+        public float HoldProgress => 0f;
     }
 
     private class EnhancedHUDSource : IAbilityHUDSource
@@ -285,6 +311,9 @@ public class AccordHUDController : MonoBehaviour
         public int CurrentCharges => 1;
         public int MaxCharges => 1;
         public bool IsActive => false;
+        public float ActiveProgress => 1f;
+        public bool IsHolding => false;
+        public float HoldProgress => 0f;
     }
 
 

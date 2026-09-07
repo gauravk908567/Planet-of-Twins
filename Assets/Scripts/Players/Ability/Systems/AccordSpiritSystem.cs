@@ -78,6 +78,11 @@ public class AccordSpiritSystem : MonoBehaviour, IAbilityHUDSource
     public float ChargeProgress => _chargeProgress;
     public bool IsReady => _cooldownTimer <= 0f;
 
+    // Border-as-timer (Track D): instant summon — no active drain; hold surfaces the charge ramp.
+    public float ActiveProgress => 0f;
+    public bool IsHolding => _isCharging;
+    public float HoldProgress => _chargeProgress;
+
     private void Awake()
     {
         _unlockState = _unlockStateMono as ISkillUnlockState;

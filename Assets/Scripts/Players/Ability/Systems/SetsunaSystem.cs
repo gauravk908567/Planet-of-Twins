@@ -28,7 +28,7 @@ using TMPro;
 ///   Wire: _unlockStateMono (SkillTreeManager), _inputProviderMono, _rescueActiveMono.
 ///   Optional: _setsunaPanel (UI), _chargeBar, _timerText.
 /// </summary>
-public class SetsunaSystem : MonoBehaviour
+public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveState
 {
     [Header("Inject")]
     [SerializeField] private SoulConvergenceSystem _scSystem;
@@ -102,12 +102,34 @@ public class SetsunaSystem : MonoBehaviour
     private CueBookData _cueBook;
     private CueHandle _chargeKaiHandle, _chargeLyraHandle, _trailKaiHandle, _trailLyraHandle;
 
-    // ── IAbilityHUDSource (for accord panel binding) ──────────
-    // Name set by designer in Inspector — never hardcoded
+    // ── IAbilityHUDSource (Track D border-as-timer) + IAbilityActiveState ──────
+    // Setsuna is the SC slot's ACCORD form (hold-charge family). While Accord is up, the SAME owner-frame card
+    // that showed Soul Convergence in normal mode is re-pointed at THIS source by AccordIconSlot (no second
+    // driver), so it now reads Setsuna: the SC souls meter RISES the card to ready (CooldownProgress), the joint
+    // F-hold that triggers Setsuna is the hold ramp (IsHolding/HoldProgress), and the 7s slow-window (+ rewind)
+    // is the active drain (IsActive/ActiveProgress). Name stays "" — the designer sets the TMP text in-scene.
     public string AbilityName => "";  // name set directly on TMP text by designer
     public bool IsActive => _state == State.Active || _state == State.Rewinding;
     public bool IsCharging => _state == State.Charging;
     public float ChargeProgress => _chargeProgress;
+
+    public int CurrentCharges => 1;
+    public int MaxCharges => 1;
+    public bool IsHolding => _state == State.Charging;   // joint F-hold to trigger Setsuna
+    public float HoldProgress => _chargeProgress;        // 0→1 of the activation hold
+    // Souls charge the card to ready (mirrors the normal SC slot); full while the window runs.
+    public float CooldownProgress =>
+        IsActive ? 1f
+                 : (_scSystem != null && _scSystem.SoulCap > 0
+                        ? Mathf.Clamp01((float)_scSystem.SoulCount / _scSystem.SoulCap)
+                        : 1f);
+    // Active window drains full→empty over the 7s; the 1.5s rewind reads as fully elapsed.
+    public float ActiveProgress =>
+        _state == State.Active && _activeDuration > 0f ? Mathf.Clamp01(_activeTimer / _activeDuration) : 1f;
+
+    // IAbilityActiveState — AccordIconSlot defers returning the slot to the normal SC view while Setsuna's
+    // slow-window (and rewind) is still running, so the card keeps draining Setsuna instead of snapping back.
+    public bool IsAbilityActive => IsActive;
 
     public static SetsunaSystem Instance { get; private set; }
 

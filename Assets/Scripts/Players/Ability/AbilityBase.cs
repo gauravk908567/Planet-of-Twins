@@ -19,6 +19,14 @@ public abstract class AbilityBase : IAbility, IAbilityHUDSource
     public virtual int MaxCharges => 1;
     public bool IsActive => isActive;
 
+    // Border-as-timer (Track D): active-window drain + charge/hold ramp channels.
+    // Press-to-fire abilities never hold; charge abilities (Empower/AccordSpirit) override.
+    // ActiveProgress: 0 at activation → 1 at data.duration elapsed (instant/durationless → 1).
+    public virtual float ActiveProgress =>
+        (data != null && data.duration > 0f) ? Mathf.Clamp01(activeTimer / data.duration) : 1f;
+    public virtual bool IsHolding => false;
+    public virtual float HoldProgress => 0f;
+
     /// <summary>
     /// 0 = fully on cooldown, 1 = ready to use.
     /// HUD ring fills from empty (0) to full (1) as cooldown expires.

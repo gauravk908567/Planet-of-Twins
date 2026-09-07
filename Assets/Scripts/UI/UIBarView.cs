@@ -117,6 +117,10 @@ public class UIBarView : MonoBehaviour
     // own Awake, before ours has run and made the material instance. Applied in styling.
     private float _drain;
     private float _drainB;
+    // External flash injected by a driver (e.g. the accord bar pulsing on a point-gain / while active). Max'd with
+    // the low-value flash, so a bar whose "low" state is NORMAL (the accord bar starts empty) can still flash on
+    // demand without the low-value warning firing when it's simply not full.
+    private float _externalFlash;
 
     private float _lastWrittenFill = float.NaN;
     private float _lastWrittenFillB = float.NaN;
@@ -225,7 +229,7 @@ public class UIBarView : MonoBehaviour
         WriteFloatIfChanged(PropFill, _displayValue, ref _lastWrittenFill);
         WriteFloatIfChanged(PropFillB, _displayValueB, ref _lastWrittenFillB);
 
-        float flash = ComputeFlashAmount(_displayValue);
+        float flash = Mathf.Max(ComputeFlashAmount(_displayValue), _externalFlash);
         WriteFloatIfChanged(PropFlashAmount, flash, ref _lastWrittenFlash);
         // Frame/symbol carries the LOUD half of the flash — same amount, same clock.
         if (_frameMaterial != null &&
@@ -328,6 +332,11 @@ public class UIBarView : MonoBehaviour
         if (_material == null) return;   // pre-Awake call — ApplyInitialStyling pushes it
         WriteFloatIfChanged(PropDrainB, _drainB, ref _lastWrittenDrainB);
     }
+
+    /// <summary>External flash (0..1), max'd with the low-value warning flash and applied to both the fill and the
+    /// line-mode frame. For bars whose "low" state is normal (the accord bar starts empty and refills), the driver
+    /// pulses this on a gain / while active instead of relying on the low-value flash. 0 = no external flash.</summary>
+    public void SetFlash(float amount01) => _externalFlash = Mathf.Clamp01(amount01);
 
     public void SetFillColor(Color color)
     {

@@ -42,6 +42,11 @@ public class RadiantSeekerAbility : IAbility, IAbilityHUDSource, IAbilityActiveS
         }
     }
 
+    // Border-as-timer (Track D): indefinite orb, press-to-fire — no drain window, no hold.
+    public float ActiveProgress => 0f;
+    public bool IsHolding => false;
+    public float HoldProgress => 0f;
+
     // ── IAbilityActiveState ───────────────────────────────────
     /// True while a live orb exists in the scene.
     /// AccordIconSlot defers the flip-back until this returns false.

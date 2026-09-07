@@ -57,7 +57,7 @@ public static class InputGlyphText
 
         string stem = InputGlyphResolver.ResolveTmpSpriteName(provider, actionName, out string fallback);
         if (!string.IsNullOrEmpty(stem))
-            return $"<sprite name=\"{stem}\">";
+            return $"<sprite name=\"{stem}\" tint=1>";   // tint=1 → sprite honours the label's colour (clan recolour; white = unchanged)
 
         if (!string.IsNullOrEmpty(fallback)) return $"[{fallback}]";
         return actionName;
@@ -102,6 +102,80 @@ public static class InputGlyphText
             : Glyph(providerA, actionName) + Glyph(providerB, actionName); // half-half (keyboard + pad)
     }
 
+    /// <summary>Joint key-cap with per-side CLAN colour (Track D): when the two players' device kinds differ, show
+    /// both glyphs and tint each its clan (<paramref name="colorA"/> = left/Lyra, <paramref name="colorB"/> = right/Kai)
+    /// via a <c>&lt;color&gt;</c> wrap — sprites carry <c>tint=1</c> so they follow it. When the kinds match, show the
+    /// single shared glyph neutral (white). The label colour is forced white so the tags drive the tint.</summary>
+    public static void ApplyJoint(TMP_Text label, IInputProvider providerA, IInputProvider providerB,
+                                  string actionName, Color colorA, Color colorB)
+    {
+        if (label == null) return;
+        var asset = SpriteAsset;
+        if (asset != null && label.spriteAsset != asset) label.spriteAsset = asset;
+        label.color = Color.white;              // per-glyph <color> tags own the tint
+        label.enableWordWrapping = false;       // two device glyphs sit side-by-side, never wrap to a 2nd line
+
+        bool sameKind = providerB == null ||
+                        InputGlyphResolver.ResolveKind(providerA) == InputGlyphResolver.ResolveKind(providerB);
+        label.text = sameKind
+            ? Glyph(providerA, actionName)                                       // one shared glyph, neutral, full size
+            // two glyphs (kb + pad) — shrink so both fit horizontally in the shared card
+            : "<size=66%>" + Wrap(Glyph(providerA, actionName), colorA) + Wrap(Glyph(providerB, actionName), colorB) + "</size>";
+    }
+
+    private static string Wrap(string glyph, Color c) => $"<color=#{ColorUtility.ToHtmlStringRGB(c)}>{glyph}</color>";
+
+    // ── Ability-HUD keycap: the KEY as a glowing letter (kb) / device icon (pad) ───────────────────────────────
+    // Track D redesign: the ability-HUD keycap drops the Kenney keycap-BOX sprite. For KEYBOARD the bare key LETTER
+    // (e.g. "Q") is the glyph — it becomes the clan-colour GLOW hero (a TMP glow material on the label). For a
+    // GAMEPAD a letter can't stand in for a face button, so the device ICON sprite stays; it reads as clan on the
+    // soft keycap behind it. Distinct from Glyph()/ApplyJoint() (which always emit the keycap sprite for both).
+
+    /// <summary>The ability-HUD keycap glyph for one viewer: the bare key LETTER for keyboard (no keycap-box sprite),
+    /// or the device ICON sprite for a gamepad. Never null/empty for a real action.</summary>
+    public static string LetterOrIcon(IInputProvider provider, string actionName)
+    {
+        if (string.IsNullOrEmpty(actionName)) return actionName;
+        var kind = InputGlyphResolver.ResolveKind(provider);
+        string stem = InputGlyphResolver.ResolveTmpSpriteName(provider, actionName, out string fallback);
+        if (kind == InputDeviceKind.Gamepad)
+            return !string.IsNullOrEmpty(stem) ? $"<sprite name=\"{stem}\" tint=1>"
+                 : (!string.IsNullOrEmpty(fallback) ? fallback : actionName);
+        // Keyboard: the key label itself is the glowing glyph (no sprite box).
+        return !string.IsNullOrEmpty(fallback) ? fallback : actionName;
+    }
+
+    /// <summary>Single-owner ability-HUD keycap: set <paramref name="label"/> to the letter (kb) / icon (pad) glyph.
+    /// Assigns the sprite asset (needed for the pad-icon path). Clan colour comes from the label's glow material +
+    /// its vertex colour (set by the caller).</summary>
+    public static void ApplyKeyCap(TMP_Text label, IInputProvider provider, string actionName)
+    {
+        if (label == null) return;
+        var asset = SpriteAsset;
+        if (asset != null && label.spriteAsset != asset) label.spriteAsset = asset;
+        label.text = LetterOrIcon(provider, actionName);
+    }
+
+    /// <summary>Joint (shared) ability-HUD keycap: ONE glyph when both players share a device KIND, else BOTH (kb
+    /// letter + pad icon) side by side, each wrapped in its clan colour. Mirrors <see cref="ApplyJoint"/>'s rule;
+    /// the label colour is forced white so the per-side <c>&lt;color&gt;</c> tags (and the glow material) own the tint.</summary>
+    public static void ApplyKeyCapJoint(TMP_Text label, IInputProvider a, IInputProvider b, string actionName,
+                                        Color colorA, Color colorB)
+    {
+        if (label == null) return;
+        var asset = SpriteAsset;
+        if (asset != null && label.spriteAsset != asset) label.spriteAsset = asset;
+        label.color = Color.white;
+        label.enableWordWrapping = false;
+
+        bool sameKind = b == null ||
+                        InputGlyphResolver.ResolveKind(a) == InputGlyphResolver.ResolveKind(b);
+        label.text = sameKind
+            ? LetterOrIcon(a, actionName)                                          // one shared glyph, neutral
+            : "<size=80%>" + Wrap(LetterOrIcon(a, actionName), colorA) + " " +
+              Wrap(LetterOrIcon(b, actionName), colorB) + "</size>";               // kb + pad, per-side clan
+    }
+
     // ── Shared multi-device prompt (couch, one screen) ────────────────────────────────────────────────────────
     private const string SharedSeparator = "  |  ";
 
@@ -118,7 +192,7 @@ public static class InputGlyphText
         foreach (var kind in ActiveDeviceKinds())
         {
             string stem = InputGlyphResolver.ResolveTmpSpriteNameForKind(provider, actionName, kind, out string fallback);
-            if (!string.IsNullOrEmpty(stem)) parts.Add($"<sprite name=\"{stem}\">");
+            if (!string.IsNullOrEmpty(stem)) parts.Add($"<sprite name=\"{stem}\" tint=1>");
             else if (!string.IsNullOrEmpty(fallback)) parts.Add($"[{fallback}]");
         }
         if (parts.Count == 0) return actionName;

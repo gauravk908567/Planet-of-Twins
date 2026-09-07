@@ -195,6 +195,15 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
             return false;
         }
 
+        // GATE (rescue-victim guard): only the PARTNER may cast Weaver's Gate. If THIS twin is the one being
+        // rescued (grabbed/trapped), block the cast — a low-health victim that casts its own gate deploys its
+        // soul onto itself, so the partner can no longer run the rescue (couch two-soul model; user-reported).
+        if (_rescueActive != null && _rescueActive.ActiveGrabbedPlayer == _caster)
+        {
+            UnityEngine.Debug.Log("[TeleportAbility] Blocked — the grabbed twin can't cast its own gate; the partner rescues.");
+            return false;
+        }
+
         // Double teleport guard — soul is already active, don't fire again
         if (_soul != null && _soul.gameObject.activeSelf && isActive)
         {

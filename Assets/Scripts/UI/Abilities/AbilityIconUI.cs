@@ -15,6 +15,11 @@ public class AbilityIconUI : MonoBehaviour
              "\"ButtonText\" in Awake when left unwired, so no per-instance wiring is needed.")]
     [SerializeField] private TMP_Text buttonText;
 
+    [Tooltip("Border-as-timer (Track D): the clan-border/liquid-tank driver on the card Image. Optional; " +
+             "auto-resolved from a child in Awake. When present, Bind()/Unbind() forward the ability source " +
+             "to it so the border carries the cooldown/active/hold timer.")]
+    [SerializeField] private BorderFillDriver borderDriver;
+
     [Header("Colours")]
     [SerializeField] private Color readyColour = new Color(1f, 1f, 1f, 1f);
     [SerializeField] private Color activeColour = new Color(0.4f, 1f, 0.4f, 1f);
@@ -48,6 +53,11 @@ public class AbilityIconUI : MonoBehaviour
             if (t != null) buttonText = t.GetComponent<TMP_Text>();
         }
 
+        // Border-as-timer driver (Track D): resolve from a child when unwired, so the border works
+        // across every scene-instance ability icon without per-instance wiring.
+        if (borderDriver == null)
+            borderDriver = GetComponentInChildren<BorderFillDriver>(true);
+
         if (_startLocked)
             SetUnlocked(false);
     }
@@ -59,12 +69,14 @@ public class AbilityIconUI : MonoBehaviour
         // Designer's TMP text in scene is preserved when name is empty.
         if (nameText != null && !string.IsNullOrEmpty(source?.AbilityName))
             nameText.text = source.AbilityName;
+        borderDriver?.SetSource(source);
         Refresh();
     }
 
     public void Unbind()
     {
         _source = null;
+        borderDriver?.SetSource(null);
         SetCooldownRing(1f);
         if (chargeText != null) chargeText.gameObject.SetActive(false);
     }
@@ -73,6 +85,19 @@ public class AbilityIconUI : MonoBehaviour
     {
         _isUnlocked = unlocked;
         gameObject.SetActive(unlocked);
+    }
+
+    /// <summary>Track D: hide the legacy ability-tile visuals (the <c>iconBG</c> state square + the old radial
+    /// <c>cooldownRing</c>) when this slot uses the new border card — the card carries state + timer now. The
+    /// name label and the button glyph stay. Disables only the Image components, so child glyphs still render.</summary>
+    public void HideLegacyVisuals()
+    {
+        if (iconBG != null) iconBG.enabled = false;
+        if (cooldownRing != null) cooldownRing.enabled = false;
+        // The panel's OWN background Image (a semi-transparent white rounded rect) sits in front of the card and
+        // veils it — hide it so the border/tank/glow read crisply. The name + glyph are separate children, unaffected.
+        var panelBg = GetComponent<Image>();
+        if (panelBg != null) panelBg.enabled = false;
     }
 
     private void Update()

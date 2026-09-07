@@ -9,7 +9,7 @@ using TMPro;
 /// IsAbilityActive = true only during the 7s buff window (_abilityActive).
 /// Charging, idle, and cooldown states all return false.
 /// </summary>
-public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityActiveState
+public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityActiveState, IAbilityHUDSource
 {
     public float DamageOutMultiplier { get; private set; } = 1f;
     public float DamageInMultiplier { get; private set; } = 1f;
@@ -30,6 +30,22 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
 
     // Exposed so SetsunaSystem can display SC timer on accord panel
     public float PowerTimeRemaining => _powerTimer;
+
+    // ── IAbilityHUDSource (Track D border-as-timer) ───────────────────────────
+    // Souls accumulate on kills → tank RISES (CooldownProgress = souls/cap); charged = ready (glow+shine);
+    // both hold F = charge ramp; 7s buff window = active drain. The number is retired — the border IS the
+    // readout. Explicit impl: SC already has an IsActive() METHOD, so a public IsActive property can't exist.
+    // Flash on soul gain is auto-detected by BorderFillDriver from the discrete jump in CooldownProgress.
+    string IAbilityHUDSource.AbilityName => "";
+    int IAbilityHUDSource.CurrentCharges => 1;
+    int IAbilityHUDSource.MaxCharges => 1;
+    bool IAbilityHUDSource.IsActive => _abilityActive;
+    float IAbilityHUDSource.CooldownProgress =>
+        _abilityActive ? 1f : (_soulCap > 0 ? Mathf.Clamp01((float)_soulCount / _soulCap) : 1f);
+    float IAbilityHUDSource.ActiveProgress =>
+        (_abilityActive && CurrentPowerDuration > 0f) ? Mathf.Clamp01(1f - _powerTimer / CurrentPowerDuration) : 1f;
+    bool IAbilityHUDSource.IsHolding => _charged && !_abilityActive && _chargeProgress > 0f;
+    float IAbilityHUDSource.HoldProgress => _chargeProgress;
 
     public static SoulConvergenceSystem Instance { get; private set; }
 
@@ -68,6 +84,9 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
     private readonly JointHoldSync _jointSync = new JointHoldSync();
 
     [Header("HUD UI")]
+    [Tooltip("Track D: the border card now shows souls → charge → window, so retire the scattered legacy readout " +
+             "(number, charge bar, power panel). Turn OFF to restore the old scattered UI.")]
+    [SerializeField] private bool _hideLegacyUI = true;
     [SerializeField] private TMP_Text _counterText;
     [SerializeField] private Slider _chargeBar;
     [SerializeField] private GameObject _powerStatePanel;
@@ -123,6 +142,8 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
 
         _chargeBar?.gameObject.SetActive(false);
         _powerStatePanel?.SetActive(false);
+        // Track D: retire the number — the border card is the readout now.
+        if (_hideLegacyUI) _counterText?.gameObject.SetActive(false);
         RefreshCounter();
 
         // Charge cue is played on demand (pooled) — no pre-created idle instance needed.
@@ -192,7 +213,7 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
             }
 
             _chargeProgress = Mathf.Clamp01(_chargeProgress + Time.deltaTime / _chargeHoldTime);
-            if (_chargeBar != null)
+            if (_chargeBar != null && !_hideLegacyUI)
             {
                 _chargeBar.gameObject.SetActive(true);
                 _chargeBar.value = _chargeProgress;
@@ -229,7 +250,7 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
         StartPowerCues();   // per-twin shield visual + buff aura (held for the power window)
 
         _chargeBar?.gameObject.SetActive(false);
-        _powerStatePanel?.SetActive(true);
+        if (!_hideLegacyUI) _powerStatePanel?.SetActive(true);
         RefreshCounter();
     }
 
