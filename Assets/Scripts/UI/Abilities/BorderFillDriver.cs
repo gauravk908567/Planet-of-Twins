@@ -120,9 +120,9 @@ public class BorderFillDriver : MonoBehaviour
             return;
         }
 
-        // The clan colour now comes from the shader (_ClanA/_ClanB), NOT the Image tint. Force the tint white
-        // so the retired M5 owner-tint (AccordHUDController.ApplyOwnerTints writes image.color) can't multiply/
-        // dim the card. Update() re-asserts this after Start-phase tinting.
+        // The clan colour comes from the shader (_ClanA/_ClanB), NOT the Image tint — force the tint white so
+        // nothing can multiply/dim the card. (The M5 owner-tint that used to write image.color has been retired;
+        // this stays as a cheap defensive guard, re-asserted in Update.)
         targetImage.color = Color.white;
 
         // CRITICAL: the ability panels have a Mask, which would render this card through a STENCIL-VARIANT
@@ -186,7 +186,7 @@ public class BorderFillDriver : MonoBehaviour
     private void Update()
     {
         if (_mat == null) return;
-        // Re-assert white (only when it drifted) so the retired M5 owner-tint can't dim the card.
+        // Re-assert white (only when it drifted) so nothing can multiply/dim the card.
         if (targetImage != null && targetImage.color != Color.white) targetImage.color = Color.white;
         ApplyAspect();   // cheap; keeps the rounded corners correct if the layout resizes
 

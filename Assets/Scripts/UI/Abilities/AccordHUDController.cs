@@ -42,19 +42,12 @@ public class AccordHUDController : MonoBehaviour
     [SerializeField] private AccordIconSlot slotKaiGate;   // couch M5 — Kai's Weaver's Gate (was off-HUD)
     [SerializeField] private AccordIconSlot slotStun;
 
-    // Couch M5 — clan owner-frame colours (ArtStyle §10, locked): Lyra/Luminari LEFT = antique gold #FFCE52,
-    // Kai/Vethara RIGHT = royal violet #A874F0. Serialized so the designer can match final art; these are the
-    // authored defaults. A JOINT slot gets left=lyra, right=kai (a split frame reads "both twins").
-    [Header("Clan owner-frame colours (couch M5 — ArtStyle §10)")]
-    [SerializeField] private Color lyraColour = new Color(1f, 0.808f, 0.322f, 1f);   // #FFCE52
-    [SerializeField] private Color kaiColour  = new Color(0.659f, 0.455f, 0.941f, 1f); // #A874F0
-
     [Header("Stagger timing")]
     [SerializeField] private float staggerInterval = 0.05f;
 
     private ISkillUnlockState _unlockState;
 
-    // Button-glyph system (P2b) — input action names per slot. Structural per-slot-role (like ApplyOwnerTints),
+    // Button-glyph system (P2b) — input action names per slot. A structural per-slot-role assignment,
     // NOT a twin-identity fork: same "Ability"/"Teleport" for both twins, resolved through each twin's OWN
     // provider so the glyph reflects that player's device. Coalesce is a PASSIVE (auto on Stun/Possess) → no key.
     private const string ActionAbility     = "Ability";      // Possess (Lyra) / Stun (Kai) — GetAbilityDown
@@ -146,7 +139,6 @@ public class AccordHUDController : MonoBehaviour
 
         BindNormalSources();
         BindAccordSources();
-        ApplyOwnerTints();
         ApplyKeyGlyphs();
     }
 
@@ -219,27 +211,6 @@ public class AccordHUDController : MonoBehaviour
         // If not wired or not unlocked, slot stays hidden — no locked text shown
         if (accordSystem != null)
             slotEmpower?.BindAccord(accordSystem.AccordSpiritHUDSource, null);
-    }
-
-    // ── Owner tints (couch M5) ────────────────────────────────
-    // Paint each slot's clan-owner frame once, from its FIXED owner (the slot's identity is the same in normal
-    // and accord — Lyra's Possess→RadiantSeeker, Kai's Stun→VoidStrike). Twin-owned slots = a solid clan frame;
-    // the three joint powers = a gold↔violet split (owned by neither). Owner is per-slot-ROLE (structural), not a
-    // behavior fork on twin identity, so this stays keep-clean-for-co-op: a UI colour lookup, no `if (isKai)`.
-    private void ApplyOwnerTints()
-    {
-        // Lyra (LEFT = gold)
-        slotGate?.SetOwnerTint(lyraColour, lyraColour);
-        slotPossess?.SetOwnerTint(lyraColour, lyraColour);
-
-        // Joint powers (split: Lyra gold ↔ Kai violet)
-        slotSC?.SetOwnerTint(lyraColour, kaiColour);
-        slotCoalesce?.SetOwnerTint(lyraColour, kaiColour);
-        slotEmpower?.SetOwnerTint(lyraColour, kaiColour);
-
-        // Kai (RIGHT = violet)
-        slotKaiGate?.SetOwnerTint(kaiColour, kaiColour);
-        slotStun?.SetOwnerTint(kaiColour, kaiColour);
     }
 
     // ── Button-glyph key-caps (P2b) ───────────────────────────

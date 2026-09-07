@@ -34,12 +34,11 @@ public class AccordIconSlot : MonoBehaviour
     [SerializeField] private Color vfxColourMax = new Color(0.5f, 0.3f, 1f, 0.6f);
     [SerializeField] private float vfxPulseSpeed = 1.8f;
 
-    [Header("Owner tint — clan identity frame (couch M5)")]
-    [Tooltip("Left/right halves of the slot's owner frame — the couch co-op ownership signal. " +
-             "Single-owner slot: SetOwnerTint paints both halves the clan colour (a solid frame). " +
-             "Joint slot (SC/Coalesce/Empower): left = Lyra gold, right = Kai violet (a split frame). " +
-             "Lives on the SLOT (static — never slides with the accord panels); the cooldown ring stays " +
-             "STATE-only, so identity and cooldown never share a channel. Either image may be left null.")]
+    [Header("Border card surface (Track D) — was the M5 owner frame")]
+    [Tooltip("ownerFrameLeft is the Image the BorderFillDriver draws the clan border card on (PoT/UIAbilityCard); " +
+             "it's a STATIC slot sibling that never slides with the accord panels, and its render is toggled off " +
+             "until the ability is bought. ownerFrameRight is the legacy M5 right-half (deactivated on joint slots — " +
+             "the shader draws the split now), kept only so the scene ref isn't orphaned. Either may be left null.")]
     [SerializeField] private Image ownerFrameLeft;
     [SerializeField] private Image ownerFrameRight;
 
@@ -106,19 +105,6 @@ public class AccordIconSlot : MonoBehaviour
         _accordSource = source;
         accordIconUI?.Bind(source);
         _accordAbilityState = activeState;
-    }
-
-    /// <summary>Couch M5 — paint the slot's clan-owner frame. Same colour twice = a solid frame (one twin owns
-    /// this slot); gold + violet = a split frame for a JOINT power (SC/Coalesce/Empower — owned by neither).
-    /// Only the HUE is driven — each frame's own ALPHA is preserved, so the frame's opacity/shape stays a
-    /// scene + UI-shader concern (a dedicated border-frame material can own the look; this only says "whose").
-    /// Null frame images are skipped, so a slot without a frame is a no-op.</summary>
-    public void SetOwnerTint(Color left, Color right)
-    {
-        if (ownerFrameLeft != null)
-            ownerFrameLeft.color = new Color(left.r, left.g, left.b, ownerFrameLeft.color.a);
-        if (ownerFrameRight != null)
-            ownerFrameRight.color = new Color(right.r, right.g, right.b, ownerFrameRight.color.a);
     }
 
     // ── Button-glyph key-cap (P2b refine) ─────────────────────
@@ -285,11 +271,32 @@ public class AccordIconSlot : MonoBehaviour
     public void SetNormalUnlocked(bool unlocked)
     {
         normalIconUI?.SetUnlocked(unlocked);
+        // The border card (ownerFrameLeft) is a STATIC sibling that doesn't ride the icon's active state, so a
+        // purchase-gated slot would otherwise show an empty dark card before the ability is bought. Tie the card's
+        // visibility to the normal ability's unlocked state so the card only appears once the ability is owned.
+        SetCardVisible(unlocked);
     }
 
     public void SetAccordUnlocked(bool unlocked)
     {
         accordIconUI?.SetUnlocked(unlocked);
+    }
+
+    // ── Card visibility (hide until the ability is bought) ─────
+    // The border card lives on ownerFrameLeft, a static sibling that does NOT follow the icon panel's unlocked
+    // SetActive. Left alone, a purchase-gated slot (SC/Coalesce/Empower) shows an empty dark card before purchase.
+    // Start seeds it from the normal ability's unlocked state; SetNormalUnlocked keeps it in sync on purchase.
+    private void Start()
+    {
+        bool unlocked = normalIconUI == null || normalIconUI.gameObject.activeSelf;
+        SetCardVisible(unlocked);
+    }
+
+    /// <summary>Show/hide the border card by toggling its Image render. The BorderFillDriver keeps running on the
+    /// same GameObject — only the draw is gated — so the card resumes instantly when shown on purchase.</summary>
+    private void SetCardVisible(bool visible)
+    {
+        if (ownerFrameLeft != null) ownerFrameLeft.enabled = visible;
     }
 
     // ── Called by AccordHUDController ─────────────────────────

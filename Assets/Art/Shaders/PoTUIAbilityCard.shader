@@ -62,6 +62,7 @@ Shader "PoT/UIAbilityCard"
         _SurfaceWidth ("Liquid Surface Line", Range(0,0.15)) = 0.03
         [HDR] _SurfaceGlow ("Liquid Surface Glow", Color) = (1.3,1.3,1.4,1)
         _FillBrightness ("Interior Fill Brightness (BG tint behind glyph — keeps the button legible)", Range(0,1)) = 0.45
+        _KeycapCutout ("Keycap cutout (keep tank fill out of the centre where the keycap sits)", Range(0,1)) = 0
 
         [Header(Symbol)]
         _IconTex ("Ability Symbol", 2D) = "black" {}
@@ -117,7 +118,7 @@ Shader "PoT/UIAbilityCard"
             float _DualClan, _UseCaster, _InteriorWash;
             float _BorderOn, _BorderWidth, _BorderProgress, _BorderInvert, _BorderBackAlpha, _RunnerWidth;
             fixed4 _RunnerGlow;
-            float _TankOn, _TankProgress, _TankDir, _TankSoft, _GlowIntensity, _SurfaceWidth, _FillBrightness;
+            float _TankOn, _TankProgress, _TankDir, _TankSoft, _GlowIntensity, _SurfaceWidth, _FillBrightness, _KeycapCutout;
             fixed4 _SurfaceGlow;
             fixed4 _IconColor; float _IconScale;
             float _ShineOn; fixed4 _ShineColor; float _ShineInterval, _ShineSpeed, _ShineWidth;
@@ -201,16 +202,23 @@ Shader "PoT/UIAbilityCard"
                     else if (_TankDir < 2.5) fc = i.uv.x;          // LeftRight
                     else                     fc = 1.0 - i.uv.x;    // RightLeft
 
+                    // Keycap cutout: keep the bright liquid OUT of the central disc where the keycap/glyph sits — the
+                    // cap is semi-transparent, so a full tank behind it washed the glyph out. 0 = no cutout (default).
+                    float cdistTank = length(p) / max(length(ext), 0.0001);   // 0 centre → ~1 corner
+                    float keepTank = (_KeycapCutout > 0.001)
+                                   ? smoothstep(_KeycapCutout * 0.72, _KeycapCutout, cdistTank)
+                                   : 1.0;
+
                     float prog = saturate(_TankProgress);
-                    float filled = 1.0 - smoothstep(prog - _TankSoft, prog + _TankSoft, fc);
+                    float filled = (1.0 - smoothstep(prog - _TankSoft, prog + _TankSoft, fc)) * keepTank;
                     float glow = max(_GlowIntensity, 0.0);
                     col.rgb += fillClan * filled * interior * glow;
                     col.a = max(col.a, filled * interior * saturate(0.35 + glow * 0.65) * clan.a);
 
-                    // Bright liquid surface line at the fill level.
+                    // Bright liquid surface line at the fill level (also kept out of the keycap disc).
                     if (_SurfaceWidth > 0.0005 && prog > 0.001 && prog < 0.999)
                     {
-                        float surf = 1.0 - smoothstep(0.0, _SurfaceWidth, abs(fc - prog));
+                        float surf = (1.0 - smoothstep(0.0, _SurfaceWidth, abs(fc - prog))) * keepTank;
                         col.rgb += _SurfaceGlow.rgb * surf * interior * _SurfaceGlow.a;
                         col.a = max(col.a, surf * interior * _SurfaceGlow.a);
                     }
