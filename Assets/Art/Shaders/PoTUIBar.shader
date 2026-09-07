@@ -61,6 +61,10 @@ Shader "PoT/UIBar"
         [HDR] _FillColorB ("Fill Color B (right half)", Color) = (1,1,1,1)
         _SplitPoint ("Split Point (UV.x)", Range(0,1)) = 0.5
         _FillB ("Fill Amount B (right half, used only when Split Halves is on)", Range(0,1)) = 1
+        // Mirror the RIGHT half's fill axis so a split bar fills SYMMETRICALLY about the split
+        // (the accord bar: gold from the left end + violet from the right end, meeting at centre).
+        // Default 0 = current behaviour, so twin/enemy/shared-health bars are unaffected.
+        [Toggle] _SplitMirror ("Split Mirror (symmetric split fill)", Float) = 0
 
         // orthogonal to Fill — never moves the fill edge
         [Header(Drain or Weakness)]
@@ -175,6 +179,7 @@ Shader "PoT/UIBar"
             fixed4 _FillColorB;
             float _SplitPoint;
             float _FillB;
+            float _SplitMirror;
 
             float _Drain;
             float _DrainB;
@@ -297,6 +302,9 @@ Shader "PoT/UIBar"
                     float splitP = saturate(_SplitPoint);
                     float2 uvL = float2(saturate(uv.x / max(splitP, 1e-4)), uv.y);
                     float2 uvR = float2(saturate((uv.x - splitP) / max(1.0 - splitP, 1e-4)), uv.y);
+                    // Symmetric split: flip the right half's axis so the same _FillDirection reads as
+                    // the mirror image on that side (base LeftToRight + mirror = both fill toward centre).
+                    if (_SplitMirror > 0.5) uvR.x = 1.0 - uvR.x;
 
                     half maskL = FillCoordMask(uvL, _FillDirection, _Fill,  softness);
                     half maskR = FillCoordMask(uvR, _FillDirection, _FillB, softness);
