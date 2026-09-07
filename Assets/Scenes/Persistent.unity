@@ -448,7 +448,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3980495
 RectTransform:
   m_ObjectHideFlags: 0
@@ -782,7 +782,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &10291258
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1163,6 +1163,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 810747990}
   nameText: {fileID: 2098232348}
   chargeText: {fileID: 24889759}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -3965,6 +3967,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 1619445082}
   ownerFrameRight: {fileID: 0}
+  borderDriver: {fileID: 0}
   slotHeight: 300
   animDuration: 0.18
 --- !u!1 &81223717
@@ -3984,7 +3987,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &81223718
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4178,6 +4181,81 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 81253020}
+  m_CullTransparentMesh: 1
+--- !u!1 &86968186
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 86968187}
+  - component: {fileID: 86968189}
+  - component: {fileID: 86968188}
+  m_Layer: 0
+  m_Name: AccordBarFrame
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &86968187
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86968186}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 493374464}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 680, y: 680}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &86968188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86968186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 2100000, guid: fb7d82bfd4bfc8b49b225a592b6e9c3f, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 1dbfcc7fd5d0f784a98b048b6671bf35, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &86968189
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86968186}
   m_CullTransparentMesh: 1
 --- !u!1 &87484124 stripped
 GameObject:
@@ -5087,6 +5165,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 224817756}
   nameText: {fileID: 467207253}
   chargeText: {fileID: 887987863}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -6892,6 +6972,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1387595291}
   nameText: {fileID: 45953219}
   chargeText: {fileID: 2017621024}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -7610,6 +7692,115 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!1 &187330092
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 187330093}
+  - component: {fileID: 187330095}
+  - component: {fileID: 187330094}
+  - component: {fileID: 187330096}
+  m_Layer: 0
+  m_Name: AccordBarFill
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &187330093
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187330092}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 493374464}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 680, y: 680}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &187330094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187330092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 2100000, guid: 65e313dbd9f9a7c44b48461c5aa85ac4, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: f8242c5df0702274fbea2c386cd47852, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &187330095
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187330092}
+  m_CullTransparentMesh: 1
+--- !u!114 &187330096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187330092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97edae007e948cb4b91a16b344a90f46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIBarView
+  _fillImage: {fileID: 187330094}
+  _frameImage: {fileID: 86968188}
+  _lerpSpeed: 1.5
+  _useUnscaledTime: 0
+  _flashThreshold: 0
+  _flashMaxAmount: 0.6
+  _flashMinAmount: 0.15
+  _sweepSeconds: 0.6
+  _autoRepeatSweepWhenFull: 0
+  _sweepInterval: 2
+  _fillColor: {r: 1, g: 0.808, b: 0.322, a: 1}
+  _fillColorB: {r: 0.659, g: 0.455, b: 0.941, a: 1}
+  _frameColor: {r: 1, g: 1, b: 1, a: 1}
+  _lineColor: {r: 0.95, g: 0.93, b: 0.88, a: 1}
+  _lineFlashColor: {r: 3, g: 2.4, b: 1.2, a: 1}
+  _drainColor: {r: 0.35, g: 0.35, b: 0.38, a: 1}
+  _flashColor: {r: 1, g: 0.92, b: 0.75, a: 1}
+  _sweepColor: {r: 1, g: 1, b: 1, a: 1}
+  _splitHalves: 1
+  _fillSpriteOverride: {fileID: 0}
+  _frameSpriteOverride: {fileID: 0}
 --- !u!1 &188863057
 GameObject:
   m_ObjectHideFlags: 0
@@ -7820,6 +8011,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 1563830726}
   ownerFrameRight: {fileID: 1139729984}
+  borderDriver: {fileID: 0}
   slotHeight: 300
   animDuration: 0.18
 --- !u!1 &199232889
@@ -11524,6 +11716,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 362044881}
   ownerFrameRight: {fileID: 1980689212}
+  borderDriver: {fileID: 0}
   slotHeight: 300
   animDuration: 0.18
 --- !u!1001 &272043406
@@ -15068,6 +15261,7 @@ GameObject:
   - component: {fileID: 362044883}
   - component: {fileID: 362044882}
   - component: {fileID: 362044881}
+  - component: {fileID: 362044884}
   m_Layer: 0
   m_Name: OwnerFrame
   m_TagString: Untagged
@@ -15087,8 +15281,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.808, b: 0.322, a: 0.3}
+  m_Material: {fileID: 2100000, guid: d1767310e93dd884bb75e538a56dafe3, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -15132,6 +15326,39 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &362044884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 362044880}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190fda851b454ad409f6af4a49aafa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderFillDriver
+  targetImage: {fileID: 0}
+  clanA: {r: 1.5, g: 1.12, b: 0.42, a: 1}
+  clanB: {r: 1, g: 0.66, b: 1.5, a: 1}
+  dualClan: 1
+  borderInvert: 0
+  tankDir: 0
+  glowCooldown: 0.18
+  glowAvailable: 0.7
+  glowActive: 1
+  glowHoldStart: 0.6
+  activeGlowDecay: 3
+  driveBorder: 1
+  driveTank: 1
+  shineWhenReady: 1
+  flashOnStep: 1
+  flashThreshold: 0.03
+  flashDecay: 3
+  passivePulse: 0
+  pulseSpeed: 3
+  pulseAmplitude: 0.6
+  releasePulseDecay: 2.5
 --- !u!1 &364051009
 GameObject:
   m_ObjectHideFlags: 0
@@ -15322,6 +15549,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 1645210208}
   ownerFrameRight: {fileID: 0}
+  borderDriver: {fileID: 0}
   slotHeight: 300
   animDuration: 0.18
 --- !u!1 &364504461
@@ -18056,6 +18284,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 1471584749}
   ownerFrameRight: {fileID: 0}
+  borderDriver: {fileID: 0}
   slotHeight: 300
   animDuration: 0.18
 --- !u!114 &426218330
@@ -18270,6 +18499,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1357044415}
   nameText: {fileID: 368670259}
   chargeText: {fileID: 2050060292}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -19535,6 +19766,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 293430165}
   nameText: {fileID: 220969176}
   chargeText: {fileID: 1236402921}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -20118,6 +20351,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1925847007}
   nameText: {fileID: 2096939202}
   chargeText: {fileID: 1063910691}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -21405,6 +21640,9 @@ RectTransform:
   - {fileID: 81223718}
   - {fileID: 52597966}
   - {fileID: 1289216851}
+  - {fileID: 533302508}
+  - {fileID: 187330093}
+  - {fileID: 86968187}
   m_Father: {fileID: 1340748125}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -22706,6 +22944,81 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 532803674}
   m_CullTransparentMesh: 1
+--- !u!1 &533302507
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 533302508}
+  - component: {fileID: 533302510}
+  - component: {fileID: 533302509}
+  m_Layer: 0
+  m_Name: AccordBarCorona
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &533302508
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 533302507}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 493374464}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 680, y: 680}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &533302509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 533302507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 2100000, guid: bd06fef921a0bef418942aba2eabd157, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: ad3e50fe0cc135647b85a738211f8df3, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &533302510
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 533302507}
+  m_CullTransparentMesh: 1
 --- !u!1 &534271617
 GameObject:
   m_ObjectHideFlags: 0
@@ -23118,6 +23431,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 29665942}
   nameText: {fileID: 1173453699}
   chargeText: {fileID: 612983148}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -28100,6 +28415,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1140372066}
   nameText: {fileID: 99047687}
   chargeText: {fileID: 2070485728}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -28680,7 +28997,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &657462387
 RectTransform:
   m_ObjectHideFlags: 0
@@ -30480,6 +30797,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 2071584535}
   nameText: {fileID: 235808509}
   chargeText: {fileID: 1607347387}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -45477,6 +45796,9 @@ MonoBehaviour:
   lyraController: {fileID: 3899918625678164159}
   kaiController: {fileID: 7943598324775945109}
   empowerSystem: {fileID: 1429211812}
+  soulConvergenceSystem: {fileID: 0}
+  coalesceSystem: {fileID: 1429211809}
+  setsunaSystem: {fileID: 0}
   accordSystem: {fileID: 1429211813}
   skillUnlockStateMono: {fileID: 1429211806}
   slotPossess: {fileID: 81093909}
@@ -47289,6 +47611,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1957150808}
   nameText: {fileID: 2023836782}
   chargeText: {fileID: 50934150}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -48108,6 +48432,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 473017833}
   nameText: {fileID: 1264910477}
   chargeText: {fileID: 318440259}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -50523,6 +50849,73 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 945458339}
   m_CullTransparentMesh: 1
+--- !u!21 &948890533
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LiberationSans SDF Material (Instance)
+  m_Shader: {fileID: 4800000, guid: fe393ace9b354375a9cb14cdbbc28be4, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 1
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 28684132378477856, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ColorMask: 15
+    - _CullMode: 0
+    - _FaceDilate: 0
+    - _GradientScale: 10
+    - _MaskSoftnessX: 0
+    - _MaskSoftnessY: 0
+    - _OutlineSoftness: 0
+    - _OutlineWidth: 0
+    - _PerspectiveFilter: 0.875
+    - _ScaleRatioA: 0.9
+    - _ScaleRatioB: 1
+    - _ScaleRatioC: 0.73125
+    - _ScaleX: 1
+    - _ScaleY: 1
+    - _ShaderFlags: 0
+    - _Sharpness: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _TextureHeight: 1024
+    - _TextureWidth: 1024
+    - _UnderlayDilate: 0
+    - _UnderlayOffsetX: 0
+    - _UnderlayOffsetY: 0
+    - _UnderlaySoftness: 0
+    - _VertexOffsetX: 0
+    - _VertexOffsetY: 0
+    - _WeightBold: 0.75
+    - _WeightNormal: 0
+    m_Colors:
+    - _ClipRect: {r: -32767, g: -32767, b: 32767, a: 32767}
+    - _FaceColor: {r: 1, g: 1, b: 1, a: 1}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
+    - _UnderlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &952281822
 GameObject:
   m_ObjectHideFlags: 0
@@ -51066,6 +51459,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 1798171371}
   ownerFrameRight: {fileID: 1549817452}
+  borderDriver: {fileID: 0}
   slotHeight: 300
   animDuration: 0.18
 --- !u!1 &967600394
@@ -52849,6 +53243,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1031133969}
   nameText: {fileID: 612436212}
   chargeText: {fileID: 1527499867}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -56940,7 +57336,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1139729984
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58359,6 +58755,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1643382097}
   nameText: {fileID: 1809974841}
   chargeText: {fileID: 57646273}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -61368,6 +61766,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 1808707848}
   ownerFrameRight: {fileID: 0}
+  borderDriver: {fileID: 0}
   slotHeight: 300
   animDuration: 0.18
 --- !u!1 &1240614443
@@ -68405,10 +68804,12 @@ MonoBehaviour:
   m_text: C
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_fontSharedMaterials: []
-  m_fontMaterial: {fileID: 0}
-  m_fontMaterials: []
+  m_sharedMaterial: {fileID: 948890533}
+  m_fontSharedMaterials:
+  - {fileID: 948890533}
+  m_fontMaterial: {fileID: 948890533}
+  m_fontMaterials:
+  - {fileID: 948890533}
   m_fontColor32:
     serializedVersion: 2
     rgba: 4278190080
@@ -68707,6 +69108,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1680183659}
   nameText: {fileID: 1249307305}
   chargeText: {fileID: 975035510}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -70554,16 +70957,16 @@ MonoBehaviour:
   accordSystem: {fileID: 1429211813}
   unlockStateMono: {fileID: 1429211806}
   panel: {fileID: 493374463}
-  barSlider: {fileID: 657462388}
-  barFill: {fileID: 1721630550}
-  colourEmpty: {r: 0.25, g: 0.75, b: 1, a: 1}
-  colourFull: {r: 0.55, g: 0.15, b: 1, a: 1}
-  fullPulseImage: {fileID: 1289216852}
-  pulseColour: {r: 0.55, g: 0.15, b: 1, a: 1}
-  pulseSpeed: 3
+  barView: {fileID: 187330096}
+  coronaImage: {fileID: 533302509}
+  coronaReady: 0.45
+  coronaLerp: 6
+  shineInterval: 2.2
+  flashDecay: 3
+  activeFlashSpeed: 5
+  activeFlashAmount: 0.55
   holdXText: {fileID: 52597967}
-  chargeRing: {fileID: 3980496}
-  chargeRingColour: {r: 1, g: 0.9, b: 0.3, a: 1}
+  promptPulseSpeed: 3
 --- !u!1 &1344689998
 GameObject:
   m_ObjectHideFlags: 0
@@ -73106,6 +73509,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 417408955}
   nameText: {fileID: 2103428693}
   chargeText: {fileID: 409662110}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -73551,6 +73956,7 @@ MonoBehaviour:
   _damageInReduction: 0.35
   _chargeHoldTime: 0.75
   _jointLeniency: 0.5
+  _hideLegacyUI: 1
   _counterText: {fileID: 244575949}
   _chargeBar: {fileID: 776507914}
   _powerStatePanel: {fileID: 2087491470}
@@ -73654,6 +74060,8 @@ MonoBehaviour:
   _dashSlider: {fileID: 257562878}
   _dashReadyColour: {r: 0.4, g: 0.8, b: 1, a: 1}
   _dashCooldownColour: {r: 0.3, g: 0.3, b: 0.4, a: 1}
+  _lyraClan: {r: 1, g: 0.808, b: 0.322, a: 1}
+  _kaiClan: {r: 0.659, g: 0.455, b: 0.941, a: 1}
   _enemyLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -74364,6 +74772,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1913164851}
   nameText: {fileID: 110280607}
   chargeText: {fileID: 881878135}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -75004,6 +75414,7 @@ GameObject:
   - component: {fileID: 1471584748}
   - component: {fileID: 1471584750}
   - component: {fileID: 1471584749}
+  - component: {fileID: 1471584751}
   m_Layer: 0
   m_Name: OwnerFrame
   m_TagString: Untagged
@@ -75042,8 +75453,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.659, g: 0.455, b: 0.941, a: 0.3}
+  m_Material: {fileID: 2100000, guid: d1767310e93dd884bb75e538a56dafe3, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -75068,6 +75479,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1471584747}
   m_CullTransparentMesh: 1
+--- !u!114 &1471584751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471584747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190fda851b454ad409f6af4a49aafa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderFillDriver
+  targetImage: {fileID: 0}
+  clanA: {r: 1, g: 0.66, b: 1.5, a: 1}
+  clanB: {r: 1, g: 0.66, b: 1.5, a: 1}
+  dualClan: 0
+  borderInvert: 1
+  tankDir: 1
+  glowCooldown: 0.18
+  glowAvailable: 0.7
+  glowActive: 1
+  glowHoldStart: 0.6
+  activeGlowDecay: 3
+  driveBorder: 1
+  driveTank: 1
+  shineWhenReady: 1
+  flashOnStep: 1
+  flashThreshold: 0.03
+  flashDecay: 3
+  passivePulse: 0
+  pulseSpeed: 3
+  pulseAmplitude: 0.6
+  releasePulseDecay: 2.5
 --- !u!1 &1471698567
 GameObject:
   m_ObjectHideFlags: 0
@@ -77970,7 +78414,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1549817452
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78251,6 +78695,7 @@ GameObject:
   - component: {fileID: 1563830728}
   - component: {fileID: 1563830727}
   - component: {fileID: 1563830726}
+  - component: {fileID: 1563830729}
   m_Layer: 0
   m_Name: OwnerFrame
   m_TagString: Untagged
@@ -78270,8 +78715,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.808, b: 0.322, a: 0.3}
+  m_Material: {fileID: 2100000, guid: d1767310e93dd884bb75e538a56dafe3, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -78315,6 +78760,39 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1563830729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1563830725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190fda851b454ad409f6af4a49aafa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderFillDriver
+  targetImage: {fileID: 0}
+  clanA: {r: 1.5, g: 1.12, b: 0.42, a: 1}
+  clanB: {r: 1, g: 0.66, b: 1.5, a: 1}
+  dualClan: 1
+  borderInvert: 0
+  tankDir: 0
+  glowCooldown: 0.18
+  glowAvailable: 0.7
+  glowActive: 1
+  glowHoldStart: 0.6
+  activeGlowDecay: 3
+  driveBorder: 1
+  driveTank: 1
+  shineWhenReady: 1
+  flashOnStep: 1
+  flashThreshold: 0.03
+  flashDecay: 3
+  passivePulse: 1
+  pulseSpeed: 3
+  pulseAmplitude: 0.6
+  releasePulseDecay: 2.5
 --- !u!1 &1564672299
 GameObject:
   m_ObjectHideFlags: 0
@@ -79567,6 +80045,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1526339751}
   nameText: {fileID: 1472229448}
   chargeText: {fileID: 1046776520}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -84914,6 +85394,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 762104944}
   nameText: {fileID: 572518000}
   chargeText: {fileID: 2031796598}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -85072,6 +85554,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 0}
   ownerFrameRight: {fileID: 0}
+  borderDriver: {fileID: 0}
   slotHeight: 80
   animDuration: 0.18
 --- !u!1 &1607347385
@@ -85665,6 +86148,7 @@ GameObject:
   - component: {fileID: 1619445081}
   - component: {fileID: 1619445083}
   - component: {fileID: 1619445082}
+  - component: {fileID: 1619445084}
   m_Layer: 0
   m_Name: OwnerFrame
   m_TagString: Untagged
@@ -85703,8 +86187,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.808, b: 0.322, a: 0.3}
+  m_Material: {fileID: 2100000, guid: d1767310e93dd884bb75e538a56dafe3, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -85729,6 +86213,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1619445080}
   m_CullTransparentMesh: 1
+--- !u!114 &1619445084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1619445080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190fda851b454ad409f6af4a49aafa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderFillDriver
+  targetImage: {fileID: 0}
+  clanA: {r: 1.5, g: 1.12, b: 0.42, a: 1}
+  clanB: {r: 0.55, g: 0.35, b: 1, a: 1}
+  dualClan: 0
+  borderInvert: 0
+  tankDir: 0
+  glowCooldown: 0.18
+  glowAvailable: 0.7
+  glowActive: 1
+  glowHoldStart: 0.6
+  activeGlowDecay: 3
+  driveBorder: 1
+  driveTank: 1
+  shineWhenReady: 1
+  flashOnStep: 1
+  flashThreshold: 0.03
+  flashDecay: 3
+  passivePulse: 0
+  pulseSpeed: 3
+  pulseAmplitude: 0.6
+  releasePulseDecay: 2.5
 --- !u!1 &1621385003
 GameObject:
   m_ObjectHideFlags: 0
@@ -86411,6 +86928,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 283654892}
   nameText: {fileID: 868628248}
   chargeText: {fileID: 1151790950}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -86639,6 +87158,7 @@ GameObject:
   - component: {fileID: 1645210207}
   - component: {fileID: 1645210209}
   - component: {fileID: 1645210208}
+  - component: {fileID: 1645210210}
   m_Layer: 0
   m_Name: OwnerFrame
   m_TagString: Untagged
@@ -86677,8 +87197,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.659, g: 0.455, b: 0.941, a: 0.3}
+  m_Material: {fileID: 2100000, guid: d1767310e93dd884bb75e538a56dafe3, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -86703,6 +87223,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1645210206}
   m_CullTransparentMesh: 1
+--- !u!114 &1645210210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1645210206}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190fda851b454ad409f6af4a49aafa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderFillDriver
+  targetImage: {fileID: 0}
+  clanA: {r: 1, g: 0.66, b: 1.5, a: 1}
+  clanB: {r: 0.55, g: 0.35, b: 1, a: 1}
+  dualClan: 0
+  borderInvert: 1
+  tankDir: 0
+  glowCooldown: 0.18
+  glowAvailable: 0.7
+  glowActive: 1
+  glowHoldStart: 0.6
+  activeGlowDecay: 3
+  driveBorder: 1
+  driveTank: 1
+  shineWhenReady: 1
+  flashOnStep: 1
+  flashThreshold: 0.03
+  flashDecay: 3
+  passivePulse: 0
+  pulseSpeed: 3
+  pulseAmplitude: 0.6
+  releasePulseDecay: 2.5
 --- !u!1 &1646362296
 GameObject:
   m_ObjectHideFlags: 0
@@ -88159,6 +88712,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1805991659}
   nameText: {fileID: 540138623}
   chargeText: {fileID: 1742261630}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -89771,7 +90326,7 @@ RectTransform:
   m_Father: {fileID: 1151371058}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -90129,6 +90684,7 @@ MonoBehaviour:
   vfxPulseSpeed: 1.8
   ownerFrameLeft: {fileID: 0}
   ownerFrameRight: {fileID: 0}
+  borderDriver: {fileID: 0}
   slotHeight: 80
   animDuration: 0.18
 --- !u!1 &1726676159
@@ -93237,6 +93793,7 @@ GameObject:
   - component: {fileID: 1798171373}
   - component: {fileID: 1798171372}
   - component: {fileID: 1798171371}
+  - component: {fileID: 1798171374}
   m_Layer: 0
   m_Name: OwnerFrame
   m_TagString: Untagged
@@ -93256,8 +93813,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.808, b: 0.322, a: 0.3}
+  m_Material: {fileID: 2100000, guid: d1767310e93dd884bb75e538a56dafe3, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -93301,6 +93858,39 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1798171374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1798171370}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190fda851b454ad409f6af4a49aafa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderFillDriver
+  targetImage: {fileID: 0}
+  clanA: {r: 1.5, g: 1.12, b: 0.42, a: 1}
+  clanB: {r: 1, g: 0.66, b: 1.5, a: 1}
+  dualClan: 1
+  borderInvert: 0
+  tankDir: 0
+  glowCooldown: 0.18
+  glowAvailable: 0.7
+  glowActive: 1
+  glowHoldStart: 0.6
+  activeGlowDecay: 3
+  driveBorder: 1
+  driveTank: 1
+  shineWhenReady: 1
+  flashOnStep: 1
+  flashThreshold: 0.03
+  flashDecay: 3
+  passivePulse: 0
+  pulseSpeed: 3
+  pulseAmplitude: 0.6
+  releasePulseDecay: 2.5
 --- !u!1001 &1801583860
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -93674,6 +94264,7 @@ GameObject:
   - component: {fileID: 1808707847}
   - component: {fileID: 1808707849}
   - component: {fileID: 1808707848}
+  - component: {fileID: 1808707850}
   m_Layer: 0
   m_Name: OwnerFrame
   m_TagString: Untagged
@@ -93712,8 +94303,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.808, b: 0.322, a: 0.3}
+  m_Material: {fileID: 2100000, guid: d1767310e93dd884bb75e538a56dafe3, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -93738,6 +94329,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1808707846}
   m_CullTransparentMesh: 1
+--- !u!114 &1808707850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1808707846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 190fda851b454ad409f6af4a49aafa8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BorderFillDriver
+  targetImage: {fileID: 0}
+  clanA: {r: 1.5, g: 1.12, b: 0.42, a: 1}
+  clanB: {r: 1, g: 0.66, b: 1.5, a: 1}
+  dualClan: 0
+  borderInvert: 0
+  tankDir: 1
+  glowCooldown: 0.18
+  glowAvailable: 0.7
+  glowActive: 1
+  glowHoldStart: 0.6
+  activeGlowDecay: 3
+  driveBorder: 1
+  driveTank: 1
+  shineWhenReady: 1
+  flashOnStep: 1
+  flashThreshold: 0.03
+  flashDecay: 3
+  passivePulse: 0
+  pulseSpeed: 3
+  pulseAmplitude: 0.6
+  releasePulseDecay: 2.5
 --- !u!1 &1809974839
 GameObject:
   m_ObjectHideFlags: 0
@@ -95301,6 +95925,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1556371850}
   nameText: {fileID: 1170627407}
   chargeText: {fileID: 2094013454}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
@@ -99864,7 +100490,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1980689212
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108335,6 +108961,8 @@ MonoBehaviour:
   lockedOverlay: {fileID: 1060447084}
   nameText: {fileID: 2042903007}
   chargeText: {fileID: 1221118447}
+  buttonText: {fileID: 0}
+  borderDriver: {fileID: 0}
   readyColour: {r: 0.46196505, g: 0.81886786, b: 0.7063896, a: 1}
   activeColour: {r: 0.4, g: 1, b: 0.4, a: 1}
   cooldownColour: {r: 0.3, g: 0.3, b: 0.3, a: 1}
