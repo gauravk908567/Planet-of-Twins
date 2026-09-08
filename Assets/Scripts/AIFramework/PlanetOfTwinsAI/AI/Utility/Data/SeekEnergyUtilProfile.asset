@@ -17,14 +17,14 @@ MonoBehaviour:
   factors:
   - blackboardKey: PoT.Enemy.DarkEnergyNorm
     curveShape: 0
-    steepness: 0
+    steepness: 7
     stepThreshold: 0
     weight: 40
     invert: 0
     isBool: 0
   - blackboardKey: PoT.Enemy.HealthNorm
     curveShape: 0
-    steepness: 0
+    steepness: 7
     stepThreshold: 0
     weight: 40
     invert: 1

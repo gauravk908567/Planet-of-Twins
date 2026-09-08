@@ -24,14 +24,14 @@ MonoBehaviour:
     isBool: 0
   - blackboardKey: PoT.Enemy.HealthNorm
     curveShape: 2
-    steepness: 0
+    steepness: 3
     stepThreshold: 0
     weight: 20
     invert: 0
     isBool: 0
   - blackboardKey: PoT.Game.FactionEnergyNorm
     curveShape: 0
-    steepness: 0
+    steepness: 3
     stepThreshold: 0
     weight: 20
     invert: 0

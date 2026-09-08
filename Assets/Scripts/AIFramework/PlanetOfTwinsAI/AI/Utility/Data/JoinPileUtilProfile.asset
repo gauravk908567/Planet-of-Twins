@@ -17,14 +17,14 @@ MonoBehaviour:
   factors:
   - blackboardKey: PoT.Squad.TargetIsEngaged
     curveShape: 0
-    steepness: 0
+    steepness: 4.5
     stepThreshold: 0
     weight: 60
     invert: 0
     isBool: 1
   - blackboardKey: PoT.Enemy.HealthNorm
     curveShape: 2
-    steepness: 0
+    steepness: 3.5
     stepThreshold: 0
     weight: 20
     invert: 0

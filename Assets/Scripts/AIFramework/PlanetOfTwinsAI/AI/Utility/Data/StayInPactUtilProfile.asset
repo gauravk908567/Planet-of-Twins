@@ -17,7 +17,7 @@ MonoBehaviour:
   factors:
   - blackboardKey: PoT.Bond.ComboReady
     curveShape: 4
-    steepness: 0
+    steepness: 3
     stepThreshold: 0.5
     weight: 50
     invert: 0

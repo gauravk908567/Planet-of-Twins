@@ -17,7 +17,7 @@ MonoBehaviour:
   factors:
   - blackboardKey: Self.Awareness.BestTarget.GameObject
     curveShape: 0
-    steepness: 0
+    steepness: 2.5
     stepThreshold: 0
     weight: 50
     invert: 0
@@ -31,21 +31,21 @@ MonoBehaviour:
     isBool: 0
   - blackboardKey: PoT.Game.FactionEnergyNorm
     curveShape: 0
-    steepness: 0
+    steepness: 4
     stepThreshold: 0
     weight: 15
     invert: 0
     isBool: 0
   - blackboardKey: PoT.Game.SharedHealthNorm
     curveShape: 5
-    steepness: 0
+    steepness: 3.8
     stepThreshold: 0
     weight: 20
     invert: 0
     isBool: 0
   - blackboardKey: PoT.Game.AllyCountNorm
     curveShape: 1
-    steepness: 2
+    steepness: 1.75
     stepThreshold: 0
     weight: 25
     invert: 0

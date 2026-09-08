@@ -17,28 +17,28 @@ MonoBehaviour:
   factors:
   - blackboardKey: Self.Awareness.BestTarget.GameObject
     curveShape: 0
-    steepness: 0
+    steepness: 0.75
     stepThreshold: 0
     weight: 50
     invert: 0
     isBool: 1
   - blackboardKey: PoT.Enemy.HealthNorm
     curveShape: 6
-    steepness: 2
+    steepness: 1.25
     stepThreshold: 0
     weight: 20
     invert: 0
     isBool: 0
   - blackboardKey: PoT.Game.FactionEnergyNorm
     curveShape: 1
-    steepness: 2
+    steepness: 1
     stepThreshold: 0
     weight: 25
     invert: 0
     isBool: 0
   - blackboardKey: PoT.Bond.PartnerAlive
     curveShape: 6
-    steepness: 0
+    steepness: 0.5
     stepThreshold: 0
     weight: 30
     invert: 1
