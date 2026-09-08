@@ -46,14 +46,15 @@ public class TimelineSignalRelay : MonoBehaviour
     }
 
     // ── HUD hide/show ────────────────────────────────────────────────────────
-    // No HUDController exists in the project yet. When HUD-hide is actually needed, either
-    // (a) add a minimal HUDController singleton on the Persistent HUD canvas, or (b) resolve the
-    // Persistent HUD CanvasGroup and toggle alpha/interactable here. Do NOT call a non-existent
-    // HUDController.Instance. Left unimplemented on purpose — logs loudly if wired prematurely.
-    public void HideHUD() => Debug.LogWarning("[TimelineSignalRelay] HideHUD not implemented — " +
- "no HUDController exists yet.", this);
-    public void ShowHUD() => Debug.LogWarning("[TimelineSignalRelay] ShowHUD not implemented — " +
- "no HUDController exists yet.", this);
+    // NOT USED — the HUD is hidden/shown by **Activation Track 22**, rebound at runtime to the
+    // Persistent HUD_Canvas GO via TimelineBindingResolver (BindingRole.HudCanvas → reg.hudCanvas).
+    // That Activation-track path is the live mechanism; these Signal entry points are a redundant
+    // alternate and are intentionally left as loud no-ops. Do NOT wire a Signal to them — toggle the
+    // HUD through the Activation track / resolver instead (R11 / BUG-032).
+    public void HideHUD() => Debug.LogWarning("[TimelineSignalRelay] HideHUD is not the live path — " +
+        "the HUD is toggled by Activation Track 22 via TimelineBindingResolver (HudCanvas). Don't wire this.", this);
+    public void ShowHUD() => Debug.LogWarning("[TimelineSignalRelay] ShowHUD is not the live path — " +
+        "the HUD is toggled by Activation Track 22 via TimelineBindingResolver (HudCanvas). Don't wire this.", this);
 
     // ── Helper ───────────────────────────────────────────────────────────────
     private bool Resolve()

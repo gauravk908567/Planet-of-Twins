@@ -34,65 +34,77 @@ public class TutorialRescueWatchStepSO : TutorialStepBase
             yield break;
         }
 
-        // Reset success latch before watching
-        rescue.ResetSuccessFlag();
-
-        // ── Wait for twin to get grabbed ──────────────────────────
-        yield return new WaitUntil(() => rescue.HasActiveRescueTarget);
-
-        // ── Show prompt (or fail-loud skip if overlay missing) ────
-        bool promptDone = false;
-        if (ctx.overlay != null)
+        // Tutorial owns rescue failures here — suppress the game-over ("battle lost") signal so a failed
+        // rescue drives the fade → reset → retry below instead (BUG-103). Cleared in the finally so it
+        // lifts on the success yield-break AND if the tutorial is skipped/aborted (coroutine disposed →
+        // finally still runs). Only the game-over signal is gated; the Failed state + poll are untouched.
+        rescue.SuppressFailGameOver = true;
+        try
         {
-            ctx.overlay.Show(
-                promptTitle.IsEmpty ? "" : promptTitle.GetLocalizedString(),
-                promptBody.IsEmpty ? "" : promptBody.GetLocalizedString(),
-                promptClip, () => promptDone = true);
-        }
-        else
-        {
-            Debug.LogError("[TutorialRescueWatch] ctx.overlay is null — skipping explainer; " +
-                           "rescue watch still proceeds.", this);
-            promptDone = true;
-        }
+            // Reset success latch before watching
+            rescue.ResetSuccessFlag();
 
-        // ── RACE: success vs. prompt dismissal ────────────────────
-        // Rescue mash is input-driven (not deltaTime) so it completes at timeScale=0.
-        // Never gate the success observation behind prompt dismissal.
-        yield return new WaitUntil(() => promptDone || rescue.WasSuccessful);
+            // ── Wait for twin to get grabbed ──────────────────────────
+            yield return new WaitUntil(() => rescue.HasActiveRescueTarget);
 
-        if (!promptDone)
-            ctx.overlay.Continue();   // success beat the prompt — release the timeScale=0 hold
+            // ── Show prompt (or fail-loud skip if overlay missing) ────
+            bool promptDone = false;
+            if (ctx.overlay != null)
+            {
+                ctx.overlay.Show(
+                    promptTitle.IsEmpty ? "" : promptTitle.GetLocalizedString(),
+                    promptBody.IsEmpty ? "" : promptBody.GetLocalizedString(),
+                    promptClip, () => promptDone = true);
+            }
+            else
+            {
+                Debug.LogError("[TutorialRescueWatch] ctx.overlay is null — skipping explainer; " +
+                               "rescue watch still proceeds.", this);
+                promptDone = true;
+            }
 
-        if (rescue.WasSuccessful)
-            yield break;
+            // ── RACE: success vs. prompt dismissal ────────────────────
+            // Rescue mash is input-driven (not deltaTime) so it completes at timeScale=0.
+            // Never gate the success observation behind prompt dismissal.
+            yield return new WaitUntil(() => promptDone || rescue.WasSuccessful);
 
-        // ── Failure watch — only reached when prompt dismissed first ──
-        // TTK uses Time.deltaTime so failure cannot expire while overlay holds timeScale=0.
-        string failMsg = failureMessage.IsEmpty
-            ? "Reach your twin in time — move closer and mash F"
-            : failureMessage.GetLocalizedString();
-
-        while (true)
-        {
-            yield return null;
+            if (!promptDone)
+                ctx.overlay.Continue();   // success beat the prompt — release the timeScale=0 hold
 
             if (rescue.WasSuccessful)
                 yield break;
 
-            if (rescue.CurrentRescueState == RescueState.Failed)
+            // ── Failure watch — only reached when prompt dismissed first ──
+            // TTK uses Time.deltaTime so failure cannot expire while overlay holds timeScale=0.
+            string failMsg = failureMessage.IsEmpty
+                ? "Reach your twin in time — move closer and mash F"
+                : failureMessage.GetLocalizedString();
+
+            while (true)
             {
-                ctx.failureNotice?.Show(failMsg);
-                ctx.resetSequencer?.TriggerReset(
-                    ctx.RescueFailLeftReset,
-                    ctx.RescueFailRightReset,
-                    null);
+                yield return null;
 
-                rescue.ResetSuccessFlag();
+                if (rescue.WasSuccessful)
+                    yield break;
 
-                yield return new WaitForSecondsRealtime(0.5f);
-                yield return new WaitUntil(() => rescue.HasActiveRescueTarget);
+                if (rescue.CurrentRescueState == RescueState.Failed)
+                {
+                    ctx.failureNotice?.Show(failMsg);
+                    ctx.resetSequencer?.TriggerReset(
+                        ctx.RescueFailLeftReset,
+                        ctx.RescueFailRightReset,
+                        null);
+
+                    rescue.ResetSuccessFlag();
+
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    yield return new WaitUntil(() => rescue.HasActiveRescueTarget);
+                }
             }
+        }
+        finally
+        {
+            rescue.SuppressFailGameOver = false;
         }
     }
 }

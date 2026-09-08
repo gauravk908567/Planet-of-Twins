@@ -6,7 +6,7 @@ public interface ITutorialRescueProvider
     RescueState CurrentRescueState { get; }
 
     /// <summary>
-    /// True as soon as a twin is grabbed � fires before state leaves Idle.
+    /// True as soon as a twin is grabbed � fires before state leaves Idle.
     /// </summary>
     bool HasActiveRescueTarget { get; }
 
@@ -21,6 +21,15 @@ public interface ITutorialRescueProvider
 
     /// <summary>Reset the success latch before watching a new rescue.</summary>
     void ResetSuccessFlag();
+
+    /// <summary>
+    /// While true, a Failed rescue does NOT fire the game-over signal (OnRescueFailed). The Failed
+    /// state transition and CurrentRescueState still happen — only the game-over trigger is gated.
+    /// The tutorial rescue-watch step sets this while it owns the rescue so a failed tutorial rescue
+    /// drives its own fade → reset → retry instead of "battle lost" (BUG-103). Non-tutorial rescues
+    /// leave it false → a failed rescue is game-over as designed.
+    /// </summary>
+    bool SuppressFailGameOver { get; set; }
 
     event System.Action<RescueState> OnRescueStateChanged;
 }

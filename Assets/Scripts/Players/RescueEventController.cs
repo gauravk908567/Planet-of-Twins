@@ -118,6 +118,14 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     public void ResetSuccessFlag() => WasSuccessful = false;
 
     /// <summary>
+    /// While true, a Failed rescue does NOT fire OnRescueFailed (the game-over signal). The Failed
+    /// state transition and CurrentRescueState are unaffected — only the game-over trigger is gated.
+    /// Set by TutorialRescueWatchStepSO while it owns the rescue so a failed tutorial rescue drives its
+    /// own fade → reset → retry instead of "battle lost" (BUG-103). Non-tutorial rescues leave it false.
+    /// </summary>
+    public bool SuppressFailGameOver { get; set; } = false;
+
+    /// <summary>
     /// Hard-resets rescue state to Idle. Called by SoftResetController on respawn.
     /// Unfreezes any grabbed twin, clears all internal state, fires state-change events.
     /// </summary>
@@ -713,7 +721,12 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             case RescueState.Failed:
                 if (_debugRescue) Debug.Log("[Rescue] FAILED — rescue lost, twin killed");
                 OnRescueResolved?.Invoke();
-                OnRescueFailed?.Invoke();   // dedicated failure signal — fires BEFORE cleanup resets state (game-over)
+                // Dedicated failure signal → game-over (GameOverController subscribes it). Suppressed
+                // while the tutorial owns the rescue (BUG-103) so a failed tutorial rescue runs its own
+                // fade → reset → retry instead. CurrentRescueState is already Failed (set in TransitionTo
+                // before EnterState), so the tutorial step's Failed poll still fires.
+                if (!SuppressFailGameOver)
+                    OnRescueFailed?.Invoke();   // fires BEFORE cleanup resets state
                 CleanupRescueEvent();
                 break;
 
