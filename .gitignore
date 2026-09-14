@@ -91,3 +91,10 @@ crashlytics-build.properties
 # Reference e-books at repo root (large binaries, not game content)
 /*.pdf
 /Library/
+
+# --- Internal working docs — for US, not the world (2026-09-14 user ruling) ---
+# CLAUDE.md, game.md, changelog.md, BACKLOG.md, BUGS.md, CHECKLIST.md, WorldStorytelling.md,
+# instruction.md, PROJECT_STATE.md, the *_analysis.md, guides, etc. Root-level markdown only —
+# kept on disk (Claude/dev still read them), never committed. A public README.md stays allowed.
+/*.md
+!/README.md
