@@ -44,6 +44,20 @@ public class UIBarHealthView : MonoBehaviour, IHealthBarView
     }
 
     /// <summary>
+    /// Pulses the EXTERNAL flash on every bar this view drives (both halves of the shared emblem).
+    /// Orthogonal to fill and drain — UIBarView max's this with its own low-value warning flash, so
+    /// the bond flash (damage / rescue-available, driven by BondFlashDriver) and the low-health flash
+    /// never fight. 0 = no external flash.
+    /// </summary>
+    public void SetFlash(float amount01)
+    {
+        if (_bars == null) return;
+        float a = Mathf.Clamp01(amount01);
+        for (int i = 0; i < _bars.Length; i++)
+            if (_bars[i] != null) _bars[i].SetFlash(a);
+    }
+
+    /// <summary>
     /// Intentionally a NO-OP. UIBarView already drives the low-health flash itself, from the
     /// displayed value against its own `_flashThreshold` (0.30 by default), ramping the pulse as
     /// the value approaches zero — and the flash lives on the FRAME and clan symbol rather than

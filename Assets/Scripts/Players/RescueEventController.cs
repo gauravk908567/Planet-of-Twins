@@ -118,6 +118,39 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     public void ResetSuccessFlag() => WasSuccessful = false;
 
     /// <summary>
+    /// Latches true the moment a rescue FAILS and stays true until ResetFailFlag(). Mirrors WasSuccessful,
+    /// and for the same reason: EnterState(Failed) → CleanupRescueEvent() resets CurrentRescueState to Idle
+    /// synchronously in the SAME call, so a frame-poll of "CurrentRescueState == Failed" never observes the
+    /// terminal value — the tutorial fade → reset → retry never fired. The tutorial rescue-watch step polls
+    /// this instead.
+    /// </summary>
+    public bool WasFailed { get; private set; } = false;
+
+    /// <summary>Reset the failure latch before watching a new rescue / after handling one failure.</summary>
+    public void ResetFailFlag() => WasFailed = false;
+
+    /// <summary>
+    /// Tutorial retry: fully restore BOTH twins — clears death flags, HP to max, resets distance drain,
+    /// unfreezes movement and clears the grabbed flag — so a failed tutorial rescue can be re-attempted.
+    /// The tutorial trap deals REAL lethal damage on TTK-timeout (SkeletonTrap.KillPlayer → HP 0), so
+    /// without this the killed twin stays dead (regen halted) and the retry loop can never re-grab.
+    /// Non-tutorial failures are game-over, so they never call this.
+    /// </summary>
+    public void ReviveTwinsForRetry()
+    {
+        ReviveOneForRetry(leftTwin);
+        ReviveOneForRetry(rightTwin);
+    }
+
+    private static void ReviveOneForRetry(Player twin)
+    {
+        if (twin == null) return;
+        twin.Health?.RestoreToFull();
+        (twin.Movement as IMovementFreezable)?.SetFrozen(false);
+        twin.SetGrabbed(false);
+    }
+
+    /// <summary>
     /// While true, a Failed rescue does NOT fire OnRescueFailed (the game-over signal). The Failed
     /// state transition and CurrentRescueState are unaffected — only the game-over trigger is gated.
     /// Set by TutorialRescueWatchStepSO while it owns the rescue so a failed tutorial rescue drives its
@@ -567,6 +600,21 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             case RescueState.Cooldown:
                 TickCooldown();
                 break;
+
+            case RescueState.SoulDied:
+                // Recovery (Bug: "mash UI never comes back after the soul leaves range"): SoulDied is entered
+                // BOTH when the soul truly dies AND when a still-deployed soul merely wanders >2×radius away
+                // (see the Triggered case). The wander case MUST be recoverable — if the live soul returns
+                // within range, re-arm the mash. A genuinely dead / returned-home soul has no
+                // ActiveSoulTransform, so a real death correctly stays terminal (no false recovery).
+                if (_activeTarget?.GrabbedPlayerTransform != null)
+                {
+                    var backSoul = ActiveSoulTransform;
+                    if (backSoul != null &&
+                        Vector3.Distance(backSoul.position, _activeTarget.GrabbedPlayerTransform.position) <= rescueProximityRadius)
+                        TransitionTo(RescueState.Triggered);
+                }
+                break;
         }
     }
 
@@ -641,6 +689,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         _state = next;
         CurrentRescueState = next;
         if (next == RescueState.Success) WasSuccessful = true;
+        if (next == RescueState.Failed) WasFailed = true;   // latch — see WasFailed / ReviveTwinsForRetry
         EnterState(next);
 
         // Terminal states (Success/Failed) call CleanupRescueEvent() inside EnterState, which

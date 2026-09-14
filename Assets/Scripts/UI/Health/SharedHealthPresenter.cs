@@ -53,13 +53,12 @@ public class SharedHealthPresenter : MonoBehaviour
         }
 
         // Re-subscribe in case OnEnable fired before sharedHealthPool was resolved.
-        // ROLLBACK (BUG-091, 2026-08-05): bar FILL reverted to the pre-UI-shader (26a192e) masked
-        // CombinedHealth to test the "survival-channel rework introduced the health bug" hypothesis
-        // for the playtest. The survival channel (CombinedSurvival01/OnSurvivalChanged) and the
-        // BondWeaknessPresenter grey-drain are left intact but unused — restore them for the proper
-        // two-channel fix after the playtest.
-        sharedHealthPool.OnCombinedHealthChanged -= HandleCombinedHealthChanged;
-        sharedHealthPool.OnCombinedHealthChanged += HandleCombinedHealthChanged;
+        // BOND REFRAME (game.md §4.1, 2026-09-09): FILL reads the PURE combat pool via OnSurvivalChanged →
+        // CombinedCombat01 (distance-INDEPENDENT), so the emblem never drains on separation — distance
+        // drives ONLY the grey desaturation (BondWeaknessPresenter → PoT/BondBar _Drain). Game-over stays
+        // on OnSharedPoolEmpty (masked pool incl. the over-max drain, so straying too far still kills).
+        sharedHealthPool.OnSurvivalChanged -= HandleSurvivalChanged;
+        sharedHealthPool.OnSurvivalChanged += HandleSurvivalChanged;
         sharedHealthPool.OnSharedPoolEmpty -= HandleSharedPoolEmpty;
         sharedHealthPool.OnSharedPoolEmpty += HandleSharedPoolEmpty;
 
@@ -75,7 +74,7 @@ public class SharedHealthPresenter : MonoBehaviour
     private void OnEnable()
     {
         if (sharedHealthPool == null) return;
-        sharedHealthPool.OnCombinedHealthChanged += HandleCombinedHealthChanged;
+        sharedHealthPool.OnSurvivalChanged += HandleSurvivalChanged;
         sharedHealthPool.OnSharedPoolEmpty += HandleSharedPoolEmpty;
 
         if (emergencyMonitor != null)
@@ -87,18 +86,21 @@ public class SharedHealthPresenter : MonoBehaviour
     private void OnDisable()
     {
         if (sharedHealthPool == null) return;
-        sharedHealthPool.OnCombinedHealthChanged -= HandleCombinedHealthChanged;
+        sharedHealthPool.OnSurvivalChanged -= HandleSurvivalChanged;
         sharedHealthPool.OnSharedPoolEmpty -= HandleSharedPoolEmpty;
 
         if (emergencyMonitor != null)
             emergencyMonitor.OnEmergencyStateChanged -= HandleEmergencyStateChanged;
     }
 
-    // ROLLBACK (BUG-091): FILL from the masked CombinedHealth (26a192e behaviour) — the bar shrinks
-    // with distance again. Restore HandleSurvivalChanged + CombinedSurvival01 for the proper fix.
-    private void HandleCombinedHealthChanged(float combined)
+    // BOND REFRAME (game.md §4.1): FILL from the PURE combat pool — distance-independent, so the emblem
+    // never drains on separation (distance only greys it via BondWeaknessPresenter). CombinedCombat01 is
+    // already normalised 0..1 (mean of the twins' real combat-health fractions), so no divide by max.
+    // NOT CombinedSurvival01 — that subtracts the over-max drain and would still empty the emblem when
+    // the twins stray far (which also hides the grey, since grey only tints the FILLED region).
+    private void HandleSurvivalChanged()
     {
-        sharedHealthBarView?.SetFill(combined / sharedHealthPool.MaxCombinedHealth);
+        sharedHealthBarView?.SetFill(sharedHealthPool.CombinedCombat01);
     }
 
     private void HandleSharedPoolEmpty()
@@ -116,6 +118,6 @@ public class SharedHealthPresenter : MonoBehaviour
 
     private void Refresh()
     {
-        sharedHealthBarView?.SetFill(sharedHealthPool.CombinedHealth / sharedHealthPool.MaxCombinedHealth);
+        sharedHealthBarView?.SetFill(sharedHealthPool.CombinedCombat01);
     }
 }

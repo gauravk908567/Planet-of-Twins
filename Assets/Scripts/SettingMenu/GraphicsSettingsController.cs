@@ -65,6 +65,15 @@ public class GraphicsSettingsController : MonoBehaviour
     [SerializeField] private Slider _renderScaleSlider;   // range 0.7–1.0
     [SerializeField] private TMP_Text _renderScaleLabel;  // optional readout
 
+    [Header("Graphics API (restart to apply)")]
+    [Tooltip("Auto / DirectX 11 / DirectX 12. The API is fixed at launch, so a change only takes effect " +
+             "after a restart — see GraphicsApiPreference. Vulkan is not in the build's API list.")]
+    [SerializeField] private TMP_Dropdown _graphicsApiDropdown;
+    [Tooltip("Optional readout of the API actually running now, e.g. \"Current: DirectX 11\".")]
+    [SerializeField] private TMP_Text _currentApiLabel;
+    [Tooltip("Optional. Hidden until the API choice changes; clicking it relaunches on the chosen API.")]
+    [SerializeField] private Button _apiRestartButton;
+
     // ── Renderer-feature names (match PC_Renderer.asset) ──────────
     private const string SsaoFeatureName = "ScreenSpaceAmbientOcclusion";
     private const string FogFeatureName = "PoTVolumetricFog";
@@ -150,6 +159,7 @@ public class GraphicsSettingsController : MonoBehaviour
         SetOptions(_antiAliasingDropdown, "Off", "SMAA");
         SetOptions(_volumetricFogDropdown, "Off", "Low", "High");
         SetOptions(_terrainQualityDropdown, "Low", "Medium", "High");
+        SetOptions(_graphicsApiDropdown, "Auto", "DirectX 11", "DirectX 12");
         if (_renderScaleSlider != null)
         {
             _renderScaleSlider.minValue = 0.7f;
@@ -181,6 +191,12 @@ public class GraphicsSettingsController : MonoBehaviour
         if (_renderScaleSlider) _renderScaleSlider.value = PlayerPrefs.GetFloat(K_RenderScale, 1.0f);
         SetDropdown(_qualityPresetDropdown, PlayerPrefs.GetInt(K_Preset, 3));   // default Custom (i.e. per-control)
 
+        // Graphics API row — independent of the quality preset (fixed at launch, never applied live).
+        // Handlers are wired AFTER this, so setting the value here can't fire a false "restart needed".
+        SetDropdown(_graphicsApiDropdown, (int)GraphicsApiPreference.Saved);
+        if (_currentApiLabel != null) _currentApiLabel.text = $"Current: {GraphicsApiPreference.CurrentApiLabel()}";
+        if (_apiRestartButton != null) _apiRestartButton.gameObject.SetActive(false);
+
         ApplyAll();
         _suppressCustom = false;
     }
@@ -205,6 +221,8 @@ public class GraphicsSettingsController : MonoBehaviour
         _sunShaftsToggle?.onValueChanged.AddListener(OnSunShaftsChanged);
         _terrainQualityDropdown?.onValueChanged.AddListener(OnTerrainChanged);
         _renderScaleSlider?.onValueChanged.AddListener(OnRenderScaleChanged);
+        _graphicsApiDropdown?.onValueChanged.AddListener(OnGraphicsApiChanged);
+        _apiRestartButton?.onClick.AddListener(OnApiRestartClicked);
     }
 
     // ── Per-control handlers: apply + save + mark Custom ──────────
@@ -218,6 +236,24 @@ public class GraphicsSettingsController : MonoBehaviour
     private void OnSunShaftsChanged(bool _)      { ApplySunShafts(); Save(); MarkCustom(); }
     private void OnTerrainChanged(int _)         { ApplyTerrain(); Save(); MarkCustom(); }
     private void OnRenderScaleChanged(float _)   { ApplyRenderScale(); Save(); MarkCustom(); }
+
+    // ── Graphics API (restart to apply; NOT part of the quality preset) ───────
+    // The API is fixed at launch — persist the choice and reveal the restart button; the relaunch itself
+    // happens in GraphicsApiPreference. Deliberately NOT MarkCustom(): the API is orthogonal to
+    // Low/Medium/High and must never flip the quality preset to Custom.
+    private void OnGraphicsApiChanged(int _)
+    {
+        PlayerPrefs.SetInt(GraphicsApiPreference.PrefKey,
+                           Mathf.Clamp(_graphicsApiDropdown != null ? _graphicsApiDropdown.value : 0, 0, 2));
+        PlayerPrefs.Save();
+        if (_apiRestartButton != null) _apiRestartButton.gameObject.SetActive(true);
+    }
+
+    private void OnApiRestartClicked()
+    {
+        int idx = _graphicsApiDropdown != null ? _graphicsApiDropdown.value : 0;
+        GraphicsApiPreference.ApplyNow((GraphicsApiPreference.ApiChoice)Mathf.Clamp(idx, 0, 2));
+    }
 
     private void MarkCustom()
     {

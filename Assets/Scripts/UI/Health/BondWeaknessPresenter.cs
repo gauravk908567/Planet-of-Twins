@@ -53,18 +53,15 @@ public class BondWeaknessPresenter : MonoBehaviour
     // one shared method would not know which half to write.
     private Action<float>[] _handlers;
 
-    // ── ROLLBACK (BUG-091, 2026-08-05) ─────────────────────────────────────────
-    // Disabled while the shared-health bar FILL is reverted to the masked CombinedHealth
-    // (pre-UI-shader 26a192e behaviour) to test the health-bug hypothesis for the playtest. That
-    // fill already shrinks with distance, so leaving this grey-drain channel on would double-count
-    // distance (the bar would shrink AND grey). Untick to restore the bond-weakness channel once
-    // the proper two-channel fix lands after the playtest.
-    [SerializeField] private bool _rollbackDisabled = true;
-
+    // ── BOND REFRAME (game.md §4.1, 2026-09-09) ────────────────────────────────
+    // The BUG-091 rollback that disabled this grey-drain channel is LIFTED. The shared-health FILL
+    // now reads the real, distance-independent pool (SharedHealthPresenter → CombinedSurvival01), so
+    // distance no longer moves the fill — this channel is the ONLY thing distance drives (grey, never
+    // shrink). One signal per channel means the double-count that forced the rollback can't recur.
+    // (The old `_rollbackDisabled` serialized bool was removed; any leftover value in the scene YAML
+    // is a dead remnant and is ignored.)
     private void Start()
     {
-        if (_rollbackDisabled) { enabled = false; return; }
-
         if (_target == null)
         {
             Debug.LogError($"[{nameof(BondWeaknessPresenter)}] No UIBarHealthView assigned — bond " +

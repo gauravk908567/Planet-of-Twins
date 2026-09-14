@@ -22,6 +22,7 @@ public class UIRingTimerView : MonoBehaviour
 {
     private static readonly int ProgressID = Shader.PropertyToID("_Progress");
     private static readonly int FlashTID = Shader.PropertyToID("_FlashT");
+    private static readonly int FillColorAID = Shader.PropertyToID("_FillColorA");
 
     [Tooltip("Seconds the ready flash takes to sweep top to bottom. Unscaled time.")]
     [SerializeField] private float _flashDuration = 0.35f;
@@ -65,6 +66,18 @@ public class UIRingTimerView : MonoBehaviour
     public void PlayReadyFlash()
     {
         _flashStart = Time.unscaledTime; // unscaled — must play through pause/Setsuna
+    }
+
+    /// <summary>Override this instance's fill colour (`_FillColorA`). At RUNTIME this writes the cloned
+    /// material (never the shared .mat), so one ring material serves differently-coloured rings (rescue
+    /// TTK red / mash green / struggle gold) driven from code. Runtime-only: in edit mode there is no
+    /// clone yet, so this would write the shared asset — the consumers only call it in play.
+    /// NOTE: the ring's `Image.color` (vertex tint) multiplies this in the shader, so leaving a stray
+    /// non-white Image.color silently corrupts the result — keep the ring Image.color white.</summary>
+    public void SetFillColor(Color c)
+    {
+        var m = TargetMat();
+        if (m != null) m.SetColor(FillColorAID, c);
     }
 
     private void Update()

@@ -45,6 +45,14 @@ public class SkillTreeUI : MonoBehaviour
     private static readonly Color P1Colour = new Color(1f, 0.82f, 0.30f);     // gold
     private static readonly Color P2Colour = new Color(0.66f, 0.45f, 0.94f);  // violet
 
+    // Item 6 (controller nav legend): runtime-built glyph legends so a pad player sees the affordances the
+    // (already-wired) nav uses. Built like the badge above — zero scene wiring. Gamepad-gated: the UI-nav
+    // actions are pad-only, so on keyboard the tabs are mouse-clickable and arrow-keys navigate (legend hidden).
+    private TMP_Text _tabHint;    // top, by the tabs: "LB  Tabs  RB"
+    private TMP_Text _navLegend;  // bottom bar: "Y Preview   A Buy   B Back"
+    private const string TabHintTemplate   = "{TabLeft}  Tabs  {TabRight}";
+    private const string NavLegendTemplate = "{UIPreview} Preview     {InstantBuy} Buy     {UICancel} Back";
+
     public bool IsOpen => SkillTreePanel != null && SkillTreePanel.activeSelf;
 
     public void Close()
@@ -116,6 +124,8 @@ public class SkillTreeUI : MonoBehaviour
         KaiTab?.onClick.AddListener(() => ShowTab(0));
         LyraTab?.onClick.AddListener(() => ShowTab(1));
         SharedTab?.onClick.AddListener(() => ShowTab(2));
+        // Item 6: re-resolve the nav legend when the active device flips keyboard↔pad (named handler, R8).
+        LastUsedDeviceTracker.OnLastUsedChanged += OnDeviceSwitched;
     }
 
     void OnDisable()
@@ -124,7 +134,10 @@ public class SkillTreeUI : MonoBehaviour
         KaiTab?.onClick.RemoveAllListeners();
         LyraTab?.onClick.RemoveAllListeners();
         SharedTab?.onClick.RemoveAllListeners();
+        LastUsedDeviceTracker.OnLastUsedChanged -= OnDeviceSwitched;
     }
+
+    void OnDeviceSwitched(InputDeviceKind kind) => RefreshNavLegend();
 
     void Update()
     {
@@ -279,6 +292,57 @@ public class SkillTreeUI : MonoBehaviour
         _moverBadge.rectTransform.sizeDelta = new Vector2(40f, 22f);
     }
 
+    // ── Item 6: pad nav legend (runtime-built) ─────────────────────────────
+    /// <summary>Build the two legend labels under the panel once (top tab-hint + bottom nav bar). Mirrors
+    /// <see cref="EnsureBadge"/> — no scene wiring; the labels ride the panel's active state (hidden when closed).</summary>
+    void EnsureNavLegend()
+    {
+        if (SkillTreePanel == null) return;
+        if (_tabHint == null)   _tabHint   = BuildLegendLabel("TabHint (auto)",   anchorTop: true,  size: 22f);
+        if (_navLegend == null) _navLegend = BuildLegendLabel("NavLegend (auto)", anchorTop: false, size: 22f);
+    }
+
+    TMP_Text BuildLegendLabel(string name, bool anchorTop, float size)
+    {
+        var go = new GameObject(name, typeof(RectTransform));
+        var t  = go.AddComponent<TextMeshProUGUI>();
+        var rt = t.rectTransform;
+        rt.SetParent(SkillTreePanel.transform, false);
+        float y = anchorTop ? 1f : 0f;
+        rt.anchorMin = new Vector2(0f, y);
+        rt.anchorMax = new Vector2(1f, y);
+        rt.pivot     = new Vector2(0.5f, y);
+        // A ~34px band inset 20px on the sides, 8px off the near edge (top hint hangs down, bottom bar sits up).
+        if (anchorTop) { rt.offsetMin = new Vector2(20f, -42f); rt.offsetMax = new Vector2(-20f, -8f); }
+        else           { rt.offsetMin = new Vector2(20f,   8f); rt.offsetMax = new Vector2(-20f, 42f); }
+        if (PointsText != null) t.font = PointsText.font;   // reuse the panel's TMP font asset
+        t.fontSize = size;
+        t.alignment = TextAlignmentOptions.Center;
+        t.raycastTarget = false;
+        t.enableWordWrapping = false;
+        return t;
+    }
+
+    /// <summary>Gamepad-gate + populate the nav legends with live device glyphs. Hidden on keyboard/mouse (the
+    /// UI-nav actions are pad-only; tabs are clickable and arrow-keys navigate there). Cheap; called on open,
+    /// tab change, and device switch — never per-frame.</summary>
+    void RefreshNavLegend()
+    {
+        EnsureNavLegend();
+        bool pad = LastUsedDeviceTracker.LastUsed == InputDeviceKind.Gamepad;
+
+        if (_tabHint != null)
+        {
+            _tabHint.gameObject.SetActive(pad);
+            if (pad && _input != null) InputGlyphText.Apply(_tabHint, TabHintTemplate, _input);
+        }
+        if (_navLegend != null)
+        {
+            _navLegend.gameObject.SetActive(pad);
+            if (pad && _input != null) InputGlyphText.Apply(_navLegend, NavLegendTemplate, _input);
+        }
+    }
+
     void InitialiseTab(GameObject root, AbilityUpgradeData[] _)
     {
         if (root == null) return;
@@ -300,6 +364,9 @@ public class SkillTreeUI : MonoBehaviour
 
         // Item 4 — put the controller cursor on the newly-shown tab (no-op while the panel is closed).
         FocusFirstNode();
+
+        // Item 6 — refresh the pad nav legend (device gate + live glyphs) each time a tab shows / the tree opens.
+        RefreshNavLegend();
     }
 
     void SetTabColour(Button btn, bool active)

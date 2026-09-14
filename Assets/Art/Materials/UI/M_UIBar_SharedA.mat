@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_UIBar_SharedA
-  m_Shader: {fileID: 4800000, guid: eed87a98335456e4ba9857532195358e, type: 3}
+  m_Shader: {fileID: 4800000, guid: 401ab419506611c4b965588d8b140446, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -34,7 +34,7 @@ Material:
     - _ColorMask: 15
     - _Drain: 0
     - _DrainB: 0
-    - _DrainDirection: 0
+    - _DrainDirection: 2
     - _DrainSoftness: 0.06
     - _Fill: 1
     - _FillB: 1
@@ -43,10 +43,13 @@ Material:
     - _FillUVMin: 0.18
     - _FlashAmount: 0
     - _FlashEmptyOpacity: 0.3
+    - _FlashFillBoost: 0.45
     - _FlashSpeed: 6
     - _Grayscale: 0
+    - _LineMode: 0
     - _Softness: 0.01
     - _SplitHalves: 1
+    - _SplitMirror: 0
     - _SplitPoint: 0.5
     - _Stencil: 0
     - _StencilComp: 8
@@ -64,6 +67,9 @@ Material:
     - _FillColor: {r: 1, g: 0.78, b: 0.29, a: 1}
     - _FillColorB: {r: 0.49, g: 0.29, b: 1, a: 1}
     - _FlashColor: {r: 1, g: 0.92, b: 0.75, a: 1}
+    - _LineColor: {r: 0.95, g: 0.93, b: 0.88, a: 1}
+    - _LineFlashColor: {r: 3, g: 2.4, b: 1.2, a: 1}
     - _SweepColor: {r: 1, g: 1, b: 1, a: 1}
+    - _TroughColor: {r: 0.044999972, g: 0.044999972, b: 0.064999975, a: 0.62}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

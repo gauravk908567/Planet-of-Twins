@@ -72,6 +72,12 @@ public class PlayerHealthComponent : MonoBehaviour,
 
     public float BondWeakness01 => Mathf.Clamp01(1f - _distanceModifier);
 
+    // Pure real combat health, 0..1 — distance-INDEPENDENT (no modifier, no over-max drain). This is what
+    // the BOND emblem's FILL reads: it moves ONLY on damage/heal, never on separation, so the emblem greys
+    // with distance (via BondWeakness01) WITHOUT ever draining its fill. SurvivalHealth01 is different — it
+    // subtracts the over-max drain (it measures how close to distance-DEATH you are, which drives game-over).
+    public float CombatHealth01 => maxCombatHealth <= 0f ? 0f : Mathf.Clamp01(_currentCombatHealth / maxCombatHealth);
+
     public event Action<float> OnDisplayHealthChanged;
 
     /// <summary>Fires with BondWeakness01 whenever the distance modifier moves.</summary>

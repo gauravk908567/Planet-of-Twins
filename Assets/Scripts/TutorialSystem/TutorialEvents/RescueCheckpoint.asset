@@ -31,15 +31,6 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   checkpointIndexB: 12
-  failureMessageB:
-    m_TableReference:
-      m_TableCollectionName: GUID:fe8cfc397746c05408fecdc72ab6ed88
-    m_TableEntryReference:
-      m_KeyId: 1538786877440
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
   references:
     version: 2
     RefIds: []

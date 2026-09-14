@@ -23,6 +23,22 @@ public interface ITutorialRescueProvider
     void ResetSuccessFlag();
 
     /// <summary>
+    /// Latches true the moment rescue FAILS and stays true (mirror of WasSuccessful). Poll this instead of
+    /// CurrentRescueState == Failed: the controller resets state to Idle synchronously on failure, so a
+    /// frame-poll never catches Failed. Reset via ResetFailFlag().
+    /// </summary>
+    bool WasFailed { get; }
+
+    /// <summary>Reset the failure latch before watching a new rescue / after handling a failure.</summary>
+    void ResetFailFlag();
+
+    /// <summary>
+    /// Fully restore both twins (alive, HP max, drain reset, unfrozen, un-grabbed) so a failed tutorial
+    /// rescue can be retried — the tutorial trap kills for real, so the reset must also revive.
+    /// </summary>
+    void ReviveTwinsForRetry();
+
+    /// <summary>
     /// While true, a Failed rescue does NOT fire the game-over signal (OnRescueFailed). The Failed
     /// state transition and CurrentRescueState still happen — only the game-over trigger is gated.
     /// The tutorial rescue-watch step sets this while it owns the rescue so a failed tutorial rescue

@@ -219,7 +219,9 @@ public class QTEController : MonoBehaviour
 
         if (fillBar != null) { fillBar.fillAmount = 0f; }
         if (timerRing != null) { timerRing.fillAmount = 1f; timerRing.color = activeColour; }
-        if (instructionText != null) instructionText.text = "Press F!";
+        // Glyph-only, device-aware SHARED prompt (both players / all active device families → "F | pad"),
+        // not a hard-coded "Press F". Matches QTEManager's ApplyShared path.
+        if (instructionText != null) InputGlyphText.ApplyShared(instructionText, "{QTEMash}");
         if (countdownText != null) countdownText.gameObject.SetActive(false);
 
         SetPanelVisible(true);

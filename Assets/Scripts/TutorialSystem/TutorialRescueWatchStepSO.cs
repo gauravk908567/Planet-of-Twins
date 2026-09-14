@@ -41,8 +41,9 @@ public class TutorialRescueWatchStepSO : TutorialStepBase
         rescue.SuppressFailGameOver = true;
         try
         {
-            // Reset success latch before watching
+            // Reset success + failure latches before watching
             rescue.ResetSuccessFlag();
+            rescue.ResetFailFlag();
 
             // ── Wait for twin to get grabbed ──────────────────────────
             yield return new WaitUntil(() => rescue.HasActiveRescueTarget);
@@ -87,15 +88,25 @@ public class TutorialRescueWatchStepSO : TutorialStepBase
                 if (rescue.WasSuccessful)
                     yield break;
 
-                if (rescue.CurrentRescueState == RescueState.Failed)
+                // Poll the LATCH, not CurrentRescueState: a failed rescue resets its state to Idle
+                // synchronously (CleanupRescueEvent), so CurrentRescueState == Failed is never observable
+                // on a frame boundary — that is why the greyscale/reset never ran. WasFailed latches until
+                // we clear it below.
+                if (rescue.WasFailed)
                 {
                     ctx.failureNotice?.Show(failMsg);
+
+                    // The tutorial trap kills for real (HP 0) — revive both twins BEFORE the reset so the
+                    // retry can re-grab; otherwise they teleport back dead and the loop stalls forever.
+                    rescue.ReviveTwinsForRetry();
+
                     ctx.resetSequencer?.TriggerReset(
                         ctx.RescueFailLeftReset,
                         ctx.RescueFailRightReset,
                         null);
 
                     rescue.ResetSuccessFlag();
+                    rescue.ResetFailFlag();
 
                     yield return new WaitForSecondsRealtime(0.5f);
                     yield return new WaitUntil(() => rescue.HasActiveRescueTarget);

@@ -24,7 +24,12 @@ using UnityEngine.UI;
 /// </summary>
 public class UIBarView : MonoBehaviour
 {
-    private const string RequiredShaderName = "PoT/UIBar";
+    [Header("Shader contract")]
+    [Tooltip("The shader this bar's fill (and any line-mode frame) material MUST use. Default is the " +
+             "generic PoT/UIBar shared by twin/enemy/accord bars; the BOND emblem's bars override this " +
+             "to PoT/BondBar — its own dedicated variant — so the bond can restyle (e.g. its desaturating " +
+             "grey) WITHOUT touching the shared bar shader. Same property IDs, so the driver is unchanged.")]
+    [SerializeField] private string _requiredShaderName = "PoT/UIBar";
 
     [Header("Targets")]
     [Tooltip("Image whose material uses the PoT/UIBar shader — the fill mask sprite.")]
@@ -151,11 +156,11 @@ public class UIBarView : MonoBehaviour
         if (_frameImage != null && _frameSpriteOverride != null) _frameImage.sprite = _frameSpriteOverride;
 
         Material source = _fillImage.material;   // the SHARED asset — never written to
-        if (source == null || source.shader == null || source.shader.name != RequiredShaderName)
+        if (source == null || source.shader == null || source.shader.name != _requiredShaderName)
         {
             string foundShader = source != null && source.shader != null ? source.shader.name : "null";
             Debug.LogError($"[UIBarView] {name}: _fillImage's material must use shader " +
-                            $"'{RequiredShaderName}' (found '{foundShader}').", this);
+                            $"'{_requiredShaderName}' (found '{foundShader}').", this);
             enabled = false;
             return;
         }
@@ -169,7 +174,7 @@ public class UIBarView : MonoBehaviour
         {
             Material frameSource = _frameImage.material;
             if (frameSource != null && frameSource.shader != null &&
-                frameSource.shader.name == RequiredShaderName)
+                frameSource.shader.name == _requiredShaderName)
             {
                 _frameMaterial = new Material(frameSource) { name = frameSource.name + " (UIBarView instance)" };
                 _frameImage.material = _frameMaterial;

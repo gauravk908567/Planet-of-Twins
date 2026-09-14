@@ -90,3 +90,4 @@ crashlytics-build.properties
 /.clineignore
 # Reference e-books at repo root (large binaries, not game content)
 /*.pdf
+/Library/

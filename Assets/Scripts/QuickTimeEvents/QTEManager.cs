@@ -39,6 +39,12 @@ public class QTEManager : MonoBehaviour
     // QTEManager has no persistent UI of its own — each anchor provides its own canvas.
     private GameObject _rootPanel;
     private Image      _fillBar;
+    // Optional ring/capsule widget on the fill Image (shared-QTE capsule, game.md §17.5): when present it owns the
+    // L->R fill via the shader (_Progress) so the mash bar can be a rounded pill, not a mesh-clipped Image fill.
+    private UIRingTimerView _fillBarView;
+    // Per-press punch + surround-glow + ripple on the mash ring — the SAME feel the rescue mash rings use
+    // (ButtonPromptView), driven once per counted mash so the QTE glyph pulses/glows exactly like a rescue press.
+    private ButtonPromptView _fillBarPrompt;
     private Image      _timerRing;
     // Optional PoT/UIRingTimer widget on the anchor's ring Image (game.md §17.5). When present
     // it owns fill AND colour/urgency (shader-side); when absent the legacy fillAmount+colour
@@ -128,6 +134,8 @@ public class QTEManager : MonoBehaviour
         // Pull World UI refs from the scene-local anchor
         _rootPanel        = anchor.RootPanel;
         _fillBar          = anchor.FillBar;
+        _fillBarView      = _fillBar != null ? _fillBar.GetComponent<UIRingTimerView>() : null;
+        _fillBarPrompt    = _fillBar != null ? _fillBar.GetComponent<ButtonPromptView>() : null;
         _timerRing        = anchor.TimerRing;
         _timerRingView    = _timerRing != null ? _timerRing.GetComponent<UIRingTimerView>() : null;
         _instructionLabel = anchor.InstructionLabel;
@@ -183,13 +191,22 @@ public class QTEManager : MonoBehaviour
                 // Couch (M7): BOTH twins' devices feed this ONE QTE — see CountMashThisFrame (distinct-device
                 // sum; solo stays single, couch accelerates).
                 if (ActiveDef != null)
-                    _mashCount += CountMashThisFrame();
+                {
+                    int mashedThisFrame = CountMashThisFrame();
+                    if (mashedThisFrame > 0)
+                    {
+                        _mashCount += mashedThisFrame;
+                        _fillBarPrompt?.Pulse();   // per-press feedback — mirrors WorldSpaceRescueUI's mash pulse
+                    }
+                }
 
                 int required = ActiveDef?.mashCountRequired ?? 20;
                 float mashDur = ActiveDef?.mashDuration ?? 5f;
                 float progress = Mathf.Clamp01((float)_mashCount / required);
 
-                if (_fillBar != null)
+                if (_fillBarView != null)
+                    _fillBarView.SetProgress(progress);   // shader-driven L->R fill (shared-QTE capsule / ring)
+                else if (_fillBar != null)
                     _fillBar.fillAmount = progress;
 
                 float timeFrac = mashDur > 0f ? Mathf.Clamp01(_mashTimer / mashDur) : 0f;
@@ -237,13 +254,19 @@ public class QTEManager : MonoBehaviour
         _mashCount = 0;
         _mashTimer = ActiveDef?.mashDuration ?? 5f;
 
-        if (_fillBar != null) _fillBar.fillAmount = 0f;
+        // Show the panel FIRST so the ring widgets' Awake runs and clones their material before we drive
+        // _Progress. The mash panel now defaults INACTIVE in-scene ("mash UI appears only once both players
+        // lock in"), so without activating first the SetProgress calls below would hit un-Awoken views whose
+        // per-instance material hasn't been cloned yet.
+        SetPanelVisible(true);
+
+        if (_fillBarView != null) _fillBarView.SetProgress(0f);
+        else if (_fillBar != null) _fillBar.fillAmount = 0f;
         if (_timerRingView != null) _timerRingView.SetProgress(1f);
         else if (_timerRing != null) { _timerRing.fillAmount = 1f; _timerRing.color = activeColour; }
         ApplyInstruction();
         if (_countdownLabel != null) _countdownLabel.gameObject.SetActive(false);
 
-        SetPanelVisible(true);
         Debug.Log("[QTEManager] Mash phase started.");
     }
 
@@ -383,7 +406,8 @@ public class QTEManager : MonoBehaviour
 
     private void ClearUIRefs()
     {
-        _rootPanel = null; _fillBar = null; _timerRing = null; _timerRingView = null;
+        _rootPanel = null; _fillBar = null; _fillBarView = null; _fillBarPrompt = null;
+        _timerRing = null; _timerRingView = null;
         _instructionLabel = null; _countdownLabel = null;
     }
 

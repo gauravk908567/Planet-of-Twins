@@ -76,6 +76,12 @@ public class WorldSpaceRescueUI : MonoBehaviour
 
     private RectTransform _ttkRect;
     private RectTransform _fKeyRect;
+    private UIRingTimerView _ttkView;       // §17.5 "one ring language" — null until the prefab ring is migrated
+    private UIRingTimerView _fKeyView;
+    private UIRingTimerView _struggleView;
+    private ButtonPromptView _fKeyPrompt;    // press-feel (punch / ripple / glow) on the F-key mash ring
+    private ButtonPromptView _strugglePrompt; // press-feel on the E struggle ring
+    private float _lastMashProgress;         // pulse the F-key prompt only when the mash advances
     private bool _isOwnerInDanger;
     private bool _soulInRange;
     private Coroutine _splitCoroutine;
@@ -86,8 +92,28 @@ public class WorldSpaceRescueUI : MonoBehaviour
     {
         _ttkRect = ttkRing?.GetComponent<RectTransform>();
         _fKeyRect = fKeyRing?.GetComponent<RectTransform>();
+        _ttkView = ttkRing != null ? ttkRing.GetComponent<UIRingTimerView>() : null;
+        _fKeyView = fKeyRing != null ? fKeyRing.GetComponent<UIRingTimerView>() : null;
+        _struggleView = struggleRing != null ? struggleRing.GetComponent<UIRingTimerView>() : null;
+        _fKeyPrompt = fKeyRing != null ? fKeyRing.GetComponent<ButtonPromptView>() : null;
+        _strugglePrompt = struggleRing != null ? struggleRing.GetComponent<ButtonPromptView>() : null;
         if (ownerPlayer == null)
             ownerPlayer = GetComponentInParent<Player>(true);
+    }
+
+    // Ring draw — prefer the PoT/UIRingTimer widget (game.md §17.5 "one ring language"); fall back to the
+    // legacy Image.fillAmount/colour on any ring not yet wired with a UIRingTimerView, so rescue keeps
+    // working on prefabs that haven't been migrated. Semantic colours (danger red / mash green /
+    // struggle gold) are preserved — the widget upgrades the LOOK, not the meaning.
+    private static void SetRingProgress(Image img, UIRingTimerView view, float p)
+    {
+        if (view != null) view.SetProgress(p);
+        else if (img != null) img.fillAmount = p;
+    }
+    private static void SetRingColour(Image img, UIRingTimerView view, Color c)
+    {
+        if (view != null) view.SetFillColor(c);
+        else if (img != null) img.color = c;
     }
 
     private void OnEnable()
@@ -185,7 +211,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
 
         // Drain TTK ring every frame
         if (_activeTarget != null && ttkRing != null)
-            ttkRing.fillAmount = _activeTarget.NormalisedTTK;
+            SetRingProgress(ttkRing, _ttkView, _activeTarget.NormalisedTTK);
 
         if (!rootPanel.activeSelf)
             rootPanel.SetActive(true);
@@ -198,12 +224,15 @@ public class WorldSpaceRescueUI : MonoBehaviour
 
         _isOwnerInDanger = true;
         _soulInRange = false;
+        _lastMashProgress = 0f;
 
         rootPanel?.SetActive(true);
         cooldownOverlay?.SetActive(false);
 
         SetTTKRingCentred();
-        if (ttkRing) { ttkRing.fillAmount = 1f; ttkRing.color = ttkColour; }
+        // TTK ring reuses the QTE timer material (M_UIRingTimer_QTE) — let its near-white/gold look with
+        // built-in urgency heat show, so only tint the legacy (non-widget) fallback red.
+        if (ttkRing) { SetRingProgress(ttkRing, _ttkView, 1f); if (_ttkView == null) SetRingColour(ttkRing, _ttkView, ttkColour); }
 
         fKeyRing?.gameObject.SetActive(false);
         if (pressFText) pressFText.gameObject.SetActive(false);
@@ -256,13 +285,13 @@ public class WorldSpaceRescueUI : MonoBehaviour
             case RescueState.Mashing:
                 if (!_isOwnerInDanger) return;
                 cooldownOverlay?.SetActive(false);
-                if (fKeyRing) fKeyRing.color = fKeyColour;
+                if (fKeyRing) SetRingColour(fKeyRing, _fKeyView, fKeyColour);
                 break;
 
             case RescueState.Cooldown:
                 if (!_isOwnerInDanger) return;
                 cooldownOverlay?.SetActive(true);
-                if (fKeyRing) fKeyRing.color = cooldownColour;
+                if (fKeyRing) SetRingColour(fKeyRing, _fKeyView, cooldownColour);
                 break;
 
             case RescueState.SoulDied:
@@ -281,6 +310,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
         if (!_isOwnerInDanger) return;
         if (_activeTarget?.GrabbedPlayer != ownerPlayer) return;
 
+        _strugglePrompt?.Pulse();   // one punch/ripple/glow per E press
         if (_struggleCoroutine != null) StopCoroutine(_struggleCoroutine);
         _struggleCoroutine = StartCoroutine(AnimateStruggleRing());
     }
@@ -299,8 +329,8 @@ public class WorldSpaceRescueUI : MonoBehaviour
         if (struggleRing == null) yield break;
 
         // Fill instantly to full, hold for struggleFillDuration, then drain
-        struggleRing.fillAmount = 1f;
-        struggleRing.color = struggleColour;
+        SetRingProgress(struggleRing, _struggleView, 1f);
+        SetRingColour(struggleRing, _struggleView, struggleColour);
 
         yield return new WaitForSeconds(struggleFillDuration);
 
@@ -309,11 +339,11 @@ public class WorldSpaceRescueUI : MonoBehaviour
         float drainDuration = 0.15f;
         while (elapsed < drainDuration)
         {
-            struggleRing.fillAmount = Mathf.Lerp(1f, 0f, elapsed / drainDuration);
+            SetRingProgress(struggleRing, _struggleView, Mathf.Lerp(1f, 0f, elapsed / drainDuration));
             elapsed += Time.deltaTime;
             yield return null;
         }
-        struggleRing.fillAmount = 0f;
+        SetRingProgress(struggleRing, _struggleView, 0f);
         _struggleCoroutine = null;
     }
 
@@ -333,14 +363,17 @@ public class WorldSpaceRescueUI : MonoBehaviour
     private void HandleMashProgress(float normalised)
     {
         if (!_isOwnerInDanger || fKeyRing == null) return;
-        fKeyRing.fillAmount = normalised;
+        SetRingProgress(fKeyRing, _fKeyView, normalised);
+        // Pulse the button-ring feel only when the mash actually advances (one punch per press).
+        if (normalised > _lastMashProgress + 0.001f) _fKeyPrompt?.Pulse();
+        _lastMashProgress = normalised;
     }
 
     private void HandleMashTime(float secondsRemaining)
     {
         if (!_isOwnerInDanger || fKeyRing == null) return;
         if (secondsRemaining < 1f)
-            fKeyRing.color = Color.Lerp(fKeyColour, ttkColour, 1f - secondsRemaining);
+            SetRingColour(fKeyRing, _fKeyView, Color.Lerp(fKeyColour, ttkColour, 1f - secondsRemaining));
     }
 
     private void HandleCooldownTime(float secondsRemaining)
@@ -354,7 +387,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
     {
         fKeyRing?.gameObject.SetActive(true);
         if (_fKeyRect) _fKeyRect.anchoredPosition = Vector2.zero;
-        if (fKeyRing) { fKeyRing.fillAmount = 1f; fKeyRing.color = fKeyColour; }
+        if (fKeyRing) { SetRingProgress(fKeyRing, _fKeyView, 1f); SetRingColour(fKeyRing, _fKeyView, fKeyColour); }
         if (pressFText) { pressFText.gameObject.SetActive(true); ApplyRescuePrompt(); }
 
         float elapsed = 0f;
@@ -413,7 +446,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
         // Hide struggle ring
         SetStruggleRingVisible(false);
         if (_struggleCoroutine != null) { StopCoroutine(_struggleCoroutine); _struggleCoroutine = null; }
-        if (struggleRing) struggleRing.fillAmount = 0f;
+        if (struggleRing) SetRingProgress(struggleRing, _struggleView, 0f);
         chainPromptPanel?.SetActive(false);
     }
 

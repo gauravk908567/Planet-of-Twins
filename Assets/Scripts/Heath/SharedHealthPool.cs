@@ -32,14 +32,34 @@ public class SharedHealthPool : MonoBehaviour, ISharedHealthPool
         }
     }
 
+    // Pure combat health (0..1), distance-INDEPENDENT — the mean of the twins' real combat-health
+    // fractions (no distance modifier, no over-max drain). This drives the BOND emblem's FILL so it
+    // only moves on damage, never on separation (the emblem greys via BondWeakness, it never drains
+    // on distance). Distinct from CombinedSurvival01, which SUBTRACTS the over-max drain (how close to
+    // distance-death you are) — that would still empty the emblem when the twins stray far, which is
+    // exactly the bug the bond reframe removes (game.md §4.1).
+    public float CombinedCombat01
+    {
+        get
+        {
+            int n = 0; float sum = 0f;
+            if (leftPlayer != null)  { sum += leftPlayer.CombatHealth01;  n++; }
+            if (rightPlayer != null) { sum += rightPlayer.CombatHealth01; n++; }
+            return n == 0 ? 0f : sum / n;
+        }
+    }
+
     // Pulses whenever either twin's health/distance moves — the trigger the bar FILL subscribes
-    // to so it re-reads CombinedSurvival01 (never the masked CombinedHealth).
+    // to so it re-reads the pure-combat pool (never the masked, distance-reactive CombinedHealth).
     public event Action OnSurvivalChanged;
 
     /// <summary>
-    /// Setsuna uses this to snapshot health at cast time and restore on rewind.
+    /// Setsuna uses this to snapshot health at cast time and restore on rewind. Reads the pure combat
+    /// pool (distance-INDEPENDENT) so casting while stretched no longer banks a distance-suppressed value
+    /// as real HP (bond reframe, game.md §4.1) — it tracks the same value the bond emblem shows.
+    /// `CombinedHealth` (masked) stays the DISPLAY value that still drives the damage-only game-over.
     /// </summary>
-    public float CurrentHealth => CombinedHealth;
+    public float CurrentHealth => CombinedCombat01 * MaxCombinedHealth;
 
     /// <summary>
     /// Force-sets both player health components to split the target value evenly.

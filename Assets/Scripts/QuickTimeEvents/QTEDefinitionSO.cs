@@ -23,7 +23,9 @@ public class QTEDefinitionSO : ScriptableObject
     public float windowDuration = 15f;
 
     [Header("UI Text")]
-    public string instructionText = "Press F!";
+    // Template for InputGlyphText.ApplyShared — {QTEMash} expands to the mash glyph(s) for all active
+    // device families (both couch players → "F | pad"). Glyph-only, no "Press" prefix.
+    public string instructionText = "{QTEMash}";
 
     [Header("Identity")]
     [Tooltip("Unique string ID — QTESuccessWatcher and analytics use this to " +

@@ -17,5 +17,5 @@ MonoBehaviour:
   mashKey: 102
   isTimedApproach: 0
   windowDuration: 15
-  instructionText: Press {QTEMash}!
+  instructionText: '{QTEMash}'
   eventId: ParkGate
