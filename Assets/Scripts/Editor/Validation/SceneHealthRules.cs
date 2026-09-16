@@ -628,7 +628,7 @@ namespace PlanetOfTwins.EditorTools
             if (sceneProp != null) sceneProp.stringValue = sceneName;
             sObj.ApplyModifiedPropertiesWithoutUndo();
 
-            string dir = "Assets/Scripts/SceneLaoder/Data";
+            string dir = "Assets/Scripts/SceneLoader/Data";
             if (!AssetDatabase.IsValidFolder(dir)) dir = "Assets";
             string path = AssetDatabase.GenerateUniqueAssetPath($"{dir}/Location_{sceneName}.asset");
             AssetDatabase.CreateAsset(so, path);
