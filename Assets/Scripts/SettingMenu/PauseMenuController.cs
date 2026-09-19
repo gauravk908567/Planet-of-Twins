@@ -3,27 +3,21 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Pause menu. ESC key opens/closes.
-/// Priority order when ESC pressed:
-///   1. SkillPreviewModal open → close modal only
-///   2. Settings panel open → close settings only
-///   3. Pause menu open → close pause menu
-///   4. Nothing open → open pause menu
+/// Pause entry point + central ESC/Back arbiter. ESC (or pad Start) opens the unified
+/// pause/settings screen (Resume | tabs | Exit on one page — SettingsScreenController).
 ///
-/// SETUP:
-///   Add to a canvas (Screen Space Overlay, sort 25).
-///   PauseRoot disabled by default.
-///   SettingsPanel child of PauseRoot — also disabled by default.
+/// ESC/Back priority (each press resolves exactly ONE layer, highest first):
+///   1. Tutorial overlay open        → TriggerContinue
+///   2. SkillPreviewModal open        → close modal
+///   3. Unified settings screen open  → its own Back state machine (HandleBack; also takes pad-B)
+///   4. Skill tree open               → close skill tree
+///   5. Nothing open                  → open pause (the unified screen)
 ///
-/// HIERARCHY:
-///   PauseMenuController (this script)
-///     └── PauseRoot
-///           ├── DimPanel      (full screen Image, alpha 0.6)
-///           ├── MenuCard      (centred panel)
-///           │     ├── ResumeButton
-///           │     ├── SettingsButton
-///           │     └── ExitButton
-///           └── SettingsPanel (retired flat panel — kept inactive; its old SettingsMenuController was removed)
+/// SETUP: add to a Screen-Space-Overlay canvas (sort 25).
+/// The old flat pause card (PauseRoot + Resume/Settings/Exit + the flat SettingsPanel) is RETIRED —
+/// disabled in the scene, no longer the pause surface. Resume/Exit now live on the unified screen's
+/// SettingsTabBar; this controller keeps Resume()/ExitGame() only as the shared timescale/audio/cursor
+/// arbiter those buttons call into.
 /// </summary>
 public class PauseMenuController : MonoBehaviour
 {
@@ -31,11 +25,9 @@ public class PauseMenuController : MonoBehaviour
 
     [Header("Panels")]
     [SerializeField] private GameObject _pauseRoot;
-    [SerializeField] private GameObject _settingsPanel;
 
     [Header("Buttons")]
     [SerializeField] private Button _resumeButton;
-    [SerializeField] private Button _settingsButton;
     [SerializeField] private Button _exitButton;
     [Tooltip("F7 — clears all input binding overrides back to authored defaults. Safe today " +
              "(no rebinding UI yet — F6). Optional; leave unwired if the button doesn't exist.")]
@@ -45,11 +37,9 @@ public class PauseMenuController : MonoBehaviour
     // must outrank pause, Setsuna (enum 2) sits below. Priority here is the arbiter's own axis.
     private const int PauseSnapshotPriority = 50;
 
-    // Pause now opens the unified settings screen directly (Resume | tabs | Exit on one page).
-    // _pauseRoot / _settingsPanel are the retired flat pause card + settings panel — kept in the
-    // scene as a fallback until the old controllers are removed, but no longer the pause surface.
+    // Pause opens the unified settings screen directly (Resume | tabs | Exit on one page). The retired
+    // flat pause card (_pauseRoot) is disabled in the scene and is no longer the pause surface.
     public bool IsPauseOpen => SettingsScreenController.Instance != null && SettingsScreenController.Instance.IsOpen;
-    public bool IsSettingsOpen => _settingsPanel != null && _settingsPanel.activeSelf;
 
     private void Awake()
     {
@@ -57,15 +47,12 @@ public class PauseMenuController : MonoBehaviour
         Instance = this;
 
         _pauseRoot.SetActive(false);
-        _settingsPanel?.SetActive(false);
 
         _resumeButton?.onClick.AddListener(Resume);
-        _settingsButton?.onClick.AddListener(OpenSettings);
         _exitButton?.onClick.AddListener(ExitGame);
         _restoreKeybindsButton?.onClick.AddListener(RestoreDefaultKeybinds);
 
-        // Item 1 (controller nav): pad-traversable + visible focus highlight for the pause menu AND the
-        // settings panel (it lives under _pauseRoot), in one pass.
+        // Item 1 (controller nav): pad-traversable + visible focus highlight for the retired pause card.
         UINavStyle.Apply(_pauseRoot);
     }
 
@@ -156,20 +143,6 @@ public class PauseMenuController : MonoBehaviour
         AudioManager.Instance?.ReleaseSnapshot(this);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
-    }
-
-    public void OpenSettings()
-    {
-        _settingsPanel?.SetActive(true);
-        // Dead path: the old flat SettingsPanel is retired and has no controller now; these members
-        // (OpenSettings/CloseSettings/_settingsPanel) await removal in a separate PauseMenuController cleanup.
-    }
-
-    public void CloseSettings()
-    {
-        _settingsPanel?.SetActive(false);
-        // Item 1 (controller nav): return focus to the Settings button we came from.
-        UINavFocus.Focus(_settingsButton);
     }
 
     // F7 — Restore Default Keybinds. Clears all binding overrides on the shared action asset

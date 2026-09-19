@@ -141,13 +141,13 @@ public class SkillTreeUI : MonoBehaviour
 
     void Update()
     {
-        // BUG (couch, pad) — while the pause menu (or its Settings) owns the screen, the skill tree must be
+        // BUG (couch, pad) — while the unified pause/settings screen owns the layer, the skill tree must be
         // INERT. Otherwise pressing the skill-tree toggle here opens the tree ON TOP of the pause menu, and
         // ShowTab(0) steals the EventSystem selection — stranding a pad player behind the pause menu with no
         // way back (the pad can't re-focus a menu it never sees). Pause is the higher-priority layer; its
         // ESC/Start arbiter owns close order. So suspend ALL skill-tree input (toggle + nav) while it's open.
-        if (PauseMenuController.Instance != null &&
-            (PauseMenuController.Instance.IsPauseOpen || PauseMenuController.Instance.IsSettingsOpen))
+        // (IsPauseOpen covers Settings too now — the unified screen IS the settings screen.)
+        if (PauseMenuController.Instance != null && PauseMenuController.Instance.IsPauseOpen)
             return;
 
         // Tab key toggles the skill tree open/closed. ESC is handled by PauseMenuController (central arbiter).
