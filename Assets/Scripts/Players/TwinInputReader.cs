@@ -56,6 +56,11 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     private InputAction _pause, _skillTree, _anySkip, _toggleHints;
     // UI map — Item 4 (skill-tree controller nav): LB/RB tab switch + instant-buy + B/East back + open-preview
     private InputAction _uiTabLeft, _uiTabRight, _instantBuy, _uiCancel, _uiPreview;
+    // UI map — F6 Phase 3 (CONTROLS edit mode): per-column cursor move + confirm
+    private InputAction _uiNavigate, _uiSubmit;
+    // F6 Phase 3 — the single interactive-rebind op in flight on THIS reader's asset (one at a time). Disposed on
+    // complete/cancel and when the reader disables, so a captured op never dangles listening for input.
+    private UnityEngine.InputSystem.InputActionRebindingExtensions.RebindingOperation _activeRebind;
 
     private void Awake()
     {
@@ -113,6 +118,8 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         _instantBuy  = Find("UI/InstantBuy");
         _uiCancel    = Find("UI/UICancel");
         _uiPreview   = Find("UI/UIPreview");
+        _uiNavigate  = Find("UI/Navigate");
+        _uiSubmit    = Find("UI/Submit");
     }
 
     private InputAction Find(string path)
@@ -131,6 +138,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
 
     private void OnDisable()
     {
+        CancelActiveRebind();   // never leave a capture listening once the asset is disabled
         _actions?.Disable();
     }
 
@@ -346,6 +354,50 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         return string.IsNullOrEmpty(display) ? "?" : display;
     }
 
+    // F6 — human-readable label for one composite PART (Move's "up"/"down"/"left"/"right"), read live so it stays
+    // true under rebinding. "?" when the family has no such composite part (e.g. a gamepad stick).
+    public string GetCompositePartDisplay(string actionName, string part, bool preferGamepad)
+    {
+        if (_actions == null || string.IsNullOrEmpty(actionName) || string.IsNullOrEmpty(part)) return "?";
+        var action = _actions.FindAction(actionName, throwIfNotFound: false);
+        if (action == null) return "?";
+        int idx = FindCompositePartIndex(action, preferGamepad, part);
+        if (idx < 0) return "?";
+        string d = action.GetBindingDisplayString(idx, InputBinding.DisplayStringOptions.DontUseShortDisplayNames);
+        return string.IsNullOrEmpty(d) ? "?" : d;
+    }
+
+    // F6 — the effective (override-aware) layout-relative control PATH for a row's binding (e.g. "w", "buttonNorth"),
+    // or a composite part when `part` is set. The device family is fixed by the column, so this path alone is a
+    // sufficient key for duplicate-binding (conflict) detection. null when the action/binding is missing.
+    public string GetEffectiveBindingPath(string actionName, string part, InputDeviceKind kind)
+    {
+        if (_actions == null || string.IsNullOrEmpty(actionName)) return null;
+        var action = _actions.FindAction(actionName, throwIfNotFound: false);
+        if (action == null) return null;
+        bool pad = kind == InputDeviceKind.Gamepad;
+        int idx = string.IsNullOrEmpty(part) ? FindBindingIndex(action, pad) : FindCompositePartIndex(action, pad, part);
+        if (idx < 0) return null;
+        action.GetBindingDisplayString(idx, out _, out string controlPath, InputBinding.DisplayStringOptions.DontUseShortDisplayNames);
+        return string.IsNullOrEmpty(controlPath) ? null : controlPath;
+    }
+
+    // F6 — has this row's binding been CHANGED from its authored default (effective path ≠ authored path)? The
+    // conflict check uses this to grandfather duplicates that ship in the defaults (e.g. Interact + Convergence both
+    // on F/A by design) — only a duplicate the player introduced is flagged. An override equal to the default is not
+    // "changed".
+    public bool IsRowBindingChanged(string actionName, string part, InputDeviceKind kind)
+    {
+        if (_actions == null || string.IsNullOrEmpty(actionName)) return false;
+        var action = _actions.FindAction(actionName, throwIfNotFound: false);
+        if (action == null) return false;
+        bool pad = kind == InputDeviceKind.Gamepad;
+        int idx = string.IsNullOrEmpty(part) ? FindBindingIndex(action, pad) : FindCompositePartIndex(action, pad, part);
+        if (idx < 0) return false;
+        var b = action.bindings[idx];
+        return (b.effectivePath ?? string.Empty) != (b.path ?? string.Empty);
+    }
+
     // ── Item 5 (button glyphs) — control-PATH resolution ───────────────────────────────
     // Unlike GetBindingDisplay (human TEXT: "E", "Button South"), this yields the stable CONTROL PATH the
     // glyph atlas keys on ("f", "buttonSouth", "leftShoulder"). Resolves the binding for the requested device
@@ -398,6 +450,140 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         _actions.RemoveAllBindingOverrides();
     }
 
+    // ── F6 Phase 3 — CONTROLS edit-mode UI reads + interactive rebind ──────────────────
+    // These read/rebind THIS reader's own (per-player, device-restricted) asset, so P1's keyboard and P2's pad
+    // each drive their own column cursor and their own overrides — no cross-talk. Menu context (game paused),
+    // so the tutorial gate doesn't apply. Never frozen: the settings screen is a menu, not gameplay.
+    public Vector2 GetUINavigate() => _uiNavigate?.ReadValue<Vector2>() ?? Vector2.zero;
+    public bool GetUISubmitDown() => Down(_uiSubmit);
+    public bool GetUISubmitHeld() => Held(_uiSubmit);
+
+    // Begin an interactive rebind of the chosen action's device-family binding on THIS reader's asset. The
+    // override is live and independent (P2 clones its own asset). Pad-B (buttonEast) and mouse motion are excluded
+    // so "cancel/back" and the pointer never get captured AS the binding; keyboard Escape cancels the capture. The
+    // onDone callback fires on both complete and cancel — the view just re-reads the current binding either way.
+    public bool StartInteractiveRebind(string actionName, string part, System.Action onDone)
+    {
+        if (_actions == null || string.IsNullOrEmpty(actionName)) return false;
+
+        var action = _actions.FindAction(actionName, throwIfNotFound: false);
+        if (action == null) return false;
+
+        bool preferPad = PairedDeviceKind == InputDeviceKind.Gamepad;
+        // part set (e.g. Move's "up") → rebind that composite part's binding; else the single device-family binding.
+        int idx = string.IsNullOrEmpty(part)
+            ? FindBindingIndex(action, preferPad)
+            : FindCompositePartIndex(action, preferPad, part);
+        if (idx < 0) return false;   // no binding for this device family (or no such composite part) → read-only
+
+        CancelActiveRebind();        // one capture at a time on this reader
+
+        // COUCH SAFETY (concurrent rebinds): a RebindingOperation listens to ALL input globally — it is NOT scoped to
+        // the action's paired devices. Two hazards if the other player touches their device mid-capture:
+        //   (1) their control could be captured INTO this binding (merge/swap), and
+        //   (2) — the subtler one — a foreign press is registered as a CANDIDATE (arming the 0.05s completion timer)
+        //       one line BEFORE our filter can drop it, so the op then "completes" with zero candidates: it applies no
+        //       binding but ENDS the capture. To the player that looks like a mysterious cancel the instant the other
+        //       player moves their pad.
+        // FIX: EXCLUDE every non-owned device UP FRONT (checked before a control can become a candidate), so foreign
+        // input never arms the timer at all. OnPotentialMatch is kept as a second line of defence for binding
+        // correctness. When UNRESTRICTED (solo), only one column is editable, so there's no concurrency to guard.
+        InputDevice[] ownDevices = null;
+        if (_actions.devices.HasValue && _actions.devices.Value.Count > 0)
+        {
+            var devs = _actions.devices.Value;
+            ownDevices = new InputDevice[devs.Count];
+            for (int i = 0; i < devs.Count; i++) ownDevices[i] = devs[i];
+        }
+
+        // The action MUST be disabled BEFORE PerformInteractiveRebinding — that call's internal WithAction() THROWS
+        // "Cannot rebind action while it is enabled" (gameplay actions stay enabled under the pause). Disable ONLY this
+        // one action (never the whole map) so the other player and this player's other inputs are untouched; re-enable
+        // on BOTH complete and cancel. The game is paused, so losing this one action for the ~1s capture is invisible.
+        // The whole build+Start is wrapped so any throw fails loud + re-enables — the action can never get stuck off.
+        action.Disable();
+        UnityEngine.InputSystem.InputActionRebindingExtensions.RebindingOperation op = null;
+        try
+        {
+            // Mid-rebind CANCEL is a dedicated control so the player's normal Back button stays fully BINDABLE (the AAA
+            // pattern): keyboard Escape, gamepad SELECT (View/Share). Pad-East (B) is therefore capturable like any other
+            // button — a duplicate it creates is surfaced by the view's conflict check, not swallowed here. Binding
+            // capture itself is device-isolated by OnPotentialMatch.
+            op = action.PerformInteractiveRebinding(idx);
+            if (preferPad)
+                op = op.WithCancelingThrough("<Gamepad>/select");
+            else
+                op = op.WithCancelingThrough("<Keyboard>/escape");
+            if (ownDevices != null)
+            {
+                // (a) Exclude the OPPOSITE device family wholesale — reliable, layout-based; covers the common
+                //     keyboard + pad couch split (P1 keyboard ignores all pads, P2 pad ignores keyboard/mouse).
+                if (preferPad)
+                    op = op.WithControlsExcluding("<Keyboard>").WithControlsExcluding("<Mouse>").WithControlsExcluding("<Pointer>");
+                else
+                    op = op.WithControlsExcluding("<Gamepad>").WithControlsExcluding("<Joystick>");
+                // (b) Exclude any SAME-family FOREIGN device instance (e.g. the 2nd pad in a two-pad game) by its
+                //     runtime path, so only THIS reader's own device(s) can ever become a candidate.
+                foreach (var dev in UnityEngine.InputSystem.InputSystem.devices)
+                {
+                    bool mine = false;
+                    for (int d = 0; d < ownDevices.Length; d++)
+                        if (ReferenceEquals(ownDevices[d], dev)) { mine = true; break; }
+                    if (!mine && !string.IsNullOrEmpty(dev.path)) op = op.WithControlsExcluding(dev.path);
+                }
+                // (c) Second line of defence: drop any foreign candidate that still slips through before it can bind.
+                op = op.OnPotentialMatch(o =>
+                {
+                    for (int i = o.candidates.Count - 1; i >= 0; i--)
+                    {
+                        var dev = o.candidates[i].device;
+                        bool mine = false;
+                        for (int d = 0; d < ownDevices.Length; d++)
+                            if (ReferenceEquals(ownDevices[d], dev)) { mine = true; break; }
+                        if (!mine) o.RemoveCandidate(o.candidates[i]);
+                    }
+                });
+            }
+            op = op.OnComplete(o => { _activeRebind = null; o.Dispose(); action.Enable(); onDone?.Invoke(); })
+                   .OnCancel(o => { _activeRebind = null; o.Dispose(); action.Enable(); onDone?.Invoke(); });
+
+            _activeRebind = op;
+            op.Start();
+        }
+        catch (System.Exception e)
+        {
+            // Fail loud, restore state (R4) — never leave the action stuck disabled.
+            Debug.LogError($"[TwinInputReader] interactive rebind failed to start for '{actionName}': {e.Message}", this);
+            _activeRebind = null;
+            op?.Dispose();
+            action.Enable();
+            return false;
+        }
+        return true;
+    }
+
+    public void CancelActiveRebind()
+    {
+        if (_activeRebind == null) return;
+        var op = _activeRebind;
+        _activeRebind = null;        // null first so the OnCancel handler is a no-op re-entry
+        op.Cancel();
+        op.Dispose();
+    }
+
+    // Live paired-device check (couch settings screen). Unrestricted (solo / single-device) always reads as live.
+    // Otherwise at least one paired device must still be present in the system (InputDevice.added flips false when
+    // a device is removed/disconnected). Lets the settings screen grey the DISCONNECTED slot without CouchDeviceManager
+    // reshuffling device↔slot assignments mid-rebind.
+    public bool HasLivePairedDevice()
+    {
+        if (_actions == null) return false;
+        if (!_actions.devices.HasValue || _actions.devices.Value.Count == 0) return true;   // unrestricted
+        foreach (var d in _actions.devices.Value)
+            if (d != null && d.added) return true;
+        return false;
+    }
+
     // Returns the index of the first non-composite binding whose control path targets the
     // requested device family (Gamepad, or Keyboard/Mouse otherwise). -1 if none match.
     private static int FindBindingIndex(InputAction action, bool preferGamepad)
@@ -411,6 +597,38 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
             bool isPad = path.StartsWith("<Gamepad>");
             bool isKbm = path.StartsWith("<Keyboard>") || path.StartsWith("<Mouse>");
             if (preferGamepad ? isPad : isKbm) return i;
+        }
+        return -1;
+    }
+
+    // Resolve the binding index of a named composite PART (e.g. Move's "up") for the requested device family. Walks
+    // composites, picks the first whose parts belong to that family (peeking the first part's path), then matches the
+    // part by name. Returns -1 when there's no such family composite (e.g. gamepad Move is a stick/dpad single, not a
+    // 2DVector composite) — the caller then treats the row as read-only.
+    private static int FindCompositePartIndex(InputAction action, bool preferGamepad, string partName)
+    {
+        var bindings = action.bindings;
+        int i = 0;
+        while (i < bindings.Count)
+        {
+            if (bindings[i].isComposite)
+            {
+                int firstPart = i + 1;
+                string partPath = firstPart < bindings.Count ? (bindings[firstPart].effectivePath ?? string.Empty) : string.Empty;
+                bool isPad = partPath.StartsWith("<Gamepad>");
+                bool isKbm = partPath.StartsWith("<Keyboard>") || partPath.StartsWith("<Mouse>");
+                if (preferGamepad ? isPad : isKbm)
+                {
+                    for (int j = firstPart; j < bindings.Count && bindings[j].isPartOfComposite; j++)
+                        if (string.Equals(bindings[j].name, partName, System.StringComparison.OrdinalIgnoreCase))
+                            return j;
+                }
+                // skip past this composite's parts and keep looking
+                i = firstPart;
+                while (i < bindings.Count && bindings[i].isPartOfComposite) i++;
+                continue;
+            }
+            i++;
         }
         return -1;
     }

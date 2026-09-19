@@ -45,7 +45,10 @@ public class PauseMenuController : MonoBehaviour
     // must outrank pause, Setsuna (enum 2) sits below. Priority here is the arbiter's own axis.
     private const int PauseSnapshotPriority = 50;
 
-    public bool IsPauseOpen => _pauseRoot.activeSelf;
+    // Pause now opens the unified settings screen directly (Resume | tabs | Exit on one page).
+    // _pauseRoot / _settingsPanel are the retired flat pause card + settings panel — kept in the
+    // scene as a fallback until the old controllers are removed, but no longer the pause surface.
+    public bool IsPauseOpen => SettingsScreenController.Instance != null && SettingsScreenController.Instance.IsOpen;
     public bool IsSettingsOpen => _settingsPanel != null && _settingsPanel.activeSelf;
 
     private void Awake()
@@ -79,46 +82,62 @@ public class PauseMenuController : MonoBehaviour
 
     private void Update()
     {
-        if (_input == null || !_input.GetPauseDown()) return;
+        if (_input == null) return;
 
-        // Centralised ESC arbiter — each press closes exactly one layer (priority: highest first)
-        if (TutorialOverlayController.Instance != null && TutorialOverlayController.Instance.IsOpen)
+        bool esc = _input.GetPauseDown();   // Esc / pad Start
+        // Pad B (<Gamepad>/buttonEast) is bound to UICancel, NOT Pause — so it never reached this arbiter and the
+        // gamepad "Back" glyph did nothing on the settings screen. Accept UICancel as Back, but only while the
+        // unified settings screen owns the layer (elsewhere buttonEast keeps its own meaning, e.g. skill-tree back).
+        bool back = esc || (IsPauseOpen && _input.GetUICancelDown());
+        if (!back) return;
+
+        // Centralised ESC/Back arbiter — each press resolves exactly one layer (priority: highest first).
+        // Non-settings layers respond to Esc/Start only; the settings screen also takes pad-B.
+        if (esc && TutorialOverlayController.Instance != null && TutorialOverlayController.Instance.IsOpen)
         {
             TutorialOverlayController.Instance.TriggerContinue();
             return;
         }
 
-        if (SkillPreviewModal.Instance != null && SkillPreviewModal.Instance.IsOpen)
+        if (esc && SkillPreviewModal.Instance != null && SkillPreviewModal.Instance.IsOpen)
         {
             SkillPreviewModal.Instance.Close();
             return;
         }
 
-        if (IsSettingsOpen)
-        {
-            CloseSettings();
-            return;
-        }
-
+        // Unified settings screen → its own Back state machine (Esc or pad-B). Today = Resume; F6 Phase 3 adds
+        // the per-player edit-mode branch (a player in Controls edit mode backs out of edit only, independent of
+        // the other player; Resume only once nobody is editing).
         if (IsPauseOpen)
         {
-            Resume();
+            SettingsScreenController.Instance.HandleBack();
             return;
         }
 
-        if (SkillTreeUI.Instance != null && SkillTreeUI.Instance.IsOpen)
+        // (The old flat settings panel is retired — its GameObject is disabled in Persistent and pause opens the
+        // unified screen directly, so there's no longer an ESC fallback branch for it here.)
+
+        if (esc && SkillTreeUI.Instance != null && SkillTreeUI.Instance.IsOpen)
         {
             SkillTreeUI.Instance.Close();
             return;
         }
 
-        OpenPause();
+        if (esc) OpenPause();
     }
 
     // ── Public API ────────────────────────────────────────────
     public void OpenPause()
     {
-        _pauseRoot.SetActive(true);
+        // Open the unified pause/settings screen (the arbiter still owns timescale/audio/cursor below).
+        if (SettingsScreenController.Instance == null)
+        {
+            Debug.LogError("[PauseMenuController] SettingsScreenController.Instance is null — the unified " +
+                           "settings screen isn't in the scene. Pause cannot open.", this);
+            return;
+        }
+        SettingsScreenController.Instance.Open();
+
         TimeScaleService.Instance?.Request(this, 0f);
         // F4/F7 — halt gameplay audio (owner set, sole AudioListener.pause writer) + duck to the
         // Paused mixer snapshot. UI/button sounds must use AudioManager.PlayUI to stay audible.
@@ -126,19 +145,12 @@ public class PauseMenuController : MonoBehaviour
         AudioManager.Instance?.RequestSnapshot(this, AudioSnapshotId.Paused, PauseSnapshotPriority);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
-
-        // P-C (controller nav): wrap-around for the pause card (Resume↕Settings↕Exit → Down past Exit wraps
-        // to Resume). Settings panel is still inactive here, so includeInactive:false scopes this to the card.
-        UINavStyle.WireWrap(_pauseRoot);
-
-        // Item 1 (controller nav): land focus on Resume so either pad drives the pause menu immediately.
-        UINavFocus.Focus(_resumeButton);
+        // Controller nav + first-focus (Resume | tabs | Exit) are handled inside SettingsScreenController.Open().
     }
 
     public void Resume()
     {
-        _settingsPanel?.SetActive(false);
-        _pauseRoot.SetActive(false);
+        SettingsScreenController.Instance?.Close();
         TimeScaleService.Instance?.Release(this);
         AudioManager.Instance?.ReleasePaused(this);
         AudioManager.Instance?.ReleaseSnapshot(this);

@@ -72,6 +72,21 @@ public interface IInputProvider
     /// </summary>
     string GetBindingDisplay(string actionName, bool preferGamepad = false);
 
+    /// <summary>F6 — human-readable label for ONE part of a composite binding (e.g. Move's "up"/"down"/"left"/
+    /// "right" 2DVector parts) of the given device family, read live so it stays true under rebinding. Returns "?"
+    /// when the action has no such composite part for that family (e.g. a gamepad stick has no directional parts).</summary>
+    string GetCompositePartDisplay(string actionName, string part, bool preferGamepad);
+
+    /// <summary>F6 — the effective (override-aware) layout-relative control PATH for a row's binding ("w",
+    /// "buttonNorth"), or a composite part when <paramref name="part"/> is set. Used by the CONTROLS view to detect
+    /// duplicate bindings (conflicts) within a column. null when the action or a matching binding is missing.</summary>
+    string GetEffectiveBindingPath(string actionName, string part, InputDeviceKind kind);
+
+    /// <summary>F6 — has this row's binding been changed from its authored default? The CONTROLS conflict check uses
+    /// it to grandfather duplicates that ship in the defaults (Interact + Convergence share F/A by design), flagging
+    /// only a duplicate the player introduced.</summary>
+    bool IsRowBindingChanged(string actionName, string part, InputDeviceKind kind);
+
     // ── Item 5 (button glyphs) — the control PATH (not display text) is the glyph key ──
     /// <summary>The resolved CONTROL PATH for an action's binding of the given device kind (e.g. "buttonSouth",
     /// "f", "leftButton") — the stable key the glyph atlas is indexed by, unlike <see cref="GetBindingDisplay"/>'s
@@ -89,4 +104,39 @@ public interface IInputProvider
     /// Keybinds" button and future F6 rebinding can rely on it.
     /// </summary>
     void ResetBindingsToDefault();
+
+    // ── F6 Phase 3 (CONTROLS edit mode: two independent per-column cursors + interactive rebind) ──
+    /// <summary>UI-map Navigate value (Vector2) read from THIS provider's own (per-player, device-restricted)
+    /// action asset — so P1's keyboard and P2's pad drive their own column cursor independently. Menu context,
+    /// ungated (the game is already paused when the settings screen is open).</summary>
+    Vector2 GetUINavigate();
+
+    /// <summary>UI-map Submit pressed this frame on THIS provider's own asset — confirm/enter on the focused row
+    /// (Enter / pad South). Menu context, ungated.</summary>
+    bool GetUISubmitDown();
+
+    /// <summary>UI-map Submit currently held on THIS provider's own asset. The rebind flow waits for this to go
+    /// false before capturing, so the button that CONFIRMED the rebind (Enter / pad South) isn't captured as the
+    /// new binding.</summary>
+    bool GetUISubmitHeld();
+
+    /// <summary>F6 — begin an interactive rebind of <paramref name="actionName"/>'s device-family binding on THIS
+    /// provider's own action asset (per-player: the override is live and independent of the other player). The next
+    /// control the player actuates becomes the new binding. <paramref name="onDone"/> fires on complete OR cancel
+    /// (the UI refreshes either way). Returns false immediately (never starting) when the action/binding is missing
+    /// or this provider can't rebind a single device (the shared aggregator). Cancels any rebind already in flight
+    /// on this provider first. Live/in-session only — no persistence (project save system is deferred/inert).
+    /// <paramref name="part"/> names a composite part to rebind ("up"/"down"/"left"/"right" for Move's 2DVector);
+    /// null/empty rebinds the action's single device-family binding (the common case).</summary>
+    bool StartInteractiveRebind(string actionName, string part, System.Action onDone);
+
+    /// <summary>Cancel an interactive rebind in flight on this provider (player pressed Back / left edit mode /
+    /// the screen closed mid-capture). Idempotent — a no-op when nothing is capturing.</summary>
+    void CancelActiveRebind();
+
+    /// <summary>Does this provider currently have a live paired input device? True when UNRESTRICTED (reads all
+    /// devices) or when at least one paired device is still present in the system. False when this provider's
+    /// paired device(s) have all disconnected. The settings screen uses this to grey the disconnected player's
+    /// column WITHOUT reshuffling slot↔device assignments (which mid-rebind would confuse both players).</summary>
+    bool HasLivePairedDevice();
 }

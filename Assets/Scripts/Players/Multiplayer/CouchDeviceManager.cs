@@ -44,6 +44,21 @@ public class CouchDeviceManager : MonoBehaviour
     /// <summary>True while two devices are separately routed to the two twins.</summary>
     public bool IsCouchActive { get; private set; }
 
+    // While suspended, auto-reassignment on device connect/disconnect is frozen. The unified settings screen sets
+    // this on Open so a mid-rebind disconnect does NOT reshuffle slot↔device (which twin a pad drives, or a
+    // revert-to-solo that swaps P1 to keyboard) — that would confuse players who are actively editing. The screen
+    // reflects the disconnect itself (greys the affected column). Released on Close, which reconciles once.
+    private bool _autoAssignSuspended;
+
+    /// <summary>Freeze/unfreeze auto device↔slot reassignment (settings screen open). On release, reconciles once
+    /// so any device change that happened while frozen is applied.</summary>
+    public void SetAutoAssignSuspended(bool suspended)
+    {
+        if (_autoAssignSuspended == suspended) return;
+        _autoAssignSuspended = suspended;
+        if (!suspended && _autoAssign) AssignAuto();   // reconcile the current device set now that we're live again
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -80,7 +95,7 @@ public class CouchDeviceManager : MonoBehaviour
 
     private void OnDeviceChange(InputDevice device, InputDeviceChange change)
     {
-        if (!_autoAssign) return;
+        if (!_autoAssign || _autoAssignSuspended) return;
         switch (change)
         {
             case InputDeviceChange.Added:

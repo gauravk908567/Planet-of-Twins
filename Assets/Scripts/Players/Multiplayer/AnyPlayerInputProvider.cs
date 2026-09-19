@@ -92,7 +92,38 @@ public sealed class AnyPlayerInputProvider : IInputProvider
     public void SetGameplayFrozen(bool frozen) => P1?.SetGameplayFrozen(frozen);   // static shared policy anyway
     public string GetBindingDisplay(string actionName, bool preferGamepad = false)
         => P1?.GetBindingDisplay(actionName, preferGamepad) ?? "?";
+    public string GetCompositePartDisplay(string actionName, string part, bool preferGamepad)
+        => P1?.GetCompositePartDisplay(actionName, part, preferGamepad) ?? "?";
+    public string GetEffectiveBindingPath(string actionName, string part, InputDeviceKind kind)
+        => P1?.GetEffectiveBindingPath(actionName, part, kind);
+    public bool IsRowBindingChanged(string actionName, string part, InputDeviceKind kind)
+        => P1 != null && P1.IsRowBindingChanged(actionName, part, kind);
     public void ResetBindingsToDefault() => P1?.ResetBindingsToDefault();
+
+    // ── F6 Phase 3 — the two-column CONTROLS cursors read ForSlot(One/Two) DIRECTLY (per-player, not through this
+    //    aggregator). These are here for interface completeness / the shared seam: navigate = P1 priority else P2;
+    //    submit = either; a rebind through the shared provider names one device → delegate to P1. ──
+    public Vector2 GetUINavigate()
+    {
+        var a = P1;
+        Vector2 va = a != null ? a.GetUINavigate() : Vector2.zero;
+        if (va.sqrMagnitude > 0.0001f) return va;
+        var b = P2;
+        return (b != null && !ReferenceEquals(b, a)) ? b.GetUINavigate() : va;
+    }
+    public bool GetUISubmitDown() => Any(p => p.GetUISubmitDown());
+    public bool GetUISubmitHeld() => Any(p => p.GetUISubmitHeld());
+    public bool StartInteractiveRebind(string actionName, string part, System.Action onDone)
+        => P1 != null && P1.StartInteractiveRebind(actionName, part, onDone);
+    public void CancelActiveRebind() => P1?.CancelActiveRebind();
+    // Shared seam: live if EITHER underlying player still has a device.
+    public bool HasLivePairedDevice()
+    {
+        var a = P1;
+        if (a != null && a.HasLivePairedDevice()) return true;
+        var b = P2;
+        return b != null && !ReferenceEquals(b, a) && b.HasLivePairedDevice();
+    }
 
     // Item 5 (glyphs): the shared aggregator isn't a single device, so PairedDeviceKind is null → the resolver
     // uses LastUsedDeviceTracker for the shared cursor. Control-path lookup delegates to P1 (both readers share

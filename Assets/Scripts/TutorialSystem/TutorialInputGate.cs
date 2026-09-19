@@ -110,6 +110,12 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
     // F5 — binding display is device-config, not gated; passthrough to the real reader.
     public string GetBindingDisplay(string actionName, bool preferGamepad = false)
         => _real?.GetBindingDisplay(actionName, preferGamepad) ?? "?";
+    public string GetCompositePartDisplay(string actionName, string part, bool preferGamepad)
+        => _real?.GetCompositePartDisplay(actionName, part, preferGamepad) ?? "?";
+    public string GetEffectiveBindingPath(string actionName, string part, InputDeviceKind kind)
+        => _real?.GetEffectiveBindingPath(actionName, part, kind);
+    public bool IsRowBindingChanged(string actionName, string part, InputDeviceKind kind)
+        => _real != null && _real.IsRowBindingChanged(actionName, part, kind);
 
     // Item 5 — glyph resolution (control path + paired device kind); device-config, ungated passthrough.
     public bool TryGetBindingControlPath(string actionName, InputDeviceKind kind, out string controlPath, out string deviceLayout)
@@ -121,4 +127,13 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
 
     // F7 — binding reset is device-config, not gated; passthrough to the real reader.
     public void ResetBindingsToDefault() => _real?.ResetBindingsToDefault();
+
+    // F6 Phase 3 — CONTROLS edit-mode reads/rebind; menu context, ungated passthrough to the real reader.
+    public Vector2 GetUINavigate() => _real?.GetUINavigate() ?? Vector2.zero;
+    public bool GetUISubmitDown() => _real?.GetUISubmitDown() ?? false;
+    public bool GetUISubmitHeld() => _real?.GetUISubmitHeld() ?? false;
+    public bool StartInteractiveRebind(string actionName, string part, System.Action onDone)
+        => _real != null && _real.StartInteractiveRebind(actionName, part, onDone);
+    public void CancelActiveRebind() => _real?.CancelActiveRebind();
+    public bool HasLivePairedDevice() => _real != null && _real.HasLivePairedDevice();
 }
