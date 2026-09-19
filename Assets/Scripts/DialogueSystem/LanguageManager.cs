@@ -70,7 +70,7 @@ public class LanguageManager : MonoBehaviour
         LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
     }
 
-    /// <summary>Called by SettingsMenuController when player picks a language.</summary>
+    /// <summary>Called by DisplaySettingsHandler when the player picks a language.</summary>
     public void SetLanguage(Locale locale)
     {
         if (locale == null) return;

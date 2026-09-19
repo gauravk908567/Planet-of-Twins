@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Audio;
 
 /// <summary>
-/// Apply + persist for the AUDIO tab (master / music / sfx). Ported from the old
+/// Apply + persist for the AUDIO tab (master / music / sfx). Ported from the old (now-removed)
 /// SettingsMenuController volume path: a linear 0-1 slider maps to decibels on the AudioMixer and is
 /// mirrored to PlayerPrefs. Holds no UI reference — it works on plain float values, so it serves
 /// whatever slider is bound to the id, wherever that slider ends up living.

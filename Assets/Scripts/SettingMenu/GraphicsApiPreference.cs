@@ -19,8 +19,8 @@ using Debug = UnityEngine.Debug;
 ///     launches stop trying. One wasted relaunch at worst, self-correcting.
 ///   • Auto = never force → the build's default API order (D3D11 primary here) is used.
 ///
-/// The Settings UI (<see cref="GraphicsSettingsController"/>) writes <see cref="PrefKey"/> and calls
-/// <see cref="ApplyNow"/> from a "Restart now" button. Vulkan is intentionally absent: it is not in this
+/// The Settings UI (GraphicsSettingsHandler via SettingsScreenController) writes <see cref="PrefKey"/> and
+/// calls <see cref="ApplyNow"/> from a "Restart now" button. Vulkan is intentionally absent: it is not in this
 /// project's Windows graphics-API build list, so <c>-force-vulkan</c> would be a no-op (add it to Player
 /// Settings first to expose it here).
 /// </summary>

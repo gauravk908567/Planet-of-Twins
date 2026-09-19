@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Localization;
 
 /// <summary>
-/// Apply + persist for language, cursor, resolution and window mode — ported from the old
+/// Apply + persist for language, cursor, resolution and window mode — ported from the old (now-removed)
 /// SettingsMenuController. Resolution and window mode are coupled (Screen.SetResolution needs both),
 /// so this handler caches both selected indices and re-applies the pair whenever either changes.
 /// Deferred settings (resolution/window) are handed here by the controller only after the user

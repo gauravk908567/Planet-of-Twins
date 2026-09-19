@@ -21,7 +21,7 @@ using TMPro;
 /// deterministically. This tool builds a throwaway standard control, transplants its visual
 /// children onto the EXISTING control, and re-points the control's own serialized slots at
 /// the transplanted children. The control GameObject keeps its identity, so every serialized
-/// reference on SettingsMenuController / GraphicsSettingsController stays intact.
+/// reference pointing at the control (e.g. from its SettingBinding) stays intact.
 ///
 /// Idempotent: a control that already has its template / checkmark / fill is skipped, so the
 /// tool is safe to re-run. Scoped strictly to descendants of a GameObject named "SettingsPanel".

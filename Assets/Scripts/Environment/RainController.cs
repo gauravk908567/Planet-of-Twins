@@ -14,7 +14,7 @@ using UnityEngine;
 /// correct, rain is world-sim); the soak/dry lag uses Time.deltaTime (scaled) for the
 /// same reason. No Time.timeScale writes here.
 /// Editor safety: _PoTWetness is a GLOBAL — zeroed in OnDestroy so play mode never
-/// leaks a soaked world into the editor (GraphicsSettingsController pattern).
+/// leaks a soaked world into the editor (same editor-safety pattern as GraphicsSettingsHandler).
 /// Camera follow: lazy Camera.main re-resolve every frame (UIBillboard lazy-fix pattern —
 /// a one-shot Start() lookup dies on boot order).
 /// </summary>

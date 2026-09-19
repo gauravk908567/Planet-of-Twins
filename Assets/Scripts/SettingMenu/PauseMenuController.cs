@@ -23,7 +23,7 @@ using UnityEngine.UI;
 ///           │     ├── ResumeButton
 ///           │     ├── SettingsButton
 ///           │     └── ExitButton
-///           └── SettingsPanel (child — SettingsMenuController on this)
+///           └── SettingsPanel (retired flat panel — kept inactive; its old SettingsMenuController was removed)
 /// </summary>
 public class PauseMenuController : MonoBehaviour
 {
@@ -161,7 +161,8 @@ public class PauseMenuController : MonoBehaviour
     public void OpenSettings()
     {
         _settingsPanel?.SetActive(true);
-        // Focus is set by SettingsMenuController.OnEnable (it owns its own first control).
+        // Dead path: the old flat SettingsPanel is retired and has no controller now; these members
+        // (OpenSettings/CloseSettings/_settingsPanel) await removal in a separate PauseMenuController cleanup.
     }
 
     public void CloseSettings()

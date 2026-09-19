@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEditor;
@@ -449,27 +450,43 @@ public static class UnifiedSettingsScreenBuilder
         so.FindProperty("_confirmDialog").objectReferenceValue = dlg;
         so.FindProperty("_controls").objectReferenceValue = controls;   // F6 Phase 3 — edit-aware Back
 
-        // Reuse the already-correct asset refs from the existing (soon-to-retire) controllers.
-        var gfx = Object.FindAnyObjectByType<GraphicsSettingsController>(FindObjectsInactive.Include);
-        if (gfx != null)
-        {
-            var gso = new SerializedObject(gfx);
-            CopyRef(so, "_urpAsset", gso, "_urpAsset");
-            CopyRef(so, "_rendererData", gso, "_rendererData");
-            CopyRef(so, "_fogMaterial", gso, "_fogMaterial");
-            CopyRef(so, "_mainCamera", gso, "_mainCamera");
-        }
-        var setm = Object.FindAnyObjectByType<SettingsMenuController>(FindObjectsInactive.Include);
-        if (setm != null)
-        {
-            var sso = new SerializedObject(setm);
-            CopyRef(so, "_audioMixer", sso, "_audioMixer");
-        }
+        // Backend ASSET refs. The old GraphicsSettings/SettingsMenu controllers that used to hold these are
+        // retired, so load the project assets directly — but never clobber a ref an earlier build already set.
+        SetAssetRefIfEmpty(so, "_audioMixer",   "Assets/Audio/GameAudioMixer.mixer");
+        SetAssetRefIfEmpty(so, "_urpAsset",     "Assets/Settings/PC_RPAsset.asset");
+        SetAssetRefIfEmpty(so, "_rendererData", "Assets/Settings/PC_Renderer.asset");
+
+        // The Fog row drives the CristianQiu VolumetricFog on the FogVolume global Volume (a scene object).
+        var fogProp = so.FindProperty("_fogVolume");
+        if (fogProp != null && fogProp.objectReferenceValue == null)
+            fogProp.objectReferenceValue = FindFogVolume();
+
         var camProp = so.FindProperty("_mainCamera");
         if (camProp.objectReferenceValue == null && Camera.main != null)
             camProp.objectReferenceValue = Camera.main;
 
         so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    // Load a project asset by path into an empty serialized object-ref (leaves an already-wired ref alone).
+    private static void SetAssetRefIfEmpty(SerializedObject so, string field, string assetPath)
+    {
+        var p = so.FindProperty(field);
+        if (p == null || p.objectReferenceValue != null) return;
+        var asset = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
+        if (asset != null) p.objectReferenceValue = asset;
+        else Debug.LogWarning($"[UnifiedSettingsScreenBuilder] Backend asset not found for {field}: {assetPath}");
+    }
+
+    // The global Volume whose profile carries the CristianQiu VolumetricFog (the live fog the Fog row drives).
+    private static Volume FindFogVolume()
+    {
+        var volumes = Object.FindObjectsByType<Volume>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var v in volumes)
+            if (v != null && v.sharedProfile != null && v.sharedProfile.Has<VolumetricFogVolumeComponent>())
+                return v;
+        Debug.LogWarning("[UnifiedSettingsScreenBuilder] No Volume with a VolumetricFogVolumeComponent found — _fogVolume left null.");
+        return null;
     }
 
     private static void WireDialog(SettingsConfirmDialog dlg, GameObject root, TMP_Text title, TMP_Text msg,
@@ -484,13 +501,6 @@ public static class UnifiedSettingsScreenBuilder
         so.FindProperty("_cancelButton").objectReferenceValue = cancel;
         so.FindProperty("_cancelLabel").objectReferenceValue = cancelLbl;
         so.ApplyModifiedPropertiesWithoutUndo();
-    }
-
-    private static void CopyRef(SerializedObject dst, string dstField, SerializedObject src, string srcField)
-    {
-        var sp = src.FindProperty(srcField);
-        var dp = dst.FindProperty(dstField);
-        if (sp != null && dp != null) dp.objectReferenceValue = sp.objectReferenceValue;
     }
 
     // ── Control factories (reuse Unity's deterministic builders) ──────

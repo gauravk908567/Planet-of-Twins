@@ -7,7 +7,7 @@ using UnityEngine.Rendering.Universal;
 /// <summary>
 /// Apply + persist for the VIDEO tab quality/display block (quality preset, V-Sync, FPS cap, texture,
 /// shadow, anti-aliasing, ambient occlusion, volumetric fog, sun shafts, terrain, render scale, and
-/// the restart-to-apply graphics API). Ported from the old GraphicsSettingsController: every value is
+/// the restart-to-apply graphics API). Ported from the old (now-removed) GraphicsSettingsController: every value is
 /// read from / written to the same "gfx_*" PlayerPrefs keys, so saved settings and their defaults are
 /// honoured even before any UI exists. Holds no UI reference — the SettingsScreenController pushes
 /// values in and reads them back to refresh controls (e.g. a preset change updating the other rows).

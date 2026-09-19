@@ -14,7 +14,7 @@ using UnityEngine.Rendering;   // VolumeProfile — the volumetric fog whose tin
 /// Blends run on UNSCALED time (sky must keep moving through Setsuna/pause, mirroring
 /// StoryGradeDirector). The skybox material is a SHARED ASSET: in-editor we snapshot its
 /// state on Awake and restore it in OnDestroy so play mode never dirties the asset
-/// (same editor-safety pattern as GraphicsSettingsController).
+/// (same editor-safety pattern as GraphicsSettingsHandler).
 /// </summary>
 [ExecuteInEditMode]
 public class SkyStateDriver : MonoBehaviour
