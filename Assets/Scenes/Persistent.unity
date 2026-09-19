@@ -38747,6 +38747,7 @@ MonoBehaviour:
   _urpAsset: {fileID: 11400000, guid: 4b83569d67af61e458304325a23e5dfd, type: 2}
   _rendererData: {fileID: 11400000, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
   _fogMaterial: {fileID: 2100000, guid: 352fdeb40bac76a4b8e29defdde7f3bb, type: 2}
+  _fogVolume: {fileID: 1579245235}
   _mainCamera: {fileID: 21424138}
 --- !u!1 &617115829
 GameObject:

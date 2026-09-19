@@ -21,19 +21,22 @@ public sealed class GraphicsSettingsHandler : ISettingHandler
 {
     private UniversalRenderPipelineAsset _urpAsset;
     private ScriptableRendererData _rendererData;
-    private Material _fogMaterial;
     private Camera _mainCamera;
 
     private ScriptableRendererFeature _ssaoFeature;
-    private ScriptableRendererFeature _fogFeature;
     private ScriptableRendererFeature _shaftsFeature;
 
-    // Renderer-feature names (must match PC_Renderer.asset). NOTE: "PoTVolumetricFog" is not currently
-    // present on PC_Renderer — the fog control no-ops until that name is reconciled (tracked separately).
+    // Renderer-feature names (must match PC_Renderer.asset).
     private const string SsaoFeatureName   = "ScreenSpaceAmbientOcclusion";
-    private const string FogFeatureName    = "PoTVolumetricFog";
     private const string ShaftsFeatureName = "CoexistenceShafts";
-    private static readonly int StepsID = Shader.PropertyToID("_Steps");
+
+    // The live volumetric fog is CristianQiu's, driven through its VolumeComponent on the FogVolume
+    // profile (Persistent) — NOT a renderer feature and NOT the dead M_PoTVolumetricFog material. Off
+    // flips the component's master enable (its pass early-outs); Low/High set the raymarch quality.
+    private VolumetricFogVolumeComponent _fog;
+    private int _fogHighSteps = 128;   // authored maxSteps, captured at Initialize = the High preset
+    private int _fogHighBlur  = 2;     // authored blurIterations
+    private const int FogLowSteps = 32;
 
     private const string K_Preset      = "gfx_preset";
     private const string K_VSync       = "gfx_vsync";
@@ -53,12 +56,18 @@ public sealed class GraphicsSettingsHandler : ISettingHandler
     {
         _urpAsset     = config?.UrpAsset;
         _rendererData = config?.RendererData;
-        _fogMaterial  = config?.FogMaterial;
         _mainCamera   = config?.MainCamera;
 
         _ssaoFeature   = FindFeature(SsaoFeatureName);
-        _fogFeature    = FindFeature(FogFeatureName);
         _shaftsFeature = FindFeature(ShaftsFeatureName);
+
+        // Resolve the CristianQiu fog component and capture its authored quality as the High preset.
+        if (config?.FogProfile != null) config.FogProfile.TryGet(out _fog);
+        if (_fog != null)
+        {
+            _fogHighSteps = _fog.maxSteps.value;
+            _fogHighBlur  = _fog.blurIterations.value;
+        }
     }
 
     public bool Owns(string id) =>
@@ -247,9 +256,14 @@ public sealed class GraphicsSettingsHandler : ISettingHandler
 
     private void ApplyVolumetricFog()
     {
-        int idx = PlayerPrefs.GetInt(K_Fog, 2);   // Off / Low / High
-        if (_fogFeature != null) _fogFeature.SetActive(idx > 0);
-        if (_fogMaterial != null && idx > 0) _fogMaterial.SetFloat(StepsID, idx == 1 ? 12f : 24f);
+        if (_fog == null) return;
+        int idx = PlayerPrefs.GetInt(K_Fog, 2);   // 0 Off / 1 Low / 2 High
+        _fog.enabled.overrideState = true;
+        if (idx <= 0) { _fog.enabled.value = false; return; }   // master off — the CQF pass early-outs
+
+        _fog.enabled.value        = true;
+        _fog.maxSteps.value       = idx == 1 ? FogLowSteps : _fogHighSteps;
+        _fog.blurIterations.value = idx == 1 ? 1 : _fogHighBlur;
     }
 
     private void ApplySunShafts() => _shaftsFeature?.SetActive(PlayerPrefs.GetInt(K_Shafts, 1) == 1);
@@ -291,10 +305,12 @@ public sealed class GraphicsSettingsHandler : ISettingHandler
 
     private struct AssetSnapshot
     {
-        public float renderScale, shadowDistance, fogSteps;
-        public bool softShadows, ssao, fog, shafts;
+        public float renderScale, shadowDistance;
+        public bool softShadows, ssao, shafts;
         public int softShadowQuality;   // -1 = field not found
         public int vSyncCount, mipmapLimit, targetFps;
+        public bool fogEnabled;         // CristianQiu fog master enable
+        public int fogSteps, fogBlur;   // authored raymarch quality
         public bool valid;
     }
     private AssetSnapshot _snap;
@@ -313,9 +329,13 @@ public sealed class GraphicsSettingsHandler : ISettingHandler
             _snap.softShadowQuality = GetPrivateInt(_urpAsset, "m_SoftShadowQuality", -1);
         }
         _snap.ssao   = _ssaoFeature != null && _ssaoFeature.isActive;
-        _snap.fog    = _fogFeature != null && _fogFeature.isActive;
         _snap.shafts = _shaftsFeature != null && _shaftsFeature.isActive;
-        if (_fogMaterial != null) _snap.fogSteps = _fogMaterial.GetFloat(StepsID);
+        if (_fog != null)
+        {
+            _snap.fogEnabled = _fog.enabled.value;
+            _snap.fogSteps   = _fog.maxSteps.value;
+            _snap.fogBlur    = _fog.blurIterations.value;
+        }
         _snap.vSyncCount = QualitySettings.vSyncCount;
         _snap.mipmapLimit = QualitySettings.globalTextureMipmapLimit;
         _snap.targetFps = Application.targetFrameRate;
@@ -335,9 +355,13 @@ public sealed class GraphicsSettingsHandler : ISettingHandler
                 SetPrivateField(_urpAsset, "m_SoftShadowQuality", _snap.softShadowQuality);
         }
         _ssaoFeature?.SetActive(_snap.ssao);
-        _fogFeature?.SetActive(_snap.fog);
         _shaftsFeature?.SetActive(_snap.shafts);
-        if (_fogMaterial != null) _fogMaterial.SetFloat(StepsID, _snap.fogSteps);
+        if (_fog != null)
+        {
+            _fog.enabled.value        = _snap.fogEnabled;
+            _fog.maxSteps.value       = _snap.fogSteps;
+            _fog.blurIterations.value = _snap.fogBlur;
+        }
         QualitySettings.vSyncCount = _snap.vSyncCount;
         QualitySettings.globalTextureMipmapLimit = _snap.mipmapLimit;
         Application.targetFrameRate = _snap.targetFps;

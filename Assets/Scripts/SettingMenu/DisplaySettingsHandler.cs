@@ -18,9 +18,15 @@ public sealed class DisplaySettingsHandler : ISettingHandler
 
     private const string PrefCursor = "CursorVisible";
 
+    // The monitor reports many modes, including sub-720p ones that letterbox/break our 16:9 UI and
+    // dozens of refresh-rate duplicates. Floor the list at a UI-safe size and keep one entry per
+    // unique width×height (highest refresh).
+    private const int MinResWidth  = 1280;
+    private const int MinResHeight = 720;
+
     public void Initialize(SettingsBackendConfig config)
     {
-        _resolutions = Screen.resolutions;
+        _resolutions = BuildFilteredResolutions();
         _resIndex = CurrentResolutionIndex();
         _windowIndex = CurrentWindowIndex();
     }
@@ -100,20 +106,49 @@ public sealed class DisplaySettingsHandler : ISettingHandler
     // ── Resolution / window mode ──────────────────────────────
     private IReadOnlyList<string> ResolutionOptions()
     {
-        if (_resolutions == null || _resolutions.Length == 0) _resolutions = Screen.resolutions;
+        if (_resolutions == null || _resolutions.Length == 0) _resolutions = BuildFilteredResolutions();
         var opts = new List<string>(_resolutions.Length);
         foreach (var r in _resolutions)
             opts.Add($"{r.width} × {r.height} @ {r.refreshRateRatio.value:F0}Hz");
         return opts;
     }
 
+    // At/above the UI-safe floor, one entry per unique size (highest refresh), highest-resolution
+    // first. Never returns empty — an odd monitor with nothing above the floor falls back to the raw
+    // list so the dropdown is never blank.
+    private static Resolution[] BuildFilteredResolutions()
+    {
+        var all = Screen.resolutions;
+        if (all == null || all.Length == 0) return all;
+
+        var best = new Dictionary<(int w, int h), Resolution>();
+        foreach (var r in all)
+        {
+            if (r.width < MinResWidth || r.height < MinResHeight) continue;
+            var key = (r.width, r.height);
+            if (!best.TryGetValue(key, out var cur) ||
+                r.refreshRateRatio.value > cur.refreshRateRatio.value)
+                best[key] = r;
+        }
+        if (best.Count == 0) return all;   // no mode clears the floor — show everything rather than nothing
+
+        var list = new List<Resolution>(best.Values);
+        list.Sort((a, b) =>
+        {
+            long areaA = (long)a.width * a.height, areaB = (long)b.width * b.height;
+            if (areaA != areaB) return areaB.CompareTo(areaA);                     // biggest first
+            return b.refreshRateRatio.value.CompareTo(a.refreshRateRatio.value);   // then highest Hz
+        });
+        return list.ToArray();
+    }
+
     private int CurrentResolutionIndex()
     {
-        var res = Screen.resolutions;
+        var res = _resolutions ?? Screen.resolutions;
         for (int i = 0; i < res.Length; i++)
             if (res[i].width == Screen.currentResolution.width &&
                 res[i].height == Screen.currentResolution.height) return i;
-        return Mathf.Max(0, res.Length - 1);
+        return 0;   // current mode below the floor / not listed → default to native max (index 0)
     }
 
     private int CurrentWindowIndex() => Screen.fullScreenMode switch

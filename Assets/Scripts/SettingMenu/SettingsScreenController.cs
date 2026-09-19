@@ -29,7 +29,9 @@ public sealed class SettingsScreenController : MonoBehaviour
     [SerializeField] private AudioMixer _audioMixer;
     [SerializeField] private UniversalRenderPipelineAsset _urpAsset;
     [SerializeField] private ScriptableRendererData _rendererData;
-    [SerializeField] private Material _fogMaterial;
+    [SerializeField] private Material _fogMaterial;   // legacy PoT-fog slot (retained, unused)
+    [Tooltip("The global FogVolume (Persistent) whose profile carries the CristianQiu Volumetric Fog the Fog row drives.")]
+    [SerializeField] private Volume _fogVolume;
     [SerializeField] private Camera _mainCamera;
 
     private readonly List<ISettingHandler> _handlers = new List<ISettingHandler>();
@@ -54,6 +56,7 @@ public sealed class SettingsScreenController : MonoBehaviour
             UrpAsset = _urpAsset,
             RendererData = _rendererData,
             FogMaterial = _fogMaterial,
+            FogProfile = _fogVolume != null ? _fogVolume.sharedProfile : null,
             MainCamera = _mainCamera,
         };
 
