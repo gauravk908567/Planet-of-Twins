@@ -192,10 +192,12 @@ public sealed class ControlsRebindView : MonoBehaviour
         var es = EventSystem.current;
         if (es != null) es.sendNavigationEvents = false;
 
-        // CONTROLS carries its own two-column, per-device legend; hide the shared single legend while it's shown.
+        // CONTROLS carries its own two-column, per-device legend bar; hide the shared single legend while it's shown,
+        // and (since our bar lives under ScreenRoot, not this panel) raise + show ours.
         var shared = SharedLegend;
         if (shared != null) shared.gameObject.SetActive(false);
         EnsureDeviceLegend();
+        if (_legendRoot != null) { _legendRoot.gameObject.SetActive(true); _legendRoot.SetAsLastSibling(); }
 
         ResetCursor(_c1);
         ResetCursor(_c2);
@@ -213,7 +215,9 @@ public sealed class ControlsRebindView : MonoBehaviour
         if (_c1 != null && _c1.overlay != null) _c1.overlay.gameObject.SetActive(false);
         if (_c2 != null && _c2.overlay != null) _c2.overlay.gameObject.SetActive(false);
 
-        // Leaving CONTROLS (tab switch or screen close): restore the shared single legend for the other tabs.
+        // Leaving CONTROLS (tab switch or screen close): hide our bar (it lives under ScreenRoot, so it won't hide
+        // with this panel) and restore the shared single legend for the other tabs.
+        if (_legendRoot != null) _legendRoot.gameObject.SetActive(false);
         var shared = SharedLegend;
         if (shared != null) shared.gameObject.SetActive(true);
     }
@@ -790,47 +794,66 @@ public sealed class ControlsRebindView : MonoBehaviour
     {
         if (_legendRoot != null) DestroyImmediate(_legendRoot.gameObject);
 
-        // A band sitting up in the free space at the bottom of the CONTROLS panel; two SELF-CONTAINED legend blocks
-        // (P1 left, P2 right) line up under the two device columns above. Each block carries its own background so the
-        // legend reads as a distinct panel of its own (the look the player liked on the earlier single legend).
+        // Put the bar in the SAME container as the shared legend (under ScreenRoot) so it spans the full SCREEN width
+        // and reaches the very bottom EDGE — covering the bottom HUD strip the player marked, exactly where the earlier
+        // shared legend sat. ~45% thicker than that bar per request. Falls back to the CONTROLS panel bottom if the
+        // shared legend isn't wired. Because it now lives OUTSIDE this panel, OnEnable/OnDisable toggle its visibility.
+        var shared = SharedLegend;
+        var sharedRT = shared != null ? shared.transform as RectTransform : null;
+        Transform parentT = sharedRT != null ? sharedRT.parent : transform;
+        float baseH = sharedRT != null ? Mathf.Max(40f, sharedRT.rect.height) : 52f;
+        float barH = baseH * 1.45f;   // ~45% thicker than the shared bar
+
         var rootGO = new GameObject("DeviceLegend2Col", typeof(RectTransform));
         _legendRoot = (RectTransform)rootGO.transform;
-        _legendRoot.SetParent(transform, false);
+        _legendRoot.SetParent(parentT, false);
         _legendRoot.anchorMin = new Vector2(0f, 0f);
         _legendRoot.anchorMax = new Vector2(1f, 0f);
         _legendRoot.pivot = new Vector2(0.5f, 0f);
-        _legendRoot.offsetMin = new Vector2(24f, 24f);
-        _legendRoot.offsetMax = new Vector2(-24f, 120f);   // tall band → the blocks sit up in the free bottom space
+        _legendRoot.offsetMin = new Vector2(0f, 0f);
+        _legendRoot.offsetMax = new Vector2(0f, barH);   // full width, hugging the very bottom edge
         rootGO.AddComponent<LayoutElement>().ignoreLayout = true;
+
+        var bar = rootGO.AddComponent<Image>();
+        bar.color = new Color(0.09f, 0.10f, 0.13f, 0.98f);   // solid bar → reads as fixed + hides the HUD behind it
+        bar.raycastTarget = false;
+
+        // Thin separator along the bar's top edge for definition against the rows above.
+        var sepGO = new GameObject("Sep", typeof(RectTransform));
+        var sepRT = (RectTransform)sepGO.transform;
+        sepRT.SetParent(_legendRoot, false);
+        sepRT.anchorMin = new Vector2(0f, 1f);
+        sepRT.anchorMax = new Vector2(1f, 1f);
+        sepRT.pivot = new Vector2(0.5f, 1f);
+        sepRT.offsetMin = new Vector2(0f, -2f);
+        sepRT.offsetMax = new Vector2(0f, 0f);
+        var sepImg = sepGO.AddComponent<Image>();
+        sepImg.color = new Color(1f, 1f, 1f, 0.08f);
+        sepImg.raycastTarget = false;
 
         _legendP1Group = BuildLegendGroup(_c1, k1, anchorLeft: true);
         _legendP2Group = BuildLegendGroup(_c2, k2, anchorLeft: false);
+
+        _legendRoot.SetAsLastSibling();   // draw above the sibling tab panels + the (hidden) shared legend
     }
 
-    // One player's legend BLOCK: a background panel that hugs its content (LayoutGroup + ContentSizeFitter), holding a
-    // coloured P1/P2 pill then Move / Select / Back chips in THAT column's device language. Anchored to its own side so
-    // it lines up under its column. All inner sizing is self-hugging (childControl off + per-child fitters) so the
-    // block wraps its chips regardless of text width.
+    // One player's hints INSIDE the shared bar (the bar is the block, so the group itself is transparent): a coloured
+    // P1/P2 pill then Move / Select / Back chips in THAT column's device language, hugging its own edge of the bar.
     private CanvasGroup BuildLegendGroup(Cursor c, InputDeviceKind kind, bool anchorLeft)
     {
-        var go = new GameObject("LegendBlock_" + c.tag, typeof(RectTransform));
+        var go = new GameObject("LegendGroup_" + c.tag, typeof(RectTransform));
         var rt = (RectTransform)go.transform;
         rt.SetParent(_legendRoot, false);
         rt.anchorMin = new Vector2(anchorLeft ? 0f : 1f, 0.5f);
         rt.anchorMax = new Vector2(anchorLeft ? 0f : 1f, 0.5f);
         rt.pivot = new Vector2(anchorLeft ? 0f : 1f, 0.5f);
-        rt.anchoredPosition = Vector2.zero;
-
-        var bg = go.AddComponent<Image>();
-        bg.color = new Color(0.12f, 0.13f, 0.17f, 0.92f);   // distinct dark block
-        bg.raycastTarget = false;
+        rt.anchoredPosition = new Vector2(anchorLeft ? 24f : -24f, 0f);   // padded in from its edge
 
         var hlg = go.AddComponent<HorizontalLayoutGroup>();
         hlg.childControlWidth = false; hlg.childControlHeight = false;   // children self-size via their own fitters
         hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
         hlg.spacing = 16f;
-        hlg.padding = new RectOffset(16, 18, 10, 10);
-        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childAlignment = anchorLeft ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight;
 
         var fitter = go.AddComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
