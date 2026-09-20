@@ -37,10 +37,9 @@ public class AccordIconSlot : MonoBehaviour
     [Header("Border card surface (Track D) — was the M5 owner frame")]
     [Tooltip("ownerFrameLeft is the Image the BorderFillDriver draws the clan border card on (PoT/UIAbilityCard); " +
              "it's a STATIC slot sibling that never slides with the accord panels, and its render is toggled off " +
-             "until the ability is bought. ownerFrameRight is the legacy M5 right-half (deactivated on joint slots — " +
-             "the shader draws the split now), kept only so the scene ref isn't orphaned. Either may be left null.")]
+             "until the ability is bought. May be left null (slot not yet converted). NB the legacy M5 right-half " +
+             "(ownerFrameRight) was deleted — the shader draws the dual-clan split now.")]
     [SerializeField] private Image ownerFrameLeft;
-    [SerializeField] private Image ownerFrameRight;
 
     [Header("Border-as-timer (Track D) — driver on the owner frame")]
     [Tooltip("Drives the clan border + liquid-tank timer on the owner-frame card (PoT/UIAbilityCard). " +

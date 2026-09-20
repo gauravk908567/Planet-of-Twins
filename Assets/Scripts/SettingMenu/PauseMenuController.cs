@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 /// <summary>
 /// Pause entry point + central ESC/Back arbiter. ESC (or pad Start) opens the unified
@@ -13,25 +12,15 @@ using UnityEngine.UI;
 ///   4. Skill tree open               → close skill tree
 ///   5. Nothing open                  → open pause (the unified screen)
 ///
-/// SETUP: add to a Screen-Space-Overlay canvas (sort 25).
-/// The old flat pause card (PauseRoot + Resume/Settings/Exit + the flat SettingsPanel) is RETIRED —
-/// disabled in the scene, no longer the pause surface. Resume/Exit now live on the unified screen's
-/// SettingsTabBar; this controller keeps Resume()/ExitGame() only as the shared timescale/audio/cursor
-/// arbiter those buttons call into.
+/// SETUP: add to a Screen-Space-Overlay canvas (sort 25). This controller has NO serialized UI refs —
+/// it is purely the pause entry + ESC/Back arbiter. Resume/Exit live on the unified screen's
+/// SettingsTabBar, which calls Resume()/ExitGame() here as the shared timescale/audio/cursor arbiter.
+/// (The old flat pause card — PauseRoot + Resume/Settings/Exit + the flat SettingsPanel — was deleted
+/// from the scene once the unified screen replaced it.)
 /// </summary>
 public class PauseMenuController : MonoBehaviour
 {
     public static PauseMenuController Instance { get; private set; }
-
-    [Header("Panels")]
-    [SerializeField] private GameObject _pauseRoot;
-
-    [Header("Buttons")]
-    [SerializeField] private Button _resumeButton;
-    [SerializeField] private Button _exitButton;
-    [Tooltip("F7 — clears all input binding overrides back to authored defaults. Safe today " +
-             "(no rebinding UI yet — F6). Optional; leave unwired if the button doesn't exist.")]
-    [SerializeField] private Button _restoreKeybindsButton;
 
     // F7 — pause snapshot priority. Nothing else requests a snapshot yet; GameOver (enum 3)
     // must outrank pause, Setsuna (enum 2) sits below. Priority here is the arbiter's own axis.
@@ -45,15 +34,6 @@ public class PauseMenuController : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-
-        _pauseRoot.SetActive(false);
-
-        _resumeButton?.onClick.AddListener(Resume);
-        _exitButton?.onClick.AddListener(ExitGame);
-        _restoreKeybindsButton?.onClick.AddListener(RestoreDefaultKeybinds);
-
-        // Item 1 (controller nav): pad-traversable + visible focus highlight for the retired pause card.
-        UINavStyle.Apply(_pauseRoot);
     }
 
     // P13: ESC comes through IInputProvider (Input System) — raw Input.* is banned. Same-scene
@@ -143,17 +123,6 @@ public class PauseMenuController : MonoBehaviour
         AudioManager.Instance?.ReleaseSnapshot(this);
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
-    }
-
-    // F7 — Restore Default Keybinds. Clears all binding overrides on the shared action asset
-    // via the input provider, then refreshes any on-screen prompt glyphs. InputPromptView is a
-    // scene-scoped non-singleton, so a sweep is the sanctioned lookup here (R4).
-    public void RestoreDefaultKeybinds()
-    {
-        _input?.ResetBindingsToDefault();
-
-        var prompts = FindObjectsByType<InputPromptView>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        foreach (var p in prompts) p.Refresh();
     }
 
     public void ExitGame()
