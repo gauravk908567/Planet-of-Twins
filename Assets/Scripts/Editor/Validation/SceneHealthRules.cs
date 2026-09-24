@@ -329,14 +329,14 @@ namespace PlanetOfTwins.EditorTools
                     var col = n.GetComponent<Collider>();
                     if (col == null || !col.isTrigger)
                         r.Add(ValidationSeverity.Error, $"CheckpointNode '{n.name}' collider missing or not IsTrigger — occupancy never registers.", n, PathOf(n));
+                    if (n.Prompt == null)
+                        r.Add(ValidationSeverity.Warning, $"CheckpointNode '{n.name}' has no prompt — place a CheckpointNodePrompt under it and wire it, or that player gets no 'Hold [button]' hint.", n, PathOf(n));
                 }
                 float dist = Vector3.Distance(a.transform.position, b.transform.position);
                 if (dist > BondFullRange)
                     r.Add(ValidationSeverity.Warning,
                         $"DualCheckpoint '{dc.name}' nodes are {dist:0.0} m apart — beyond the ~{BondFullRange:0} m full-health bond range, so the save pose drains health.",
                         dc, PathOf(dc));
-                if (dc.PromptText == null)
-                    r.Add(ValidationSeverity.Info, $"DualCheckpoint '{dc.name}' has no prompt text — players get no 'Hold X' hint.", dc, PathOf(dc));
                 if (Application.isPlaying)
                     r.Add(ValidationSeverity.Info,
                         $"LIVE '{dc.name}': {dc.CurrentState}" +

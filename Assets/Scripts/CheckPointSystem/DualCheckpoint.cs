@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using TMPro;
 
 /// <summary>
@@ -34,15 +35,12 @@ public class DualCheckpoint : MonoBehaviour
     [Tooltip("Sync leniency (s) between the two X-holds — same idiom as the Accord/SC joint powers.")]
     [SerializeField, Range(0f, 1.5f)] private float _jointLeniency = 0.5f;
 
-    [Header("Prompt (world-space text — R1; optional)")]
-    [Tooltip("World-space TMP text near the checkpoint: BRIGHT 'both' line when both twins are present, GREY 'one' " +
-             "line when only one is, hidden otherwise (§11.2).")]
-    [SerializeField] private TMP_Text _promptText;
-    [Tooltip("Both twins present. {Cancel} = the save button: ONE glyph if both players use the same device kind, " +
-             "else each player's own (keyboard key + pad button), P1 first.")]
-    [SerializeField] private string _bothTemplate = "Hold {Cancel} to save checkpoint";
-    [Tooltip("One twin present. {Cancel} = THAT player's own device glyph.")]
-    [SerializeField] private string _oneTemplate  = "Hold {Cancel} to save";
+    [Header("Prompts — one per node (each node's CheckpointNodePrompt child, wired on the node)")]
+    [Tooltip("{Cancel} = the save button of the twin ON that node — or, on the empty node, of the partner who still " +
+             "has to get there. BRIGHT when both twins are on their nodes, GREY while one waits, hidden when nobody is " +
+             "on a node or the checkpoint is spent (§11.2).")]
+    [FormerlySerializedAs("_oneTemplate")]
+    [SerializeField] private string _nodeTemplate = "Hold {Cancel} to save";
     [SerializeField] private Color _brightColor = Color.white;
     [SerializeField] private Color _greyColor   = new Color(0.6f, 0.6f, 0.6f, 0.5f);
 
@@ -50,7 +48,6 @@ public class DualCheckpoint : MonoBehaviour
     public WorldLocationSO Location => _location;
     public CheckpointNode NodeA => _nodeA;
     public CheckpointNode NodeB => _nodeB;
-    public TMP_Text PromptText => _promptText;
     public bool IsSpent => _saveOnce && _saved;
 
     public enum State { BothVacant, OneOccupied, BothOccupied }
@@ -69,8 +66,21 @@ public class DualCheckpoint : MonoBehaviour
     private bool _firedThisVisit;      // re-arm guard: one save per both-present visit
     private bool _claimingInput;       // whether we currently hold the Accord-X claim
     private bool _soloHoldPrev;        // rising-edge tracker for the solo-attempt signal
-    private int _promptKey = int.MinValue;   // prompt rebuilt only when state/occupant/device kinds change (no per-frame TMP alloc)
+    private int _promptKeyA = int.MinValue;  // each rebuilt only when brightness/player/device kind change (no per-frame TMP alloc)
+    private int _promptKeyB = int.MinValue;
     private IRescueActive _rescue;
+
+    // R8: own children only — start with both node prompts hidden.
+    private void Awake()
+    {
+        HidePrompt(_nodeA);
+        HidePrompt(_nodeB);
+    }
+
+    private static void HidePrompt(CheckpointNode node)
+    {
+        if (node != null && node.Prompt != null) node.Prompt.gameObject.SetActive(false);
+    }
 
     private void Start()
     {
@@ -83,8 +93,10 @@ public class DualCheckpoint : MonoBehaviour
         if (_location == null)
             Debug.LogWarning("[DualCheckpoint] No WorldLocationSO wired — a save here won't resolve its area " +
                              "on Continue/respawn (§11.2). Wire this area's WorldLocationSO.", this);
+        if (_nodeA.Prompt == null || _nodeB.Prompt == null)
+            Debug.LogWarning("[DualCheckpoint] A node has no prompt — place a CheckpointNodePrompt under each node and " +
+                             "wire it on the node, or that player won't see which button saves (§11.2).", this);
         _rescue = RescueEventController.Instance as IRescueActive;   // R4
-        if (_promptText != null) _promptText.gameObject.SetActive(false);
     }
 
     private void OnDisable() => ReleaseClaim();   // area unload — never leak the Accord suppression
@@ -128,29 +140,39 @@ public class DualCheckpoint : MonoBehaviour
 
     private void UpdatePrompt(bool spent, Player a, Player b)
     {
-        if (_promptText == null) return;
-        if (spent || CurrentState == State.BothVacant)
+        bool show = !spent && CurrentState != State.BothVacant;
+        bool bright = CurrentState == State.BothOccupied;
+
+        // Each node names ITS player: the twin standing on it, or — on the empty node — the partner who still has to
+        // get there (the twin that isn't on the other node). Grey while waiting, bright once both are in place.
+        UpdateNodePrompt(_nodeA.Prompt, ref _promptKeyA, show, bright, a != null ? a : PartnerOf(b));
+        UpdateNodePrompt(_nodeB.Prompt, ref _promptKeyB, show, bright, b != null ? b : PartnerOf(a));
+    }
+
+    private void UpdateNodePrompt(TMP_Text prompt, ref int cacheKey, bool show, bool bright, Player player)
+    {
+        if (prompt == null) return;
+        var input = player != null ? PlayerInputRouter.For(player) : null;
+        if (!show || input == null)
         {
-            if (_promptText.gameObject.activeSelf) _promptText.gameObject.SetActive(false);
-            _promptKey = int.MinValue;
+            if (prompt.gameObject.activeSelf) prompt.gameObject.SetActive(false);
+            cacheKey = int.MinValue;
             return;
         }
-        if (!_promptText.gameObject.activeSelf) _promptText.gameObject.SetActive(true);
-
-        // One twin → that player's own glyph. Both → both players' glyphs (slot order; one icon if same device kind).
-        bool both = CurrentState == State.BothOccupied;
-        IInputProvider first  = both ? PlayerInputRouter.ForSlot(PlayerSlot.One) : PlayerInputRouter.For(a != null ? a : b);
-        IInputProvider second = both ? PlayerInputRouter.ForSlot(PlayerSlot.Two) : null;
+        if (!prompt.gameObject.activeSelf) prompt.gameObject.SetActive(true);
 
         // Device kind is in the key so the glyph follows a keyboard↔pad switch (solo last-used) while shown.
-        int key = System.HashCode.Combine(CurrentState, first, InputGlyphResolver.ResolveKind(first),
-                                          second, second != null ? InputGlyphResolver.ResolveKind(second) : InputDeviceKind.KeyboardMouse);
-        if (key == _promptKey) return;
-        _promptKey = key;
+        int key = System.HashCode.Combine(bright, input, InputGlyphResolver.ResolveKind(input));
+        if (key == cacheKey) return;
+        cacheKey = key;
 
-        if (both) { InputGlyphText.ApplyJointFormat(_promptText, _bothTemplate, first, second); _promptText.color = _brightColor; }
-        else      { InputGlyphText.Apply(_promptText, _oneTemplate, first);                    _promptText.color = _greyColor;  }
+        InputGlyphText.Apply(prompt, _nodeTemplate, input);
+        prompt.color = bright ? _brightColor : _greyColor;
     }
+
+    // The twin that is NOT `present`. Null when `present` is null, isn't a roster twin, or the roster isn't up.
+    private static Player PartnerOf(Player present) =>
+        present != null && PlayerRoster.Instance != null ? PlayerRoster.Instance.Other(present) : null;
 
     // Rising-edge "a lone twin on a node pressed X" → the OTHER (vacant) node should flash (§11.2 visual pass).
     private void HandleSoloAttempt(Player a, Player b, int occupied)
