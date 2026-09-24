@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.Collections.Generic;
 
 public class SkillTreeUI : MonoBehaviour
 {
@@ -45,13 +46,20 @@ public class SkillTreeUI : MonoBehaviour
     private static readonly Color P1Colour = new Color(1f, 0.82f, 0.30f);     // gold
     private static readonly Color P2Colour = new Color(0.66f, 0.45f, 0.94f);  // violet
 
-    // Item 6 (controller nav legend): runtime-built glyph legends so a pad player sees the affordances the
-    // (already-wired) nav uses. Built like the badge above — zero scene wiring. Gamepad-gated: the UI-nav
-    // actions are pad-only, so on keyboard the tabs are mouse-clickable and arrow-keys navigate (legend hidden).
+    // Item 6 (controller nav legend): runtime-built legends so each player sees the affordances. Built like the badge
+    // above — zero scene wiring. The tab hint is pad-only (on keyboard the tabs are mouse-clickable). The bottom bar
+    // shows on both: pad = live glyphs; keyboard/mouse = the hover / click / Esc affordances as text (the UI-nav
+    // actions have no keyboard bindings — hover previews, a click buys, Esc goes through the pause arbiter).
     private TMP_Text _tabHint;    // top, by the tabs: "LB  Tabs  RB"
-    private TMP_Text _navLegend;  // bottom bar: "Y Preview   A Buy   B Back"
+    private TMP_Text _navLegend;  // bottom bar
     private const string TabHintTemplate   = "{TabLeft}  Tabs  {TabRight}";
-    private const string NavLegendTemplate = "{UIPreview} Preview     {InstantBuy} Buy     {UICancel} Back";
+    private const string NavLegendTemplate = "{UIPreview} View larger     {InstantBuy} Buy     {UICancel} Back";
+    private const string MouseLegendText   = "Hover a card to view it larger     Click to buy     Esc  Back";
+
+    // BUG-125 — every card (all tabs), so any action in the tree can drop a pending mouse-hover preview.
+    private readonly List<SkillNodeButton> _nodes = new List<SkillNodeButton>();
+    private GameObject _lastSelected;
+    private bool _modalWasOpen;
 
     public bool IsOpen => SkillTreePanel != null && SkillTreePanel.activeSelf;
 
@@ -176,10 +184,18 @@ public class SkillTreeUI : MonoBehaviour
         // and hide the last-mover badge (the cursor is on the modal, not a node).
         if (SkillPreviewModal.Instance != null && SkillPreviewModal.Instance.IsOpen)
         {
+            if (!_modalWasOpen) { _modalWasOpen = true; CancelAllHovers(); }   // a preview is up — drop the rest
             if (_moverBadge != null) _moverBadge.gameObject.SetActive(false);
             return;
         }
+        _modalWasOpen = false;
         if (_input == null) return;
+
+        // BUG-125 — the cursor moved (keys / pad / a click) or a player pressed a tree button: whatever card the mouse
+        // happens to rest on must not pop its preview a moment later.
+        var current = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+        if (current != _lastSelected || AnyPlayerActive()) CancelAllHovers();
+        _lastSelected = current;
 
         // Back / Cancel (B / East — the UICancel action) closes the skill tree: "Back" everywhere. The preview
         // modal, when open, already consumed its own B in the block above, so this only closes the panel itself.
@@ -249,7 +265,21 @@ public class SkillTreeUI : MonoBehaviour
         if (p == null) return false;
         if (p.GetMovementInput().sqrMagnitude > 0.04f) return true;   // stick / dpad / WASD past a deadzone
         return p.GetUITabLeftDown() || p.GetUITabRightDown()
-            || p.GetInstantBuyDown() || p.GetUICancelDown();
+            || p.GetInstantBuyDown() || p.GetUIPreviewDown() || p.GetUICancelDown();
+    }
+
+    // Either player did something in the tree this frame (same reads as the last-mover badge).
+    static bool AnyPlayerActive()
+    {
+        var p1 = PlayerInputRouter.ForSlot(PlayerSlot.One);
+        var p2 = PlayerInputRouter.ForSlot(PlayerSlot.Two);
+        return ProviderActive(p1) || (p2 != null && !ReferenceEquals(p2, p1) && ProviderActive(p2));
+    }
+
+    void CancelAllHovers()
+    {
+        foreach (var node in _nodes)
+            if (node != null) node.CancelHover();
     }
 
     // Pin a single "P1"/"P2" badge to the corner of the selected node so it reads as part of the cursor.
@@ -323,9 +353,9 @@ public class SkillTreeUI : MonoBehaviour
         return t;
     }
 
-    /// <summary>Gamepad-gate + populate the nav legends with live device glyphs. Hidden on keyboard/mouse (the
-    /// UI-nav actions are pad-only; tabs are clickable and arrow-keys navigate there). Cheap; called on open,
-    /// tab change, and device switch — never per-frame.</summary>
+    /// <summary>Populate the legends for the active device: pad = live glyphs (tab hint + nav bar); keyboard/mouse =
+    /// the nav bar as text (hover / click / Esc), tab hint hidden. Cheap; called on open, tab change, and device
+    /// switch — never per-frame.</summary>
     void RefreshNavLegend()
     {
         EnsureNavLegend();
@@ -338,8 +368,9 @@ public class SkillTreeUI : MonoBehaviour
         }
         if (_navLegend != null)
         {
-            _navLegend.gameObject.SetActive(pad);
-            if (pad && _input != null) InputGlyphText.Apply(_navLegend, NavLegendTemplate, _input);
+            _navLegend.gameObject.SetActive(true);
+            if (!pad) _navLegend.text = MouseLegendText;
+            else if (_input != null) InputGlyphText.Apply(_navLegend, NavLegendTemplate, _input);
         }
     }
 
@@ -347,12 +378,16 @@ public class SkillTreeUI : MonoBehaviour
     {
         if (root == null) return;
         foreach (var btn in root.GetComponentsInChildren<SkillNodeButton>(true))
+        {
             btn.InitialiseFromScene(_purchaser, _pointBank);
+            _nodes.Add(btn);
+        }
     }
 
     void ShowTab(int index)
     {
         _activeTab = index;
+        CancelAllHovers();   // BUG-125 — a tab switch (LB/RB or a click) is not asking for a preview
 
         if (KaiTabContent) KaiTabContent.SetActive(index == 0);
         if (LyraTabContent) LyraTabContent.SetActive(index == 1);

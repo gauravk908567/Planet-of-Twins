@@ -6,7 +6,7 @@ using TMPro;
 
 [RequireComponent(typeof(Button))]
 public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
-                               IPointerClickHandler
+                               IPointerMoveHandler, IPointerClickHandler
 {
     [Header("Scene assignment — set per button in Inspector")]
     [SerializeField] public AbilityUpgradeData NodeData;
@@ -25,7 +25,7 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
     [SerializeField] private Image _lockedOverlay;
 
     [Header("Hover threshold to open video zoom (seconds) — MOUSE only; controller focus does NOT hover")]
-    [SerializeField] private float HoverThreshold = 2.0f;
+    [SerializeField] private float HoverThreshold = 5f;
 
     // ── Colours ───────────────────────────────────────────────
     static readonly Color BgPurchased = new Color(0.08f, 0.20f, 0.12f);
@@ -43,8 +43,10 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
     private IPointBank _pointBank;
     private Button _btn;
 
-    private bool _isHovered;
-    private float _hoverTimer;
+    private bool _isHovered;          // a mouse hover is counting down to the preview
+    private float _hoverTimer;        // unscaled — the tree is open at timeScale 0
+    private bool _pointerInside;
+    private bool _hoverCancelled;     // cancelled by a skill-tree action; re-arms only when the mouse moves on this card
     private bool _clipAssigned = false;
 
     private enum State { Purchased, NextAffordable, NextLocked, Locked, Maxed }
@@ -93,11 +95,19 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
         // Stop cleanly on tab hide — prevents audio/buffer issues
         if (_videoPlayer != null && _videoPlayer.isPlaying)
             _videoPlayer.Pause();
+
+        // A hidden card gets no pointer-exit, so a pending hover would fire when its tab is shown again (BUG-125).
+        _isHovered = false;
+        _hoverTimer = 0f;
+        _pointerInside = false;
+        _hoverCancelled = false;
     }
 
     private void Update()
     {
         if (!_isHovered) return;
+        // While a preview is open, a card behind it must not take it over (its own Buy / Prev / Next own that).
+        if (SkillPreviewModal.Instance != null && SkillPreviewModal.Instance.IsOpen) { _hoverTimer = 0f; return; }
         _hoverTimer += Time.unscaledDeltaTime;
         if (_hoverTimer >= HoverThreshold)
         {
@@ -227,6 +237,7 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
     public void OnPointerClick(PointerEventData e)
     {
         if (e != null && e.button != PointerEventData.InputButton.Left) return;
+        CancelHover();   // buying isn't asking for the preview (BUG-125)
         RequestPurchase();
     }
 
@@ -238,16 +249,44 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
     // ── Hover ─────────────────────────────────────────────────
     public void OnPointerEnter(PointerEventData _)
     {
-        // Hover-zoom is the MOUSE affordance for video nodes only; text-only nodes open via click/Submit.
-        // Controller focus is ISelectHandler (not IPointerEnter), so a highlighted node never auto-hovers.
-        if (_data == null || _data.nodes[_nodeIndex].previewClip == null) return;
-        _isHovered = true;
-        _hoverTimer = 0f;
+        _pointerInside = true;
+        _hoverCancelled = false;
+        ArmHover();
+    }
+
+    // After a skill-tree action cancelled the hover, only a fresh mouse move on this card asks for the preview again.
+    public void OnPointerMove(PointerEventData _)
+    {
+        if (!_hoverCancelled || !_pointerInside) return;
+        _hoverCancelled = false;
+        ArmHover();
     }
 
     public void OnPointerExit(PointerEventData _)
     {
+        _pointerInside = false;
+        _hoverCancelled = false;
         _isHovered = false;
+        _hoverTimer = 0f;
+    }
+
+    /// <summary>Drop a pending mouse-hover preview. <see cref="SkillTreeUI"/> calls this on every card whenever the
+    /// player does something else in the tree (moves the cursor, buys, previews, switches tab), so the card the mouse
+    /// happens to rest on doesn't pop its preview a moment later (BUG-125).</summary>
+    public void CancelHover()
+    {
+        if (!_isHovered) return;   // nothing pending (or it already opened) — don't re-arm a spent hover
+        _isHovered = false;
+        _hoverTimer = 0f;
+        _hoverCancelled = _pointerInside;
+    }
+
+    private void ArmHover()
+    {
+        // Hover-zoom is the MOUSE affordance for video nodes only; text-only nodes open via click/Submit.
+        // Controller focus is ISelectHandler (not IPointerEnter), so a highlighted node never auto-hovers.
+        if (_data == null || _data.nodes[_nodeIndex].previewClip == null) return;
+        _isHovered = true;
         _hoverTimer = 0f;
     }
 

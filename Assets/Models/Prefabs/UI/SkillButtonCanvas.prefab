@@ -843,7 +843,7 @@ MonoBehaviour:
   _videoPlayer: {fileID: 8531453540152830276}
   _thumbnailStrip: {fileID: 8067194452165791716}
   _lockedOverlay: {fileID: 9182972685802088936}
-  HoverThreshold: 1.2
+  HoverThreshold: 5
 --- !u!222 &1831241861592198480
 CanvasRenderer:
   m_ObjectHideFlags: 0
