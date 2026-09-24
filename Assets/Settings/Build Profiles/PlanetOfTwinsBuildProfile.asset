@@ -21,7 +21,7 @@ MonoBehaviour:
   m_OverrideGlobalSceneList: 0
   m_Scenes:
   - m_enabled: 1
-    m_path: Assets/Scenes/Bootstrap.unity
+    m_path: Assets/_PoT/Scenes/Boot/Bootstrap.unity
   m_HasScriptingDefines: 0
   m_ScriptingDefines: []
   m_PlayerSettingsYaml:

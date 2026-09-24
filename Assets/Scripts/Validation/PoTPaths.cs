@@ -44,7 +44,7 @@ public static class PoTPaths
     /// after a move is caught instead of silently re-growing the old folder tree.</summary>
     public static class Create
     {
-        public const string AreaScenes        = "Assets/Scenes";                        // Area Tools: <root>/<Area>/<Area>.unity + kit
+        public const string AreaScenes        = "Assets/_PoT/Scenes/Areas";             // Area Tools: <root>/<Area>/<Area>.unity + kit
         public const string SpawnAreaConfigs  = "Assets/Scripts/SpawnSystem/SpawnArea"; // Area Tools ▸ Setup Zone: <root>/<scene>/
         public const string WorldLocations    = "Assets/Scripts/SceneLoader/Data";      // Scene Health fix: Location_<scene>.asset
         public const string GradeProfiles     = "Assets/Settings/Grading";              // GradeProfileAuthoring
