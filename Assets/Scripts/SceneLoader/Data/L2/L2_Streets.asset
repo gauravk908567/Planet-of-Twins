@@ -21,3 +21,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d82fdc3acbda7994d892c7513c881baa, type: 2}
   - {fileID: 11400000, guid: 48ea0ea987f56f74f861daaec7045a83, type: 2}
   isStartLocation: 1
+  displayName: Streets
+  musicTrack: {fileID: 0}
+  ambience: {fileID: 0}

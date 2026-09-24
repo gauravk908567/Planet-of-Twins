@@ -20,3 +20,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 65fec7f4712afb14dbea45b14bb78fdf, type: 2}
   - {fileID: 11400000, guid: 601133f2c9f303f429533ac5c9cda92f, type: 2}
   isStartLocation: 0
+  displayName: Park
+  musicTrack: {fileID: 0}
+  ambience: {fileID: 0}

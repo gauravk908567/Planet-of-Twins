@@ -16,5 +16,6 @@ MonoBehaviour:
     _name: L5_Fields
   adjacentLocations: []
   isStartLocation: 0
-  namedEntrances: []
-  defaultEntranceId: Default
+  displayName: Museum Fields
+  musicTrack: {fileID: 0}
+  ambience: {fileID: 0}

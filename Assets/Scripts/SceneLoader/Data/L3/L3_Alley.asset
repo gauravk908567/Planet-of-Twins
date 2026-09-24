@@ -22,5 +22,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cb83b7af6584f034c921b90f79e73cf2, type: 2}
   - {fileID: 11400000, guid: dc133cf5612fe4747a0665fefee06a49, type: 2}
   isStartLocation: 0
+  displayName: Alley
   musicTrack: {fileID: 0}
   ambience: {fileID: 0}
