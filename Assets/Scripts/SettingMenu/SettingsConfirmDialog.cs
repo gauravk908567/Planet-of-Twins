@@ -4,10 +4,13 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// The single modal dialog the settings screen uses for three confirmations:
+/// The project's Yes/No modal. The settings screen uses three preset confirmations:
 ///   • Exit        — "Are you sure you want to exit?" + last-save time (Exit / Cancel).
 ///   • Keep/Revert — after a disruptive display change; auto-reverts on a countdown (Keep / Revert).
 ///   • Restart     — the graphics API only changes on relaunch (Restart Now / Later).
+/// Other screens use the generic <see cref="Show"/> (e.g. the save-slot screen's overwrite / delete) with their own
+/// instance of the same UI. Put this component on an always-active object and point <c>_root</c> at the dialog
+/// child (Awake hides <c>_root</c>).
 /// Hidden by default; appears only when a Show* method is called. Runs on UNSCALED time because the
 /// screen is open while the game is paused (timeScale 0). Focus lands on the safe choice (Cancel /
 /// Revert / Later) so a stray Submit is never destructive.
@@ -48,6 +51,20 @@ public sealed class SettingsConfirmDialog : MonoBehaviour
     public void ShowRestart(Action onRestart) =>
         Configure("Restart Required", "The graphics API changes after the game restarts.",
                   "Restart Now", "Later", onRestart, null, false, 0f, null);
+
+    /// <summary>Any other confirmation. Focus lands on <paramref name="cancelLabel"/> (the safe choice).</summary>
+    public void Show(string title, string message, string confirmLabel, string cancelLabel,
+                     Action onConfirm, Action onCancel = null) =>
+        Configure(title, message, confirmLabel, cancelLabel, onConfirm, onCancel, false, 0f, null);
+
+    /// <summary>Back out from input (B / Esc) — same as pressing the cancel button.</summary>
+    public void Dismiss()
+    {
+        if (IsOpen) Cancel();
+    }
+
+    /// <summary>The dialog's buttons' parent — for wiring pad navigation between just these two while open.</summary>
+    public GameObject ButtonRow => _confirmButton != null ? _confirmButton.transform.parent.gameObject : null;
 
     private void Configure(string title, string message, string confirm, string cancel,
         Action onConfirm, Action onCancel, bool countdown, float seconds, string countdownBase)

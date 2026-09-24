@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 /// <summary>
 /// Apply + persist for language, cursor, resolution and window mode — ported from the old (now-removed)
@@ -77,9 +78,12 @@ public sealed class DisplaySettingsHandler : ISettingHandler
     public void Invoke(string id) { }
 
     // ── Language ──────────────────────────────────────────────
+    // In-game the LanguageManager (Persistent) owns the locale list; the front-end menu's copy of this screen runs before
+    // Persistent exists, so it goes to Unity Localization directly (same PlayerPrefs key → the manager restores it at boot).
     private IReadOnlyList<string> LanguageOptions()
     {
-        _locales = LanguageManager.Instance != null ? LanguageManager.Instance.AvailableLocales : null;
+        if (LanguageManager.Instance != null) _locales = LanguageManager.Instance.AvailableLocales;
+        else _locales = LocalizationSettings.InitializationOperation.IsDone ? LocalizationSettings.AvailableLocales.Locales : null;
         if (_locales == null) return new List<string>();
         var names = new List<string>(_locales.Count);
         foreach (var l in _locales) names.Add(l.LocaleName);
@@ -89,8 +93,8 @@ public sealed class DisplaySettingsHandler : ISettingHandler
     private int CurrentLanguageIndex()
     {
         if (_locales == null) LanguageOptions();
-        if (_locales == null || LanguageManager.Instance == null) return 0;
-        var current = LanguageManager.Instance.CurrentLocale;
+        if (_locales == null) return 0;
+        var current = LocalizationSettings.SelectedLocale;   // LanguageManager.CurrentLocale is this same value
         for (int i = 0; i < _locales.Count; i++)
             if (_locales[i] == current) return i;
         return 0;
@@ -100,7 +104,8 @@ public sealed class DisplaySettingsHandler : ISettingHandler
     {
         if (_locales == null) LanguageOptions();
         if (_locales == null || index < 0 || index >= _locales.Count) return;
-        LanguageManager.Instance?.SetLanguage(_locales[index]);
+        if (LanguageManager.Instance != null) LanguageManager.Instance.SetLanguage(_locales[index]);
+        else LanguageManager.SelectAndSave(_locales[index]);
     }
 
     // ── Resolution / window mode ──────────────────────────────

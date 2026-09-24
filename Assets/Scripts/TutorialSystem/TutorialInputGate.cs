@@ -106,6 +106,7 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
     public bool GetInstantBuyDown() => _real?.GetInstantBuyDown() ?? false;
     public bool GetUICancelDown() => _real?.GetUICancelDown() ?? false;
     public bool GetUIPreviewDown() => _real?.GetUIPreviewDown() ?? false;
+    public bool GetUIDeleteDown() => _real?.GetUIDeleteDown() ?? false;
 
     // F5 — binding display is device-config, not gated; passthrough to the real reader.
     public string GetBindingDisplay(string actionName, bool preferGamepad = false)

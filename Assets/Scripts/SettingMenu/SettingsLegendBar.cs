@@ -22,7 +22,7 @@ using TMPro;
 /// </summary>
 public sealed class SettingsLegendBar : MonoBehaviour
 {
-    public enum LegendAction { Move, SwitchTab, Select, Back }
+    public enum LegendAction { Move, SwitchTab, Select, Back, Delete }
 
     [Serializable]
     public sealed class Item
@@ -99,6 +99,7 @@ public sealed class SettingsLegendBar : MonoBehaviour
             case LegendAction.SwitchTab: glyphAction = null;     kb = "◄  ►"; pad = "LB / RB";  caption = "Switch Tab"; break;
             case LegendAction.Select:    glyphAction = "Submit"; kb = "Enter";         pad = "A";        caption = "Select"; break;
             case LegendAction.Back:      glyphAction = null;     kb = "Esc";           pad = "B";        caption = "Back"; break;
+            case LegendAction.Delete:    glyphAction = "UIDelete"; kb = "Del";         pad = "X";        caption = "Delete"; break;
             default:                     glyphAction = null;     kb = pad = "?";       caption = string.Empty; break;
         }
     }

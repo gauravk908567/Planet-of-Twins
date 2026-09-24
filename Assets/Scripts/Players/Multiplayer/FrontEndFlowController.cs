@@ -25,6 +25,9 @@ public class FrontEndFlowController : MonoBehaviour
     [SerializeField] private SaveSlotScreen saveSlots;   // optional — unwired skips straight to Character Select
     [SerializeField] private CharacterSelectScreen characterSelect;
     [SerializeField] private CharacterSelectController selection;
+    [Tooltip("Optional — the main-menu copy of the unified settings screen (UnifiedSettings prefab, Menu Context ON). " +
+             "Unwired → Options just logs.")]
+    [SerializeField] private SettingsScreenController settings;
 
     /// <summary>True once the flow has finished (both twins assigned) — GameBootstrapper waits on this.</summary>
     public bool IsFrontEndComplete { get; private set; }
@@ -34,6 +37,8 @@ public class FrontEndFlowController : MonoBehaviour
     private bool _slotChosen;
     private bool _slotBackRequested;
     private bool _backRequested;
+    private bool _optionsRequested;
+    private bool _settingsClosed;
     private bool _running;
 
     private void Awake()
@@ -43,6 +48,15 @@ public class FrontEndFlowController : MonoBehaviour
     }
 
     private void OnDestroy() { if (Instance == this) Instance = null; }
+
+    // Back while the settings screen is open: the in-game PauseMenuController arbiter does this in Persistent; the menu
+    // has no pause controller, so route the same inputs (Esc / pad Start = Pause, pad B = UICancel) to its Back logic.
+    private void Update()
+    {
+        if (settings == null || !settings.IsOpen) return;
+        var input = PlayerInputRouter.SharedInput;   // either player's device
+        if (input != null && (input.GetPauseDown() || input.GetUICancelDown())) settings.HandleBack();
+    }
 
     /// <summary>Start the flow (idempotent). No-op if already running or complete.</summary>
     public void Begin()
@@ -80,12 +94,24 @@ public class FrontEndFlowController : MonoBehaviour
         while (!selection.IsComplete)
         {
             // ── Start Menu ──
-            _newGameRequested = _continueRequested = false;
+            _newGameRequested = _continueRequested = _optionsRequested = false;
             characterSelect.Hide();
             saveSlots?.Hide();
             mainMenu.Show();
-            yield return new WaitUntil(() => _newGameRequested || _continueRequested);
+            yield return new WaitUntil(() => _newGameRequested || _continueRequested || _optionsRequested);
             mainMenu.Hide();
+
+            // ── Options → the same settings screen as in-game (menu copy: Resume = "Back", no Exit). Back closes it
+            //    and the loop re-shows the Start Menu with focus. ──
+            if (_optionsRequested)
+            {
+                _settingsClosed = false;
+                settings.Closed += OnSettingsClosed;
+                settings.Open();
+                yield return new WaitUntil(() => _settingsClosed);
+                settings.Closed -= OnSettingsClosed;
+                continue;
+            }
 
             // ── Save-Slot select (only when the feature is live). New Game → pick a target slot; Continue → pick
             //    a save to resume (which stages SaveService.PendingLoad for the boot path). Back returns to menu. ──
@@ -121,5 +147,15 @@ public class FrontEndFlowController : MonoBehaviour
     private void OnSlotChosen(int slot) => _slotChosen = true;
     private void OnSlotBack()       => _slotBackRequested = true;
     private void OnBack()           => _backRequested = true;
-    private void OnOptions()        => Debug.Log("[FrontEndFlowController] Options pressed — TODO: open settings (stub).");
+    private void OnSettingsClosed() => _settingsClosed = true;
+
+    private void OnOptions()
+    {
+        if (settings == null)
+        {
+            Debug.LogWarning("[FrontEndFlowController] Options pressed but no settings screen is wired (BUG-121).", this);
+            return;
+        }
+        _optionsRequested = true;
+    }
 }

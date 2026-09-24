@@ -61,6 +61,9 @@ public interface IInputProvider
     /// <summary>Press button 1 / North — skill-tree "open preview" over the focused node (1st press), and
     /// "buy" inside the preview modal (2nd press). Separate from InstantBuy (button 3 / South = direct buy).</summary>
     bool GetUIPreviewDown();
+    /// <summary>Press X/West (keyboard Delete) — "delete the focused item" in menus (save-slot screen). The
+    /// menu shows a confirmation before anything is removed.</summary>
+    bool GetUIDeleteDown();
 
     // ── F5 (Button HUDs) — live binding display for on-screen prompts ──
     /// <summary>

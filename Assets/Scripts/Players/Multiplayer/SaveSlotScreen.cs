@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
@@ -11,11 +12,12 @@ using UnityEngine.UI;
 ///
 /// <para><b>Mode:</b>
 /// <list type="bullet">
-/// <item><b>NewGame</b> — every slot pickable; an occupied slot arms a two-press overwrite guard before it
-/// commits (greybox — no confirm dialog GO).</item>
+/// <item><b>NewGame</b> — every slot pickable; picking an occupied slot asks for confirmation before overwriting.</item>
 /// <item><b>Continue</b> — only occupied slots pickable (empty ones greyed); picking one stages that save for
 /// the boot path.</item>
-/// </list></para>
+/// </list>
+/// In both modes an occupied slot can be <b>deleted</b> (pad X / keyboard Delete on the focused slot), also after a
+/// confirmation. The shared <see cref="SettingsConfirmDialog"/> asks both questions; focus starts on its safe choice.</para>
 ///
 /// <para>On pick: the mode + slot are RECORDED in <see cref="SessionSetup.SetMode"/> — this screen lives in the
 /// FrontEnd scene, which runs BEFORE Persistent loads, so SaveService doesn't exist yet (calling it here was a
@@ -26,7 +28,9 @@ using UnityEngine.UI;
 ///
 /// <para><b>Input</b> (BUG-116): the shared EventSystem navigation, same as the Main Menu — ANY device (both pads,
 /// keyboard, mouse) moves the focus glow among pickable slots + Back (<see cref="UINavStyle"/> / <see cref="UINavFocus"/>),
-/// Submit (A / Enter) picks, UI Cancel (B / Esc) = Back. (Replaced a P1-only stick index that drew no highlight.)</para>
+/// Submit (A / Enter) picks, UI Cancel (B / Esc) = Back (or closes the dialog). Delete = <c>UIDelete</c> on either
+/// player's device (<see cref="PlayerInputRouter.SharedInput"/>). The on-screen <see cref="SettingsLegendBar"/> shows
+/// the buttons; its Delete hint appears only while the focused slot holds a save.</para>
 /// </summary>
 [DisallowMultipleComponent]
 public class SaveSlotScreen : MonoBehaviour
@@ -51,6 +55,14 @@ public class SaveSlotScreen : MonoBehaviour
     [SerializeField] private Button backButton;
     [SerializeField] private TMP_Text statusText;
 
+    [Header("Confirm + legend")]
+    [Tooltip("Yes/No dialog for overwrite + delete (same component the settings screen uses).")]
+    [SerializeField] private SettingsConfirmDialog confirmDialog;
+    [Tooltip("Button legend (Select / Delete / Back) — refreshed on show; flips keyboard↔pad live by itself.")]
+    [SerializeField] private SettingsLegendBar legend;
+    [Tooltip("The legend's Delete chip — shown only while the focused slot holds a save.")]
+    [SerializeField] private GameObject deleteHint;
+
     private Button[] _slotButtons;
     private TMP_Text[] _slotLabels;
 
@@ -60,7 +72,7 @@ public class SaveSlotScreen : MonoBehaviour
     public event Action BackRequested;
 
     private Mode _mode;
-    private int _armedOverwrite = -1;   // NewGame two-press guard: the occupied slot currently armed (-1 = none)
+    private int _pendingSlot = -1;   // the slot the open dialog is about (-1 = none)
 
     private void Awake()
     {
@@ -74,7 +86,7 @@ public class SaveSlotScreen : MonoBehaviour
         }
         if (backButton != null) backButton.onClick.AddListener(RaiseBack);
 
-        // Item 1 (controller nav): pad/keyboard-traversable cards + the shared focus glow.
+        // Item 1 (controller nav): pad/keyboard-traversable cards + the shared focus glow (dialog buttons included).
         UINavStyle.Apply(panel);
     }
 
@@ -88,39 +100,60 @@ public class SaveSlotScreen : MonoBehaviour
     public void Show(Mode mode)
     {
         _mode = mode;
-        _armedOverwrite = -1;
+        _pendingSlot = -1;
         if (panel != null) panel.SetActive(true);
+        if (confirmDialog != null) confirmDialog.HideImmediate();
         if (titleText != null)
             titleText.text = mode == Mode.NewGame ? "NEW GAME — CHOOSE A SLOT" : "CONTINUE — CHOOSE A SAVE";
         Refresh();
+        if (legend != null) legend.Refresh();
+        FocusFirst();
+    }
 
-        // Wrap AFTER Refresh settles interactability (Continue greys empty slots → skipped), then land the focus on
-        // the first pickable slot (Back if none) so any device can drive the screen immediately.
+    public void Hide()
+    {
+        if (confirmDialog != null) confirmDialog.HideImmediate();
+        if (panel != null) panel.SetActive(false);
+    }
+
+    // Wrap AFTER Refresh settles interactability (Continue greys empty slots → skipped), then land the focus on
+    // the first pickable slot (Back if none) so any device can drive the screen immediately.
+    private void FocusFirst()
+    {
         UINavStyle.WireWrap(panel);
         int first = FirstPickable();
         UINavFocus.Focus(first >= 0 && _slotButtons[first] != null ? _slotButtons[first] : backButton);
     }
 
-    public void Hide()
-    {
-        if (panel != null) panel.SetActive(false);
-    }
-
-    // ── Input: navigation/submit are the EventSystem's; this only adds Back + the overwrite-guard reset ──
+    // ── Input: navigation/submit are the EventSystem's; this adds Back, Delete and the dialog's Back ──
     private void Update()
     {
         if (panel == null || !panel.activeSelf) return;
 
+        if (confirmDialog != null && confirmDialog.IsOpen)
+        {
+            if (UINavFocus.CancelPressedThisFrame()) confirmDialog.Dismiss();   // B / Esc = the safe choice
+            return;
+        }
+
         if (UINavFocus.CancelPressedThisFrame()) { RaiseBack(); return; }   // B / Esc from any device
 
-        // Moving the focus off the armed slot cancels the pending overwrite (the old index-nav did this too).
-        if (_armedOverwrite >= 0)
-        {
-            var sel = UnityEngine.EventSystems.EventSystem.current != null
-                ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
-            var armed = _slotButtons[_armedOverwrite];
-            if (sel != null && armed != null && sel != armed.gameObject) { _armedOverwrite = -1; Refresh(); }
-        }
+        int focused = FocusedSlot();
+        bool canDelete = focused >= 0 && SaveSystem.HasSave(focused);
+        if (deleteHint != null && deleteHint.activeSelf != canDelete) deleteHint.SetActive(canDelete);
+
+        var input = PlayerInputRouter.SharedInput;   // either player's device
+        if (canDelete && input != null && input.GetUIDeleteDown()) RequestDelete(focused);
+    }
+
+    // The slot whose card has the EventSystem focus, or -1 (Back / nothing focused).
+    private int FocusedSlot()
+    {
+        var sel = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+        if (sel == null || _slotButtons == null) return -1;
+        for (int i = 0; i < _slotButtons.Length; i++)
+            if (_slotButtons[i] != null && _slotButtons[i].gameObject == sel) return i;
+        return -1;
     }
 
     // NewGame: every valid slot is pickable. Continue: only slots holding a LOADABLE save (stale v1 / corrupt = greyed).
@@ -136,21 +169,29 @@ public class SaveSlotScreen : MonoBehaviour
 
     private int SlotCount => _slotButtons != null ? _slotButtons.Length : 0;
 
-    // ── Commit ─────────────────────────────────────────────────
+    // ── Pick ───────────────────────────────────────────────────
     private void OnSlotClicked(int slot)
     {
+        if (confirmDialog != null && confirmDialog.IsOpen) return;
         if (!IsPickable(slot)) { Status("That slot is empty."); return; }
 
-        // Occupied + New Game: require a second press on the same slot before overwriting (greybox guard).
-        if (_mode == Mode.NewGame && SaveSystem.HasSave(slot) && _armedOverwrite != slot)
+        // New Game into an occupied slot: confirm the overwrite first.
+        if (_mode == Mode.NewGame && SaveSystem.HasSave(slot))
         {
-            _armedOverwrite = slot;
-            Refresh();
-            Status("Occupied slot — press again to overwrite.");
+            Confirm(slot, $"Overwrite Slot {slot + 1}?",
+                    $"{Describe(slot)}\nwill be replaced by a new game. This can't be undone.",
+                    "Overwrite", ConfirmOverwrite);
             return;
         }
 
         Commit(slot);
+    }
+
+    private void ConfirmOverwrite()
+    {
+        int slot = _pendingSlot;
+        _pendingSlot = -1;
+        if (slot >= 0) Commit(slot);
     }
 
     private void Commit(int slot)
@@ -168,6 +209,56 @@ public class SaveSlotScreen : MonoBehaviour
         SlotChosen?.Invoke(slot);
     }
 
+    // ── Delete ─────────────────────────────────────────────────
+    private void RequestDelete(int slot) =>
+        Confirm(slot, $"Delete Slot {slot + 1}?",
+                $"{Describe(slot)}\nwill be deleted. This can't be undone.",
+                "Delete", ConfirmDelete);
+
+    private void ConfirmDelete()
+    {
+        int slot = _pendingSlot;
+        _pendingSlot = -1;
+        if (slot < 0) return;
+
+        SaveSystem.Delete(slot);
+        Refresh();
+        Status($"Slot {slot + 1} deleted.");
+
+        // Interactability may have changed (Continue greys the now-empty slot) → re-wire, and keep focus sensible.
+        UINavStyle.WireWrap(panel);
+        if (IsPickable(slot) && _slotButtons[slot] != null) UINavFocus.Focus(_slotButtons[slot]);
+        else
+        {
+            int first = FirstPickable();
+            UINavFocus.Focus(first >= 0 && _slotButtons[first] != null ? _slotButtons[first] : backButton);
+            if (first < 0 && _mode == Mode.Continue) Status("No saves left.");
+        }
+    }
+
+    // ── Dialog ─────────────────────────────────────────────────
+    private void Confirm(int slot, string title, string message, string confirmLabel, Action onConfirm)
+    {
+        if (confirmDialog == null)
+        {
+            // Fail loud but stay usable: without the dialog the action simply happens (logged).
+            Debug.LogError("[SaveSlotScreen] confirmDialog unwired — acting without confirmation.", this);
+            _pendingSlot = slot;
+            onConfirm();
+            return;
+        }
+        _pendingSlot = slot;
+        confirmDialog.Show(title, message, confirmLabel, "Cancel", onConfirm, OnConfirmCancelled);
+        UINavStyle.WireWrap(confirmDialog.ButtonRow, UINavStyle.WrapAxis.Horizontal);   // pad stays on Yes/No
+    }
+
+    private void OnConfirmCancelled()
+    {
+        int slot = _pendingSlot;
+        _pendingSlot = -1;
+        if (slot >= 0 && slot < SlotCount && _slotButtons[slot] != null) UINavFocus.Focus(_slotButtons[slot]);
+    }
+
     private void RaiseBack() => BackRequested?.Invoke();
 
     // ── Presentation ───────────────────────────────────────────
@@ -181,9 +272,7 @@ public class SaveSlotScreen : MonoBehaviour
                 _slotLabels[i].text = LabelFor(i);
         }
         if (statusText != null)
-            statusText.text = _mode == Mode.Continue
-                ? "Pick a save to resume"
-                : "Pick a slot (an occupied slot needs a second press to overwrite)";
+            statusText.text = _mode == Mode.Continue ? "Pick a save to resume" : "Pick a slot to start in";
     }
 
     private void Status(string msg) { if (statusText != null) statusText.text = msg; }
@@ -195,16 +284,23 @@ public class SaveSlotScreen : MonoBehaviour
 
         var data = SaveSystem.Peek(slot);
         if (data == null || data.IsEmpty)
-        {
             sb.Append(_mode == Mode.NewGame ? "Empty — start here" : "Empty");
-        }
         else
-        {
-            sb.Append(data.areaId).Append('\n').Append(FormatTime(data.savedAtUtc));
-            if (_mode == Mode.NewGame && _armedOverwrite == slot) sb.Append("\nPress again to overwrite");
-        }
+            sb.Append(AreaNameOf(data)).Append('\n').Append(FormatTime(data.savedAtUtc));
         return sb.ToString();
     }
+
+    // "Slot 2 (Park, 2026-09-24 18:03)" for the dialog message.
+    private string Describe(int slot)
+    {
+        var data = SaveSystem.Peek(slot);
+        if (data == null || data.IsEmpty) return $"Slot {slot + 1}";
+        return $"Slot {slot + 1} ({AreaNameOf(data)}, {FormatTime(data.savedAtUtc)})";
+    }
+
+    // The saved display name; saves written before it existed fall back to a name derived from the area id.
+    private static string AreaNameOf(GameSaveData data) =>
+        !string.IsNullOrWhiteSpace(data.areaName) ? data.areaName : WorldLocationSO.PrettifyId(data.areaId);
 
     private static string FormatTime(string isoUtc)
     {

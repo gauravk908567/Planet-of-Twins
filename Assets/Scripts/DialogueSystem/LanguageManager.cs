@@ -25,6 +25,9 @@ public class LanguageManager : MonoBehaviour
 {
     public static LanguageManager Instance { get; private set; }
 
+    /// <summary>PlayerPrefs key holding the chosen locale code.</summary>
+    public const string PrefKey = "SelectedLocale";
+
     public event System.Action<Locale> OnLanguageChanged;
 
     /// <summary>Currently active locale.</summary>
@@ -48,7 +51,7 @@ public class LanguageManager : MonoBehaviour
         AvailableLocales = LocalizationSettings.AvailableLocales.Locales;
 
         // Restore saved language preference
-        string savedCode = PlayerPrefs.GetString("SelectedLocale", "");
+        string savedCode = PlayerPrefs.GetString(PrefKey, "");
         if (!string.IsNullOrEmpty(savedCode))
         {
             foreach (var locale in AvailableLocales)
@@ -71,11 +74,15 @@ public class LanguageManager : MonoBehaviour
     }
 
     /// <summary>Called by DisplaySettingsHandler when the player picks a language.</summary>
-    public void SetLanguage(Locale locale)
+    public void SetLanguage(Locale locale) => SelectAndSave(locale);
+
+    /// <summary>Select + persist a locale. Static so the settings screen on the front-end menu (which runs before
+    /// Persistent, i.e. with no LanguageManager) can change language too; this manager restores it at boot.</summary>
+    public static void SelectAndSave(Locale locale)
     {
         if (locale == null) return;
         LocalizationSettings.SelectedLocale = locale;
-        PlayerPrefs.SetString("SelectedLocale", locale.Identifier.Code);
+        PlayerPrefs.SetString(PrefKey, locale.Identifier.Code);
         PlayerPrefs.Save();
     }
 

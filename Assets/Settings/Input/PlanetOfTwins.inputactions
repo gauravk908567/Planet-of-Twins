@@ -689,6 +689,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "UIDelete",
+                    "type": "Button",
+                    "id": "b1b1b1b1-0000-4000-8000-000000000109",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1118,6 +1127,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "UIPreview",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c2c2c2c2-0000-4000-8000-000000000115",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIDelete",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c2c2c2c2-0000-4000-8000-000000000116",
+                    "path": "<Keyboard>/delete",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIDelete",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

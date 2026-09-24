@@ -22,6 +22,8 @@ public class GameSaveData
     public int version = CurrentVersion;
     public string savedAtUtc = "";        // ISO-8601 (round-trip "o") — the slot card's timestamp
     public string areaId = "";            // WorldLocationSO.name of the checkpoint area (Continue boots here)
+    public string areaName = "";          // player-facing name for the slot card (WorldLocationSO.DisplayName at save
+                                          // time); older saves lack it → the card derives one from areaId
     public string[] activeAreaIds = Array.Empty<string>();  // locations loaded at save time (occupancy seed)
 
     public Vector3 leftTwinPosition;
@@ -63,6 +65,7 @@ public class GameSaveData
             version = CurrentVersion,
             savedAtUtc = DateTime.UtcNow.ToString("o"),
             areaId = cp.checkpointLocation != null ? cp.checkpointLocation.name : "",
+            areaName = cp.checkpointLocation != null ? cp.checkpointLocation.DisplayName : "",
             activeAreaIds = activeAreaIds != null ? new List<string>(activeAreaIds).ToArray() : IdsOf(cp.activeLocations),
             leftTwinPosition = cp.leftTwinPosition,
             rightTwinPosition = cp.rightTwinPosition,

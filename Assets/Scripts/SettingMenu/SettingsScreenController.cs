@@ -24,6 +24,9 @@ public sealed class SettingsScreenController : MonoBehaviour
     [SerializeField] private SettingsConfirmDialog _confirmDialog;
     [Tooltip("F6 Phase 3 — the CONTROLS tab's rebind view. Lets Back route per-player while a player is editing.")]
     [SerializeField] private ControlsRebindView _controls;
+    [Tooltip("ON only for the copy on the MAIN MENU (FrontEnd): Resume reads \"Back\" and just closes the screen (no " +
+             "pause flow there), Exit is hidden. OFF for the in-game (Persistent) copy.")]
+    [SerializeField] private bool _menuContext;
 
     [Header("Backend assets (ASSET refs — R1, not control refs)")]
     [SerializeField] private AudioMixer _audioMixer;
@@ -47,7 +50,13 @@ public sealed class SettingsScreenController : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            // The main-menu copy (FrontEnd) and the in-game copy (Persistent) never coexist in a real boot — the
+            // bootstrapper unloads FrontEnd before Persistent loads. If they ever do (both opened by hand in the
+            // editor), the in-game copy wins: never let the menu copy make the pause screen destroy itself.
+            if (!(Instance._menuContext && !_menuContext)) { Destroy(gameObject); return; }
+        }
         Instance = this;
 
         var config = new SettingsBackendConfig
@@ -88,6 +97,9 @@ public sealed class SettingsScreenController : MonoBehaviour
 
     public bool IsOpen => _screenRoot != null && _screenRoot.activeSelf;
 
+    /// <summary>Raised after the screen closes (the main menu uses it to take focus back).</summary>
+    public event System.Action Closed;
+
     // ── Open / close ──────────────────────────────────────────────────
     public void Open()
     {
@@ -99,6 +111,7 @@ public sealed class SettingsScreenController : MonoBehaviour
         CouchDeviceManager.Instance?.SetAutoAssignSuspended(true);
         BuildRegistry();
         RefreshOptionsAndValues();
+        _tabBar?.SetMenuMode(_menuContext);   // before Initialise → bar navigation skips the hidden Exit
         _tabBar?.Initialise(this);
         var first = _tabBar != null ? _tabBar.FirstTabButton : null;
         if (first != null) UINavFocus.Focus(first);
@@ -110,6 +123,7 @@ public sealed class SettingsScreenController : MonoBehaviour
         if (_screenRoot != null) _screenRoot.SetActive(false);
         // Resume auto device assignment — this reconciles any connect/disconnect that happened while open.
         CouchDeviceManager.Instance?.SetAutoAssignSuspended(false);
+        Closed?.Invoke();
     }
 
     // ── Back / Cancel (Esc or pad-B, routed by PauseMenuController's arbiter so ESC stays centralised) ──
@@ -137,9 +151,9 @@ public sealed class SettingsScreenController : MonoBehaviour
     // ── Resume / exit (from the tab bar) ──────────────────────────────
     public void RequestResume()
     {
-        // The pause flow owns timescale/audio/cursor; delegate to it. Close() is a fallback for a
-        // standalone/test context where no PauseMenuController is present.
-        if (PauseMenuController.Instance != null) PauseMenuController.Instance.Resume();
+        // In-game the pause flow owns timescale/audio/cursor; delegate to it. On the main menu ("Back") — or a
+        // standalone/test context with no PauseMenuController — just close.
+        if (!_menuContext && PauseMenuController.Instance != null) PauseMenuController.Instance.Resume();
         else Close();
     }
 

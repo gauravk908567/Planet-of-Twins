@@ -48,6 +48,21 @@ public sealed class SettingsTabBar : MonoBehaviour
 
     public Button FirstTabButton => _tabs.Count > 0 ? _tabs[0].button : null;
 
+    private string _resumeText;   // the authored Resume label, restored when not in menu mode
+
+    /// <summary>Main-menu copy of the screen: Resume reads "Back" (it closes the screen) and Exit is hidden (the main
+    /// menu has its own quit). Call before <see cref="Initialise"/> so the bar's navigation skips the hidden Exit.</summary>
+    public void SetMenuMode(bool menu)
+    {
+        var label = _resumeButton != null ? _resumeButton.GetComponentInChildren<TMP_Text>(true) : null;
+        if (label != null)
+        {
+            _resumeText ??= label.text;
+            label.text = menu ? "Back" : _resumeText;
+        }
+        if (_exitButton != null) _exitButton.gameObject.SetActive(!menu);
+    }
+
     public void Initialise(SettingsScreenController screen)
     {
         _screen = screen;
@@ -144,9 +159,9 @@ public sealed class SettingsTabBar : MonoBehaviour
     private void WireBarNavigation()
     {
         _barItems.Clear();
-        if (_resumeButton != null) _barItems.Add(_resumeButton);
+        if (_resumeButton != null && _resumeButton.gameObject.activeSelf) _barItems.Add(_resumeButton);
         foreach (var t in _tabs) if (t.button != null) _barItems.Add(t.button);
-        if (_exitButton != null) _barItems.Add(_exitButton);
+        if (_exitButton != null && _exitButton.gameObject.activeSelf) _barItems.Add(_exitButton);   // hidden on the main menu
 
         for (int i = 0; i < _barItems.Count; i++)
         {
