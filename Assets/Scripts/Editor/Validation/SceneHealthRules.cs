@@ -341,7 +341,7 @@ namespace PlanetOfTwins.EditorTools
                     r.Add(ValidationSeverity.Info,
                         $"LIVE '{dc.name}': {dc.CurrentState}" +
                         $" · A={(a.Occupant != null ? a.Occupant.name : "—")} B={(b.Occupant != null ? b.Occupant.name : "—")}" +
-                        (dc.IsSpent ? " · spent (saved once)" : ""), dc, PathOf(dc));
+                        (dc.IsConsumed ? " · consumed (re-arming)" : ""), dc, PathOf(dc));
             }
 
             int total = singles.Count + duals.Count;

@@ -12,9 +12,13 @@ using TMPro;
 /// <para>R1: nodes + prompt are same-scene children. R4: resolves CheckpointManager / rescue by singleton at
 /// play time. Reuses <see cref="PlayerInputRouter.For"/> + <see cref="JointHoldSync"/> (the Accord/SC idiom).</para>
 ///
-/// <para>Prompt text is driven here; the burst VFX + the solo-attempt flash (with its interval-reset timer)
-/// are the deferred visual pass — this exposes <see cref="CurrentState"/>, <see cref="HoldProgress"/> and
-/// <see cref="OnSoloSaveAttempt"/> for it to consume.</para>
+/// <para>After a save the checkpoint is CONSUMED (prompts hidden, no saving) and re-arms after
+/// <c>_rearmSeconds</c> — big games keep save points reusable, and ours heals / refills nothing, so there is nothing
+/// to exploit (§11.2 "Re-use rule"). Saving again also needs both twins to step off and back on.</para>
+///
+/// <para>Prompt text is driven here. The node visuals (<see cref="CheckpointNodeVisual"/>) READ this: they poll
+/// <see cref="CurrentState"/> / <see cref="HoldProgress"/> / <see cref="IsConsumed"/> and listen to
+/// <see cref="Saved"/>, <see cref="Rearmed"/> and <see cref="OnSoloSaveAttempt"/>.</para>
 /// </summary>
 public class DualCheckpoint : MonoBehaviour
 {
@@ -26,8 +30,9 @@ public class DualCheckpoint : MonoBehaviour
     [Tooltip("This area's WorldLocationSO — REQUIRED so Continue/respawn streams the right chunk (§11.1). " +
              "Surfaced by the dashboard checkpoint inspector; a save with no location can't resolve its area.")]
     [SerializeField] private WorldLocationSO _location;
-    [Tooltip("Save once, then this checkpoint stays inert for the session. Off = re-saves each fresh visit.")]
-    [SerializeField] private bool _saveOnce = true;
+    [Tooltip("After a save the checkpoint looks consumed, then comes back after this many seconds (§11.2 — long " +
+             "enough that players think it's gone). 0 = it stays consumed while this area is loaded. SCALED time.")]
+    [SerializeField, Min(0f)] private float _rearmSeconds = 13f;
 
     [Header("Activation — both twins HOLD X (§11.2)")]
     [Tooltip("Seconds both players must hold X together while both stand on the nodes. UNSCALED.")]
@@ -38,7 +43,7 @@ public class DualCheckpoint : MonoBehaviour
     [Header("Prompts — one per node (each node's CheckpointNodePrompt child, wired on the node)")]
     [Tooltip("{Cancel} = the save button of the twin ON that node — or, on the empty node, of the partner who still " +
              "has to get there. BRIGHT when both twins are on their nodes, GREY while one waits, hidden when nobody is " +
-             "on a node or the checkpoint is spent (§11.2).")]
+             "on a node or the checkpoint is consumed (§11.2).")]
     [FormerlySerializedAs("_oneTemplate")]
     [SerializeField] private string _nodeTemplate = "Hold {Cancel} to save";
     [SerializeField] private Color _brightColor = Color.white;
@@ -48,22 +53,28 @@ public class DualCheckpoint : MonoBehaviour
     public WorldLocationSO Location => _location;
     public CheckpointNode NodeA => _nodeA;
     public CheckpointNode NodeB => _nodeB;
-    public bool IsSpent => _saveOnce && _saved;
+    /// <summary>True from a save until the checkpoint re-arms (§11.2 "Re-use rule").</summary>
+    public bool IsConsumed => _consumed;
 
     public enum State { BothVacant, OneOccupied, BothOccupied }
 
-    /// <summary>Occupancy state for the visual burst state machine (§11.2).</summary>
+    /// <summary>Occupancy state for the node visuals (§11.2).</summary>
     public State CurrentState { get; private set; } = State.BothVacant;
-    /// <summary>0..1 progress of the joint X-hold (for the visual pass).</summary>
+    /// <summary>0..1 progress of the joint X-hold (drives the hold ring).</summary>
     public float HoldProgress { get; private set; }
-    /// <summary>Fired (rising edge) when a lone twin on a node presses X — the vacant node to flash "come here"
-    /// (§11.2). The visual pass owns the flash + its interval-reset timer; this just signals the attempt.</summary>
+    /// <summary>Fired (rising edge) when a lone twin on a node presses X while the checkpoint is live — both node
+    /// visuals fire a trail at once ("come here", §11.2). The argument is the vacant node.</summary>
     public event System.Action<CheckpointNode> OnSoloSaveAttempt;
+    /// <summary>Fired once when a save goes through — the checkpoint is now consumed.</summary>
+    public event System.Action Saved;
+    /// <summary>Fired when a consumed checkpoint comes back (<c>_rearmSeconds</c> after the save).</summary>
+    public event System.Action Rearmed;
 
     private readonly JointHoldSync _jointSync = new JointHoldSync();
     private float _holdTimer;          // unscaled
-    private bool _saved;               // saveOnce latch
-    private bool _firedThisVisit;      // re-arm guard: one save per both-present visit
+    private bool _consumed;            // saved, waiting to re-arm
+    private float _rearmTimer;         // SCALED countdown: pause freezes it, Setsuna slows it (a world beat)
+    private bool _firedThisVisit;      // one save per both-present visit — step off and back on to save again
     private bool _claimingInput;       // whether we currently hold the Accord-X claim
     private bool _soloHoldPrev;        // rising-edge tracker for the solo-attempt signal
     private int _promptKeyA = int.MinValue;  // each rebuilt only when brightness/player/device kind change (no per-frame TMP alloc)
@@ -108,19 +119,21 @@ public class DualCheckpoint : MonoBehaviour
         int occupied = (a != null ? 1 : 0) + (b != null ? 1 : 0);
         CurrentState = occupied == 0 ? State.BothVacant : occupied == 1 ? State.OneOccupied : State.BothOccupied;
 
-        bool spent = _saveOnce && _saved;
-        UpdatePrompt(spent, a, b);
+        TickRearm();
+        UpdatePrompt(_consumed, a, b);
 
-        // Claim X for the whole checkpoint zone whenever anyone stands on a node (§11.2): on the nodes X means
-        // "save" (or the solo come-here flash), never "charge Accord". A spent checkpoint releases its claim.
-        if (occupied >= 1 && !spent) Claim(); else ReleaseClaim();
+        // Claim X whenever anyone stands on a node (§11.2): on the nodes X means "save" (or the solo come-here call),
+        // never "charge Accord". Held through the consumed window too — both players are still holding X on the
+        // frame the save fires, and releasing then let a full-bar Accord start (BUG-124).
+        if (occupied >= 1) Claim(); else ReleaseClaim();
 
-        // Solo attempt → signal the vacant node (visual flash consumes this, §11.2 visual pass).
-        HandleSoloAttempt(a, b, occupied);
+        // Solo attempt → both node visuals fire a trail (only while the checkpoint is live).
+        if (_consumed) _soloHoldPrev = false;
+        else HandleSoloAttempt(a, b, occupied);
 
         bool bothPresent = a != null && b != null && a != b;   // two DISTINCT twins, one per node
         if (!bothPresent) { _firedThisVisit = false; ResetHoldTimer(); return; }
-        if (spent) { ResetHoldTimer(); return; }
+        if (_consumed) { ResetHoldTimer(); return; }
         if (_firedThisVisit) { ResetHoldTimer(); return; }     // already saved this visit; wait until they leave
         if (!GuardsPass(a, b)) { ResetHoldTimer(); return; }   // rescued / dead / ability active → no save
 
@@ -138,9 +151,9 @@ public class DualCheckpoint : MonoBehaviour
         else ResetHoldTimer();
     }
 
-    private void UpdatePrompt(bool spent, Player a, Player b)
+    private void UpdatePrompt(bool consumed, Player a, Player b)
     {
-        bool show = !spent && CurrentState != State.BothVacant;
+        bool show = !consumed && CurrentState != State.BothVacant;
         bool bright = CurrentState == State.BothOccupied;
 
         // Each node names ITS player: the twin standing on it, or — on the empty node — the partner who still has to
@@ -219,9 +232,21 @@ public class DualCheckpoint : MonoBehaviour
         Vector3 right = roster?.TwinB != null ? roster.TwinB.transform.position : transform.position;
         cpm.SaveCheckpoint(left, right, _location);
 
-        _saved = true;
+        _consumed = true;
+        _rearmTimer = _rearmSeconds;
         _firedThisVisit = true;
         ResetHoldTimer();
+        Saved?.Invoke();
+    }
+
+    // Consumed → live again after _rearmSeconds (0 = stays consumed while the area is loaded).
+    private void TickRearm()
+    {
+        if (!_consumed || _rearmSeconds <= 0f) return;
+        _rearmTimer -= Time.deltaTime;   // SCALED — see _rearmTimer
+        if (_rearmTimer > 0f) return;
+        _consumed = false;
+        Rearmed?.Invoke();
     }
 
     private void ResetHoldTimer()

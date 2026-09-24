@@ -780,7 +780,7 @@ public class GameDebuggerV2 : MonoBehaviour
             string a = dc.NodeA != null && dc.NodeA.Occupant != null ? dc.NodeA.Occupant.name : "—";
             string b = dc.NodeB != null && dc.NodeB.Occupant != null ? dc.NodeB.Occupant.name : "—";
             GUILayout.Label($"Dual '{dc.name}' [{dc.gameObject.scene.name}] → {LocationLabel(dc.Location, dc.gameObject.scene.name)}" +
-                            $"  · {dc.CurrentState} A={a} B={b} hold {dc.HoldProgress:P0}{(dc.IsSpent ? " · spent" : "")}");
+                            $"  · {dc.CurrentState} A={a} B={b} hold {dc.HoldProgress:P0}{(dc.IsConsumed ? " · consumed (re-arming)" : "")}");
         }
         GUI.color = prev;
         if (_cpSingles.Count == 0 && _cpDuals.Count == 0) GUILayout.Label("(no checkpoints in the loaded scenes)");

@@ -5,8 +5,7 @@ using TMPro;
 /// One node (A or B) of a <see cref="DualCheckpoint"/> (game.md §11.2). A trigger volume that tracks the
 /// twin currently standing in it (SoulPlayer excluded). The parent <see cref="DualCheckpoint"/> reads both
 /// nodes' occupants to decide when both twins are present, and drives this node's own <see cref="Prompt"/>.
-/// The per-node burst VFX (clan colour) will read <see cref="IsOccupied"/> + the parent's state in the visual
-/// pass — not wired yet.
+/// This node's <see cref="CheckpointNodeVisual"/> reads <see cref="IsOccupied"/> to spin the orb and run the trails.
 ///
 /// <para>R1: a same-scene child of its DualCheckpoint. Occupancy uses the same trigger mechanism as the
 /// legacy <see cref="CheckpointTrigger"/> (the twin's CharacterController generates the enter/exit events).</para>
