@@ -50,7 +50,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
 
     // Gameplay map (cached in Awake — FindAction per frame allocates)
     private InputAction _move, _attack, _switch, _ability, _teleport, _interact,
-                        _cancel, _empower, _struggle, _soulBreak, _convergence,
+                        _cancel, _empower, _struggle, _convergence,
                         _overview, _qteMash;
     // UI map
     private InputAction _pause, _skillTree, _anySkip, _toggleHints;
@@ -109,7 +109,6 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         _cancel      = Find("Gameplay/Cancel");
         _empower     = Find("Gameplay/Empower");
         _struggle    = Find("Gameplay/Struggle");
-        _soulBreak   = Find("Gameplay/SoulBreak");
         _convergence = Find("Gameplay/Convergence");
         _overview    = Find("Gameplay/Overview");
         _qteMash     = Find("Gameplay/QTEMash");
@@ -205,7 +204,6 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         _cancel?.AddBinding("<Joystick>/button3");       // cancel / Accord entry (X, hold)
         _empower?.AddBinding("<Joystick>/button4");      // empower (R, hold)
         _teleport?.AddBinding("<Joystick>/button5");     // emergency teleport (C, hold)
-        _soulBreak?.AddBinding("<Joystick>/button5");    // C-share: soul-break == teleport key
         _interact?.AddBinding("<Joystick>/button6");     // rescue / interact (F)
         _convergence?.AddBinding("<Joystick>/button6");  // F-share: convergence hold
         _qteMash?.AddBinding("<Joystick>/button6");      // F-share: QTE mash
@@ -263,9 +261,6 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     // Struggle — E while grabbed (always allowed — attack lock shouldn't block escape;
     // deliberately a SEPARATE action from Attack: struggle is keyboard-E only, not LMB)
     public bool GetStruggleMash() => !_gameplayFrozen && Down(_struggle);
-
-    // Soul break — C mash while chain-bound (always allowed)
-    public bool GetSoulBreakMash() => !_gameplayFrozen && Down(_soulBreak);
 
     // Convergence hold — F (Soul Convergence charge / Setsuna charge)
     public bool GetConvergenceHeld() => !_gameplayFrozen && AbilityAllowed && Held(_convergence);

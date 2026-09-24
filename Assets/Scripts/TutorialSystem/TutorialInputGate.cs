@@ -86,7 +86,6 @@ public class TutorialInputGate : MonoBehaviour, IInputProvider, ITutorialGate
     public bool GetCancelHeld() => _real?.GetCancelHeld() ?? false;
     public bool GetEmpowerHeld() => _abilityAllowed && (_real?.GetEmpowerHeld() ?? false);
     public bool GetStruggleMash() => _real?.GetStruggleMash() ?? false;
-    public bool GetSoulBreakMash() => _real?.GetSoulBreakMash() ?? false;
     public bool GetConvergenceHeld() => _abilityAllowed && (_real?.GetConvergenceHeld() ?? false);
 
     // ── P13 additions — ungated passthroughs (mirrors TwinInputReader: these never

@@ -71,7 +71,6 @@ public sealed class AnyPlayerInputProvider : IInputProvider
     public bool GetCancelHeld()        => Any(p => p.GetCancelHeld());
     public bool GetEmpowerHeld()       => Any(p => p.GetEmpowerHeld());
     public bool GetStruggleMash()      => Any(p => p.GetStruggleMash());
-    public bool GetSoulBreakMash()     => Any(p => p.GetSoulBreakMash());
     public bool GetConvergenceHeld()   => Any(p => p.GetConvergenceHeld());
 
     // ── Shared-UI action reads — the ones this aggregator exists for ──

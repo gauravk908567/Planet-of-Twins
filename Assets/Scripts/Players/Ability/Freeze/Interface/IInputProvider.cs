@@ -19,8 +19,6 @@ public interface IInputProvider
     /// <summary>Hold X � cancel teleport window or detach from QTE trigger.</summary>
     bool GetCancelHeld();
     bool GetEmpowerHeld();
-    /// <summary>Press C while soul is chain-bound by SiphonGhost — mash to break free.</summary>
-    bool GetSoulBreakMash();
     /// <summary>Press E while grabbed � mash to trigger struggle pause (tier-1 traps only).</summary>
     bool GetStruggleMash();
     /// <summary>Hold F to charge Soul Convergence or Setsuna. Gated by IsAbilityAllowed.</summary>

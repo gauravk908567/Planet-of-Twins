@@ -182,7 +182,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         OnActiveTargetChanged?.Invoke(null);
     }
 
-    /// <summary>Exposed so SiphonGhost can read soul break-mash input without raw Input calls.</summary>
+    /// <summary>Exposed so SiphonGhost can read the soul owner's bind-break mash (Struggle) without raw Input calls.</summary>
     public IInputProvider InputProvider =>
         ActiveSoul?.Caster != null ? PlayerInputRouter.For(ActiveSoul.Caster) : _input;
 
