@@ -7,20 +7,19 @@ namespace PlanetOfTwins.EditorTools
 {
     /// <summary>
     /// P17 authoring: creates the 6 story-grade VolumeProfiles + the FailureReset sting
- /// profile under Assets/Settings/Grading/. Idempotent — existing
-    /// assets are left untouched (author-tuned values survive re-runs).
+ /// profile under PoTPaths.Create.GradeProfiles. Idempotent — a profile that exists ANYWHERE
+    /// (found by name) is left untouched (author-tuned values survive re-runs and folder moves).
  /// Values are the starting grade; the user tunes in Unity.
     /// </summary>
     public static class GradeProfileAuthoring
     {
-        private const string Dir = "Assets/Settings/Grading";
+        private const string Dir = PoTPaths.Create.GradeProfiles;
 
         // Menu retired (tool consolidation 2026-07-10) — invoked as a Fix from the Scene Health
         // Dashboard (Persistent Volumes recipe: missing grade profiles).
         public static void CreateAll()
         {
-            if (!AssetDatabase.IsValidFolder(Dir))
-                AssetDatabase.CreateFolder("Assets/Settings", "Grading");
+            PoTAssetLookup.EnsureFolder(Dir);
 
             int created = 0;
 
@@ -121,8 +120,8 @@ namespace PlanetOfTwins.EditorTools
         // ── Helpers ───────────────────────────────────────────────────────────────
         private static int Create(string name, System.Action<VolumeProfile> author)
         {
+            if (PoTAssetLookup.PathsOf<VolumeProfile>(name).Count > 0) return 0;   // exists (any folder) — never duplicate
             string path = Dir + "/" + name + ".asset";
-            if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(path) != null) return 0;
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             AssetDatabase.CreateAsset(profile, path);
             author(profile);

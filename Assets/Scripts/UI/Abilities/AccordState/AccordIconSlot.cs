@@ -151,10 +151,10 @@ public class AccordIconSlot : MonoBehaviour
     {
         if (_keyCapMatsLoaded) return;
         _keyCapMatsLoaded = true;
-        _matGoldGlow    = Resources.Load<Material>("AbilityHUD/M_UIKeyLetterGlow_Gold");
-        _matVioletGlow  = Resources.Load<Material>("AbilityHUD/M_UIKeyLetterGlow_Violet");
-        _matNeutralGlow = Resources.Load<Material>("AbilityHUD/M_UIKeyLetterGlow_Neutral");
-        _matKeycapBase  = Resources.Load<Material>("AbilityHUD/M_UIKeycap");
+        _matGoldGlow    = Resources.Load<Material>(PoTPaths.ResourceKeys.KeyLetterGlowGold);
+        _matVioletGlow  = Resources.Load<Material>(PoTPaths.ResourceKeys.KeyLetterGlowViolet);
+        _matNeutralGlow = Resources.Load<Material>(PoTPaths.ResourceKeys.KeyLetterGlowNeutral);
+        _matKeycapBase  = Resources.Load<Material>(PoTPaths.ResourceKeys.Keycap);
         if (_matGoldGlow == null || _matVioletGlow == null || _matKeycapBase == null)
             Debug.LogError("[AccordIconSlot] Missing keycap materials under Resources/AbilityHUD — glowing-letter " +
                            "keycaps fall back to plain labels.");

@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Couch — Option B, B-2 ("any controller"). Loads and indexes the community SDL_GameControllerDB
-/// (<c>Assets/Settings/Input/Resources/gamecontrollerdb.txt</c>) by USB vendor/product id so an
+/// (the <c>gamecontrollerdb.txt</c> text asset in a Resources folder) by USB vendor/product id so an
 /// unrecognized generic HID pad can be promoted to a real <see cref="UnityEngine.InputSystem.Gamepad"/>
 /// from its published button/axis mapping. See <see cref="HidGamepadLayoutBuilder"/> (turns a mapping +
 /// the pad's HID descriptor into a Unity layout) and <see cref="UniversalGamepadRegistrar"/> (wires it up
@@ -20,7 +20,7 @@ public static class SdlControllerDb
     private static Dictionary<int, Dictionary<string, string>> _byVidPid;
 
     // Resource path (no extension), relative to a Resources/ folder.
-    private const string ResourcePath = "gamecontrollerdb";
+    private const string ResourcePath = PoTPaths.ResourceKeys.ControllerDb;
 
     public static int Count { get { EnsureLoaded(); return _byVidPid.Count; } }
 
@@ -39,9 +39,9 @@ public static class SdlControllerDb
         var asset = Resources.Load<TextAsset>(ResourcePath);
         if (asset == null)
         {
-            Debug.LogError("[SdlControllerDb] 'gamecontrollerdb' not found under a Resources/ folder — generic " +
+            Debug.LogError($"[SdlControllerDb] '{ResourcePath}' not found under a Resources/ folder — generic " +
                            "controller support (Option B) is limited to natively-recognized pads. Expected " +
-                           "Assets/Settings/Input/Resources/gamecontrollerdb.txt.");
+                           $"{ResourcePath}.txt directly inside a Resources/ folder (Planet of Twins Tools ▸ Validation ▸ Path Health).");
             return;
         }
 

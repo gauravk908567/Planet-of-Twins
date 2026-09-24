@@ -8,7 +8,8 @@ using UnityEngine;
 namespace PlanetOfTwins.EditorTools
 {
     /// <summary>
-    /// Static lint over Assets/Scripts for documented Rulebook / Banned-Lazy-Work violations.
+    /// Static lint over the first-party code root (PoTPaths.Scan.FirstPartyCode) for documented Rulebook /
+    /// Banned-Lazy-Work violations.
     /// Deliberately conservative + allowlisted so it earns trust (≈zero false positives). The
     /// Phase-9 pass is INFO-level ("candidate"), not an assertion of guilt.
     /// </summary>
@@ -26,8 +27,14 @@ namespace PlanetOfTwins.EditorTools
 
         public static void Collect(List<ValidationFinding> findings)
         {
-            string scriptsRoot = Path.Combine(Application.dataPath, "Scripts");
-            if (!Directory.Exists(scriptsRoot)) return;
+            string scriptsRoot = Path.GetFullPath(PoTPaths.Scan.FirstPartyCode);   // the editor's cwd is the project root
+            if (!Directory.Exists(scriptsRoot))
+            {
+                findings.Add(new ValidationFinding(ValidationSeverity.Error, "Code lint",
+                    $"Code root '{PoTPaths.Scan.FirstPartyCode}' not found — nothing was linted. Update PoTPaths.Scan.FirstPartyCode.",
+                    null, PoTPaths.Scan.FirstPartyCode));
+                return;
+            }
 
             var patterns = BuildPatterns();
 

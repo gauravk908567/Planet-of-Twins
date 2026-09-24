@@ -871,14 +871,8 @@ public class GameDebuggerV2 : MonoBehaviour
     private void AutoFillSpawnables()
     {
         _spawnables.Clear();
-        foreach (var guid in UnityEditor.AssetDatabase.FindAssets(
-                     "t:Prefab", new[] { "Assets/Models/Prefabs/Enemies" }))
-        {
-            var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (prefab != null && prefab.GetComponent<Enemy>() != null)
-                _spawnables.Add(new SpawnEntry { label = prefab.name, prefab = prefab });
-        }
+        foreach (var prefab in PoTAssetLookup.PrefabsWith<Enemy>())   // folder-free: survives prefab moves
+            _spawnables.Add(new SpawnEntry { label = prefab.name, prefab = prefab });
         UnityEditor.EditorUtility.SetDirty(this);
         Debug.Log($"[GameDebuggerV2] Auto-filled {_spawnables.Count} enemy prefabs.", this);
     }

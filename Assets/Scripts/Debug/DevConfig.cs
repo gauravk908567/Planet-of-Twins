@@ -44,7 +44,7 @@ public class DevConfig : ScriptableObject
         {
             if (!_loaded)
             {
-                _instance = Resources.Load<DevConfig>("DevConfig");
+                _instance = Resources.Load<DevConfig>(PoTPaths.ResourceKeys.DevConfig);
                 _loaded = true;
                 if (_instance == null)
                     Debug.LogWarning("[DevConfig] No Resources/DevConfig.asset — all dev flags default OFF (shipping flow).");

@@ -14,25 +14,17 @@ namespace PlanetOfTwins.EditorTools
     /// </summary>
     public static class PoiEcologyAuthoring
     {
-        private const string EnemyPrefabFolder = "Assets/Models/Prefabs/Enemies";
-        private const string SeekProfilePath =
-            "Assets/Scripts/AIFramework/PlanetOfTwinsAI/AI/Utility/Data/SeekEnergyUtilProfile.asset";
-        private const string DefaultFeedProfilePath =
-            "Assets/Scripts/AIFramework/PlanetOfTwinsAI/AI/POI/Data/DefaultPoiEnergyProfile.asset";
-
         // Menu retired (tool consolidation 2026-07-10) — invoked as a Fix from the Scene Health
         // Dashboard (Wiring recipe: POI-without-emitter; Enemy prefabs recipe: missing SeekEnergy).
         public static void Wire()
         {
-            var seekProfile = AssetDatabase.LoadAssetAtPath<UtilityWeightProfile>(SeekProfilePath);
-            if (seekProfile == null)
-            {
-                Debug.LogError($"[PoiEcology] Missing {SeekProfilePath} — reimport/compile first.");
-                return;
-            }
+            var seekProfile = PoTAssetLookup.FindUnique<UtilityWeightProfile>(PoTPaths.Named.SeekEnergyUtilProfile);
+            if (seekProfile == null) return;   // PoTAssetLookup logged why
+            var feedProfile = GetOrCreateFeedProfile();
+            if (feedProfile == null) return;
 
             int prefabsWired = WirePrefabs(seekProfile);
-            int emittersAdded = WireScenePois(GetOrCreateFeedProfile());
+            int emittersAdded = WireScenePois(feedProfile);
 
             AssetDatabase.SaveAssets();
             Debug.Log($"[PoiEcology] Done — {prefabsWired} enemy prefab(s) wired with SeekEnergy, " +
@@ -42,17 +34,18 @@ namespace PlanetOfTwins.EditorTools
         private static int WirePrefabs(UtilityWeightProfile seekProfile)
         {
             int wired = 0;
-            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { EnemyPrefabFolder }))
+            // Folder-free: every prefab with a GOAP brain, wherever it lives. Eligibility is read off the prefab
+            // asset's root (same components as the loaded contents), so only eligible prefabs are opened.
+            foreach (var prefab in PoTAssetLookup.PrefabsWith<PoTGOAPBrainBase>())
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
+                bool eligible = prefab.GetComponent<EnemyDarkEnergy>() != null
+                                && prefab.GetComponent<SiphonGhost>() == null;
+                if (!eligible) continue;
+
+                string path = AssetDatabase.GetAssetPath(prefab);
                 var root = PrefabUtility.LoadPrefabContents(path);
                 try
                 {
-                    bool eligible = root.GetComponent<PoTGOAPBrainBase>() != null
-                                    && root.GetComponent<EnemyDarkEnergy>() != null
-                                    && root.GetComponent<SiphonGhost>() == null;
-                    if (!eligible) continue;
-
                     bool dirty = false;
 
                     var goal = root.GetComponent<GOAPGoalSeekEnergy>();
@@ -104,17 +97,16 @@ namespace PlanetOfTwins.EditorTools
 
         private static PoiEnergyProfile GetOrCreateFeedProfile()
         {
-            var profile = AssetDatabase.LoadAssetAtPath<PoiEnergyProfile>(DefaultFeedProfilePath);
-            if (profile != null) return profile;
+            // Found by name in any folder; null (logged) if duplicated. Created only when none exists.
+            string name = PoTPaths.Named.DefaultPoiEnergyProfile;
+            if (PoTAssetLookup.PathsOf<PoiEnergyProfile>(name).Count > 0)
+                return PoTAssetLookup.FindUnique<PoiEnergyProfile>(name);
 
-            string dir = System.IO.Path.GetDirectoryName(DefaultFeedProfilePath).Replace('\\', '/');
-            if (!AssetDatabase.IsValidFolder(dir))
-                AssetDatabase.CreateFolder(System.IO.Path.GetDirectoryName(dir).Replace('\\', '/'),
-                                           System.IO.Path.GetFileName(dir));
-
-            profile = ScriptableObject.CreateInstance<PoiEnergyProfile>();
-            AssetDatabase.CreateAsset(profile, DefaultFeedProfilePath);
-            Debug.Log($"[PoiEcology] created {DefaultFeedProfilePath} (defaults — tune per POI by " +
+            PoTAssetLookup.EnsureFolder(PoTPaths.Create.PoiEnergyProfiles);
+            string path = $"{PoTPaths.Create.PoiEnergyProfiles}/{name}.asset";
+            var profile = ScriptableObject.CreateInstance<PoiEnergyProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+            Debug.Log($"[PoiEcology] created {path} (defaults — tune per POI by " +
                       "duplicating it and assigning the copy on that POI's emitter).");
             return profile;
         }

@@ -452,9 +452,11 @@ public static class UnifiedSettingsScreenBuilder
 
         // Backend ASSET refs. The old GraphicsSettings/SettingsMenu controllers that used to hold these are
         // retired, so load the project assets directly — but never clobber a ref an earlier build already set.
-        SetAssetRefIfEmpty(so, "_audioMixer",   "Assets/Audio/GameAudioMixer.mixer");
-        SetAssetRefIfEmpty(so, "_urpAsset",     "Assets/Settings/PC_RPAsset.asset");
-        SetAssetRefIfEmpty(so, "_rendererData", "Assets/Settings/PC_Renderer.asset");
+        SetAssetRefIfEmpty<UnityEngine.Audio.AudioMixer>(so, "_audioMixer", PoTPaths.Named.GameAudioMixer);
+        SetAssetRefIfEmpty<UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset>(
+            so, "_urpAsset", PoTPaths.Named.PcRenderPipelineAsset);
+        SetAssetRefIfEmpty<UnityEngine.Rendering.Universal.ScriptableRendererData>(
+            so, "_rendererData", PoTPaths.Named.PcRendererData);
 
         // The Fog row drives the CristianQiu VolumetricFog on the FogVolume global Volume (a scene object).
         var fogProp = so.FindProperty("_fogVolume");
@@ -468,14 +470,14 @@ public static class UnifiedSettingsScreenBuilder
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 
-    // Load a project asset by path into an empty serialized object-ref (leaves an already-wired ref alone).
-    private static void SetAssetRefIfEmpty(SerializedObject so, string field, string assetPath)
+    // Find a project asset by type + name (any folder) into an empty serialized object-ref (leaves an already-wired
+    // ref alone). A missing or duplicated asset is logged by PoTAssetLookup and the ref stays empty.
+    private static void SetAssetRefIfEmpty<T>(SerializedObject so, string field, string assetName) where T : Object
     {
         var p = so.FindProperty(field);
         if (p == null || p.objectReferenceValue != null) return;
-        var asset = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
+        var asset = PoTAssetLookup.FindUnique<T>(assetName);
         if (asset != null) p.objectReferenceValue = asset;
-        else Debug.LogWarning($"[UnifiedSettingsScreenBuilder] Backend asset not found for {field}: {assetPath}");
     }
 
     // The global Volume whose profile carries the CristianQiu VolumetricFog (the live fog the Fog row drives).

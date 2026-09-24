@@ -7,15 +7,15 @@ using UnityEngine;
 /// <b>Planet of Twins Tools ▸ Input</b>:
 ///   • <b>Import Glyphs as Sprites</b> — set every texture under <see cref="GlyphRoot"/> to a UI-ready Single
 ///     Sprite import (Kenney PNGs land as Default in a 3D/URP project, unusable as UI Image sprites / TMP).
-///   • <b>Bake Glyph Map</b> — (re)generate <c>Assets/Resources/InputGlyphMap.asset</c> from the atlas using the
+///   • <b>Bake Glyph Map</b> — (re)generate the Resources <c>InputGlyphMap</c> (the one the runtime loads, wherever it
+///     lives; created under <see cref="PoTPaths.Create.BakedResources"/> if none exists) from the atlas using the
 ///     canonical control-path → Kenney-filename table below, so <see cref="InputGlyphResolver"/> can look up a
 ///     glyph by (device kind, control path). Re-run after adding a binding/glyph.
 /// Both are idempotent.
 /// </summary>
 public static class InputGlyphImporter
 {
-    private const string GlyphRoot = "Assets/Art/UI/InputGlyphs";
-    private const string MapAssetPath = "Assets/Resources/InputGlyphMap.asset";
+    private const string GlyphRoot = PoTPaths.Scan.InputGlyphAtlas;
 
     // ── Canonical table: (device kind, Input System control path, atlas folder, Kenney filename stem) ──
     // The control paths are what IInputProvider.TryGetBindingControlPath yields; the stems are verified to exist
@@ -121,21 +121,23 @@ public static class InputGlyphImporter
             });
         }
 
-        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
-            AssetDatabase.CreateFolder("Assets", "Resources");
-
-        var map = AssetDatabase.LoadAssetAtPath<InputGlyphMap>(MapAssetPath);
+        // Update the map the runtime actually loads (by its Resources key, any Resources folder); create one only if none exists.
+        var map = Resources.Load<InputGlyphMap>(PoTPaths.ResourceKeys.InputGlyphMap);
         bool created = map == null;
+        string mapPath;
         if (created)
         {
+            mapPath = PoTPaths.Create.BakedResourceAsset(PoTPaths.ResourceKeys.InputGlyphMap);
+            PoTAssetLookup.EnsureFolder(System.IO.Path.GetDirectoryName(mapPath).Replace('\\', '/'));
             map = ScriptableObject.CreateInstance<InputGlyphMap>();
-            AssetDatabase.CreateAsset(map, MapAssetPath);
+            AssetDatabase.CreateAsset(map, mapPath);
         }
+        else mapPath = AssetDatabase.GetAssetPath(map);
 
         map.EditorSetEntries(entries);
         EditorUtility.SetDirty(map);
         AssetDatabase.SaveAssets();
 
-        Debug.Log($"[GlyphBaker] {(created ? "Created" : "Updated")} {MapAssetPath} — {entries.Count}/{Table.Length} entries baked, {missing} missing.");
+        Debug.Log($"[GlyphBaker] {(created ? "Created" : "Updated")} {mapPath} — {entries.Count}/{Table.Length} entries baked, {missing} missing.");
     }
 }

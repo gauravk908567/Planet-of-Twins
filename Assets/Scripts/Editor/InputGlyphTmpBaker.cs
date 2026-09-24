@@ -15,16 +15,16 @@ using UnityEngine.TextCore;
 ///      source <c>sprite</c> and the <c>tmpSpriteName</c>, so the packed names match the resolver 1:1 (no drift);
 ///   2. loads each used PNG as a readable texture and <see cref="Texture2D.PackTextures"/> into one atlas;
 ///   3. hand-builds spriteGlyphTable + spriteCharacterTable (uniform 1em height) + a TextMeshPro/Sprite material;
-///   4. writes <c>Assets/Resources/Sprites/InputGlyphs.asset</c> (TMP's default sprite search path, so the bare
-///      <c>&lt;sprite="InputGlyphs" …&gt;</c> tag resolves without touching TMP Settings).
+///   4. writes the Resources <c>Sprites/InputGlyphs</c> asset (the one InputGlyphText loads, wherever it lives; created
+///      under <see cref="PoTPaths.Create.BakedResources"/> if none exists — TMP's default sprite search path, so the
+///      bare <c>&lt;sprite="InputGlyphs" …&gt;</c> tag resolves without touching TMP Settings).
 ///
 /// Idempotent: re-run after the glyph map changes. Menu: <b>Planet of Twins Tools ▸ Input ▸ Bake TMP Glyph Sprite Asset</b>.
 /// </summary>
 public static class InputGlyphTmpBaker
 {
-    private const string MapResourcePath = "InputGlyphMap";                 // Resources/InputGlyphMap.asset
-    private const string OutDir          = "Assets/Resources/Sprites";
-    private const string OutAssetPath    = OutDir + "/InputGlyphs.asset";   // <sprite="InputGlyphs" name="…">
+    private const string MapResourcePath = PoTPaths.ResourceKeys.InputGlyphMap;
+    private const string OutResourceKey  = PoTPaths.ResourceKeys.InputGlyphSpriteAsset;   // <sprite="InputGlyphs" name="…">
     private const int    PointSize       = 128;                             // em reference for sprite scaling
     private const float  RenderEm        = 2.0f;                            // glyph height in em (bigger — reads clearly next to text)
     private const float  BaselineFrac    = 0.78f;                           // top-of-glyph above baseline as a fraction of its height (centers it on the line)
@@ -156,24 +156,26 @@ public static class InputGlyphTmpBaker
 
         spriteAsset.UpdateLookupTables();
 
-        // Write: replace wholesale so no stale sub-assets survive a re-bake.
-        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
-            AssetDatabase.CreateFolder("Assets", "Resources");
-        if (!AssetDatabase.IsValidFolder(OutDir))
-            AssetDatabase.CreateFolder("Assets/Resources", "Sprites");
-        if (AssetDatabase.LoadAssetAtPath<TMP_SpriteAsset>(OutAssetPath) != null)
-            AssetDatabase.DeleteAsset(OutAssetPath);
+        // Write: replace wholesale so no stale sub-assets survive a re-bake. Target = the asset the runtime loads
+        // (by its Resources key, wherever it was moved); first bake → the PoTPaths create location.
+        var existing = Resources.Load<TMP_SpriteAsset>(OutResourceKey);
+        string outPath = existing != null
+            ? AssetDatabase.GetAssetPath(existing)
+            : PoTPaths.Create.BakedResourceAsset(OutResourceKey);
+        PoTAssetLookup.EnsureFolder(Path.GetDirectoryName(outPath).Replace('\\', '/'));
+        if (existing != null)
+            AssetDatabase.DeleteAsset(outPath);
 
-        AssetDatabase.CreateAsset(spriteAsset, OutAssetPath);
+        AssetDatabase.CreateAsset(spriteAsset, outPath);
         atlas.name = "InputGlyphs Atlas";
         material.name = "InputGlyphs Material";
         AssetDatabase.AddObjectToAsset(atlas, spriteAsset);
         AssetDatabase.AddObjectToAsset(material, spriteAsset);
         EditorUtility.SetDirty(spriteAsset);
         AssetDatabase.SaveAssets();
-        AssetDatabase.ImportAsset(OutAssetPath);
+        AssetDatabase.ImportAsset(outPath);
 
-        Debug.Log($"[TmpGlyphBaker] Baked {OutAssetPath} — {stems.Count} glyphs into a {aw}x{ah} atlas. " +
+        Debug.Log($"[TmpGlyphBaker] Baked {outPath} — {stems.Count} glyphs into a {aw}x{ah} atlas. " +
                   "Inline via InputGlyphText.Apply (emits name-only <sprite name=\"keyboard_f\"> against this asset).");
     }
 }

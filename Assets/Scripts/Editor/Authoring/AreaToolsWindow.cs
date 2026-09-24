@@ -78,7 +78,7 @@ namespace PlanetOfTwins.EditorTools
                     Create();
 
             EditorGUILayout.Space();
-            EditorGUILayout.HelpBox("Creates Assets/Scenes/<name>/<name>.unity + WorldLocationSO (+ AreaZoneConfig kit). " +
+            EditorGUILayout.HelpBox($"Creates {PoTPaths.Create.AreaScenes}/<name>/<name>.unity + WorldLocationSO (+ AreaZoneConfig kit). " +
                 "After: build geometry, bake the NavMesh, set adjacency on the WorldLocationSO, place spawn " +
                 "points/POIs, assign the identity volume's profile — then run the Scene Health Dashboard.", MessageType.Info);
         }
@@ -86,8 +86,8 @@ namespace PlanetOfTwins.EditorTools
         private void Create()
         {
             string name = _name.Trim();
-            string dir = $"Assets/Scenes/{name}";
-            EnsureFolder(dir);
+            string dir = $"{PoTPaths.Create.AreaScenes}/{name}";
+            PoTAssetLookup.EnsureFolder(dir);
             string scenePath = $"{dir}/{name}.unity";
             if (System.IO.File.Exists(scenePath))
             {
@@ -239,7 +239,7 @@ namespace PlanetOfTwins.EditorTools
         }
 
         // ═══════════════ Tab 2 · Setup Zone (was AreaAutoWireWindow) ═══════════════
-        private const string ConfigRoot = "Assets/Scripts/SpawnSystem/SpawnArea";
+        private const string ConfigRoot = PoTPaths.Create.SpawnAreaConfigs;
 
         private SpawnZone _zone;
         private Vector2 _scroll;
@@ -315,7 +315,7 @@ namespace PlanetOfTwins.EditorTools
         {
             string sceneName = _zone.gameObject.scene.name;
             string dir = $"{ConfigRoot}/{sceneName}";
-            EnsureFolder(dir);
+            PoTAssetLookup.EnsureFolder(dir);
 
             var setup = CreateSo<SpawnSetupConfig>($"{dir}/SpawnSetup_{sceneName}.asset");
             var env = CreateSo<ZoneEnvironmentConfig>($"{dir}/Environment_{sceneName}.asset");
@@ -338,7 +338,7 @@ namespace PlanetOfTwins.EditorTools
         {
             string sceneName = _zone.gameObject.scene.name;
             string dir = $"{ConfigRoot}/{sceneName}";
-            EnsureFolder(dir);
+            PoTAssetLookup.EnsureFolder(dir);
 
             var so = new SerializedObject(cfg);
             if (cfg.spawnSetup == null)
@@ -475,15 +475,6 @@ namespace PlanetOfTwins.EditorTools
             foreach (var s in list) if (s.path == scenePath) return;
             list.Add(new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = list.ToArray();
-        }
-
-        private static void EnsureFolder(string path)
-        {
-            if (AssetDatabase.IsValidFolder(path)) return;
-            string parent = System.IO.Path.GetDirectoryName(path).Replace('\\', '/');
-            string leaf = System.IO.Path.GetFileName(path);
-            if (!AssetDatabase.IsValidFolder(parent)) EnsureFolder(parent);
-            AssetDatabase.CreateFolder(parent, leaf);
         }
 
         private void EditorSceneMarkDirty()

@@ -17,9 +17,8 @@ namespace PlanetOfTwins.EditorTools
     /// </summary>
     public class CueIdVerifierWindow : EditorWindow
     {
-        private const string ScriptRoot = "Assets/Scripts";
+        private const string ScriptRoot = PoTPaths.Scan.FirstPartyCode;
         private const string SelfFile = "CueIdVerifierWindow.cs";
-        private const string FxIdsPath = "Assets/Scripts/Fx/Generated/FxIds.cs";
 
         // PlayBook(<book-expr-without-comma>, "id", …)
         private static readonly Regex PlayBookLiteral = new Regex(
@@ -145,6 +144,9 @@ namespace PlanetOfTwins.EditorTools
                     }
                 }
             }
+            else
+                Add(MessageType.Error,
+                    $"Code root '{ScriptRoot}' not found — no call site was checked. Update PoTPaths.Scan.FirstPartyCode.", null);
 
             // 3a) a PlayBook literal that no book defines → typo / wrong name at the call site
             foreach (var (id, file, line) in playBookLiterals)
@@ -228,11 +230,19 @@ namespace PlanetOfTwins.EditorTools
 
             sb.AppendLine("}");
 
-            string dir = System.IO.Path.GetDirectoryName(FxIdsPath);
+            // Overwrite the existing FxIds.cs wherever it was moved (a second copy would be a duplicate class);
+            // create it under PoTPaths.Create.FxIds only if none exists.
+            string name = PoTPaths.Named.FxIdsScript;
+            string fxIdsPath = PoTAssetLookup.PathsOf<MonoScript>(name).Count == 0
+                ? $"{PoTPaths.Create.FxIds}/{name}.cs"
+                : PoTAssetLookup.FindUniquePath<MonoScript>(name);   // null (logged) if duplicated
+            if (fxIdsPath == null) return;
+
+            string dir = System.IO.Path.GetDirectoryName(fxIdsPath);
             if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
-            System.IO.File.WriteAllText(FxIdsPath, sb.ToString());
-            AssetDatabase.ImportAsset(FxIdsPath);
-            Debug.Log($"[CueIdVerifier] Generated {FxIdsPath} ({booksInLibraries.Count} book(s) in libraries, {orphans.Count} unsorted).");
+            System.IO.File.WriteAllText(fxIdsPath, sb.ToString());
+            AssetDatabase.ImportAsset(fxIdsPath);
+            Debug.Log($"[CueIdVerifier] Generated {fxIdsPath} ({booksInLibraries.Count} book(s) in libraries, {orphans.Count} unsorted).");
         }
 
         // One inner class per book: a const per id (id written once on the book; first const wins on collision).

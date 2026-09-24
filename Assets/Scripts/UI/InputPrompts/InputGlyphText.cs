@@ -22,9 +22,8 @@ using UnityEngine;
 /// </summary>
 public static class InputGlyphText
 {
-    /// <summary>Resources path of the packed TMP sprite asset baked by <c>Bake TMP Glyph Sprite Asset</c>
-    /// (Assets/Resources/Sprites/InputGlyphs.asset).</summary>
-    private const string SpriteAssetResourcePath = "Sprites/InputGlyphs";
+    /// <summary>Resources path of the packed TMP sprite asset baked by <c>Bake TMP Glyph Sprite Asset</c>.</summary>
+    private const string SpriteAssetResourcePath = PoTPaths.ResourceKeys.InputGlyphSpriteAsset;
 
     private static readonly Regex TokenPattern = new Regex(@"\{(\w+)\}", RegexOptions.Compiled);
 

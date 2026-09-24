@@ -466,12 +466,12 @@ namespace PlanetOfTwins.EditorTools
                 string[] gradeNames = { "Grade_Act1_Warm", "Grade_Shock", "Grade_EarlyFear", "Grade_MidPurpose",
                                         "Grade_LateChaos", "Grade_Ending_Losing", "FailureReset_Sting" };
                 var missingProfiles = gradeNames
-                    .Where(n => AssetDatabase.LoadAssetAtPath<VolumeProfile>($"Assets/Settings/Grading/{n}.asset") == null)
+                    .Where(n => PoTAssetLookup.PathsOf<VolumeProfile>(n).Count == 0)   // by name, any folder
                     .ToList();
                 if (missingProfiles.Count > 0)
                     r.Add(ValidationSeverity.Warning,
                         $"Missing grade profile(s): {string.Join(", ", missingProfiles)} — StoryGradeDirector rows will have nothing to play.",
-                        null, "Assets/Settings/Grading")
+                        null, PoTPaths.Create.GradeProfiles)
                         .WithFix("Create grade profiles", GradeProfileAuthoring.CreateAll);
 
                 r.Summary = $"{globals.Count} global volume(s)";
@@ -516,11 +516,9 @@ namespace PlanetOfTwins.EditorTools
         {
             var r = new RecipeResult(EnemyPrefabs);
             int total = 0, healthy = 0;
-            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Models/Prefabs/Enemies" }))
+            foreach (var prefab in PoTAssetLookup.PrefabsWith<Enemy>())   // folder-free: survives prefab moves
             {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab == null || prefab.GetComponent<Enemy>() == null) continue;
+                var path = AssetDatabase.GetAssetPath(prefab);
                 total++;
                 bool ok = true;
 
@@ -713,8 +711,8 @@ namespace PlanetOfTwins.EditorTools
             if (sceneProp != null) sceneProp.stringValue = sceneName;
             sObj.ApplyModifiedPropertiesWithoutUndo();
 
-            string dir = "Assets/Scripts/SceneLoader/Data";
-            if (!AssetDatabase.IsValidFolder(dir)) dir = "Assets";
+            string dir = PoTPaths.Create.WorldLocations;
+            PoTAssetLookup.EnsureFolder(dir);
             string path = AssetDatabase.GenerateUniqueAssetPath($"{dir}/Location_{sceneName}.asset");
             AssetDatabase.CreateAsset(so, path);
             AssetDatabase.SaveAssets();

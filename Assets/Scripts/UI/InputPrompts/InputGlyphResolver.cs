@@ -13,7 +13,7 @@ using UnityEngine;
 /// </summary>
 public static class InputGlyphResolver
 {
-    private const string MapResourcePath = "InputGlyphMap";   // Assets/Resources/InputGlyphMap.asset
+    private const string MapResourcePath = PoTPaths.ResourceKeys.InputGlyphMap;
 
     private static InputGlyphMap _map;
     private static Dictionary<(InputDeviceKind, string), InputGlyphMap.Entry> _lookup;

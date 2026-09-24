@@ -13,9 +13,7 @@ using UnityEngine.VFX;
 /// </summary>
 public static class CheckpointVisualBuilder
 {
-    private const string PrefabPath   = "Assets/Models/Prefabs/Environment/DualCheckpoint.prefab";
-    private const string TrailMatPath = "Assets/Shader/Checkpoint/M_CheckpointTrail.mat";
-    private const string RingMatPath  = "Assets/Art/Materials/UI/M_UIRingTimer_Shared.mat";   // dual-clan ring, used unmodified
+    // The prefab + both materials are found by type + name anywhere under Assets/ (PoTPaths.Named) — folder moves are safe.
     private const string TrailsName   = "Trails";
     private const string RingName     = "HoldRing";
 
@@ -28,15 +26,12 @@ public static class CheckpointVisualBuilder
     [MenuItem("Planet of Twins Tools/Checkpoint/Build Dual Checkpoint Node Visuals")]
     public static void Build()
     {
-        var trailMat = AssetDatabase.LoadAssetAtPath<Material>(TrailMatPath);
-        var ringMat  = AssetDatabase.LoadAssetAtPath<Material>(RingMatPath);
-        if (trailMat == null || ringMat == null)
-        {
-            Debug.LogError($"[CheckpointVisualBuilder] Missing material: trail={trailMat != null} ring={ringMat != null}.");
-            return;
-        }
+        string prefabPath = PoTAssetLookup.FindUniquePath<GameObject>(PoTPaths.Named.DualCheckpointPrefab);
+        var trailMat = PoTAssetLookup.FindUnique<Material>(PoTPaths.Named.CheckpointTrailMaterial);
+        var ringMat  = PoTAssetLookup.FindUnique<Material>(PoTPaths.Named.RingTimerSharedMaterial);   // dual-clan ring, used unmodified
+        if (prefabPath == null || trailMat == null || ringMat == null) return;   // PoTAssetLookup logged which
 
-        var root = PrefabUtility.LoadPrefabContents(PrefabPath);
+        var root = PrefabUtility.LoadPrefabContents(prefabPath);
         try
         {
             var dc = root.GetComponent<DualCheckpoint>();
@@ -46,8 +41,8 @@ public static class CheckpointVisualBuilder
             foreach (var node in root.GetComponentsInChildren<CheckpointNode>(true))
                 if (BuildNode(dc, node, trailMat, ringMat)) built++;
 
-            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
-            Debug.Log($"[CheckpointVisualBuilder] Built visuals on {built} node(s) of {PrefabPath}.");
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Debug.Log($"[CheckpointVisualBuilder] Built visuals on {built} node(s) of {prefabPath}.");
         }
         finally
         {
