@@ -340,7 +340,6 @@ public class WitnessEnemy : Enemy
 
     protected override void HandleDeath()
     {
-        GetComponent<WitnessAuraVFX>()?.StopAll();
         StopAura();                         // stop the held Witness-book aura visual
         ClearBuffs(_lastBuffed);
 

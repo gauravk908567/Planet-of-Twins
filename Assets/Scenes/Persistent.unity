@@ -49187,7 +49187,6 @@ GameObject:
   - component: {fileID: 1203473033}
   - component: {fileID: 1203473035}
   - component: {fileID: 1203473036}
-  - component: {fileID: 1203473037}
   - component: {fileID: 1203473038}
   - component: {fileID: 1203473039}
   - component: {fileID: 1203473040}
@@ -49359,21 +49358,6 @@ MonoBehaviour:
   rightTwin: {fileID: 2052370839900251933}
   skillTreeManager: {fileID: 1429211806}
   flashUI: {fileID: 546973309}
---- !u!114 &1203473037
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1203473025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 166c3cb0fdfc4c3499aae6818e5ac889, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StunVFXSystem
-  _abilitySetup: {fileID: 247002339}
-  _cueBook: {fileID: 11400000, guid: 1e96cacc29f889e40a26876a89237ae7, type: 2}
-  _fx: {fileID: 28317391}
 --- !u!114 &1203473038
 MonoBehaviour:
   m_ObjectHideFlags: 0

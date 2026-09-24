@@ -6,7 +6,7 @@ using UnityEngine;
 /// events from <c>TwinAbilitySetup.StunEvents/PossessEvents</c> (the same source the abilities' own VFX
 /// fire from) — so the glyph can't desync from the effect. On apply it claims the affected enemy's
 /// <c>ManpuSlot</c> for a held→closing arc (R1); on end it releases it. Place on an always-active GO
-/// (e.g. the GameSystem beside <c>ImmobiliseAuraVFX</c>).
+/// (e.g. the GameSystem in Persistent).
 /// </summary>
 public class ManpuAbilityListener : MonoBehaviour
 {
