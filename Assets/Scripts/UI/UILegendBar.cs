@@ -5,8 +5,9 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Phase 1 of the F6 rebinding/legend work — the bottom legend bar of the unified settings screen. Shows the
-/// four navigation affordances (Move / Switch Tab / Select / Back) as device-aware hints that flip
+/// The shared on-screen button legend (unified settings screen, save-slot screen, …) — born as Phase 1 of the F6
+/// rebinding/legend work. Shows the screen's affordances (Move / Switch Tab / Select / Back / Delete — each screen
+/// lists only the ones it uses) as device-aware hints that flip
 /// keyboard↔gamepad LIVE (Overwatch-2 style) via <see cref="LastUsedDeviceTracker"/>, plus an always-on
 /// "who last moved" tag (P1/P2 + device family) so couch players can see which of them is driving the shared
 /// menu cursor.
@@ -17,10 +18,10 @@ using TMPro;
 /// / paired actions (Move = stick/WASD, Switch Tab = shoulders/◄►) have no single control path, so they stay
 /// text. A theme pass swaps the text chips for the full keycap atlas later; nothing here bakes visual polish.</para>
 ///
-/// Lives under ScreenRoot (toggled with the screen), so <see cref="OnEnable"/> refreshes it every time the
+/// Lives under its screen's root (toggled with the screen), so <see cref="OnEnable"/> refreshes it every time the
 /// screen opens; the device-switch event keeps it live while open. No cross-scene refs (R2), no new singleton.
 /// </summary>
-public sealed class SettingsLegendBar : MonoBehaviour
+public sealed class UILegendBar : MonoBehaviour
 {
     public enum LegendAction { Move, SwitchTab, Select, Back, Delete }
 

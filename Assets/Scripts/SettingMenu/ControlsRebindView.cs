@@ -159,7 +159,7 @@ public sealed class ControlsRebindView : MonoBehaviour
     private CanvasGroup _legendP1Group, _legendP2Group;
     private bool _legendBuilt;
     private InputDeviceKind _legendKindP1, _legendKindP2;
-    private SettingsLegendBar _sharedLegend;
+    private UILegendBar _sharedLegend;
 
     private SettingsTabBar TabBar => SettingsScreenController.Instance != null ? SettingsScreenController.Instance.TabBar : null;
 
@@ -751,17 +751,17 @@ public sealed class ControlsRebindView : MonoBehaviour
     }
 
     // ── Two-column bottom device legend (CONTROLS only) ──────────────────────
-    // The shared single legend (SettingsLegendBar) flips keyboard↔pad by last-used device — right for the other tabs
+    // The shared single legend (UILegendBar) flips keyboard↔pad by last-used device — right for the other tabs
     // where one shared cursor drives the menu. CONTROLS has two independent per-player cursors on two device columns,
     // so its legend splits to match: P1's hints in its column's device language, P2's in its own, each FIXED by that
     // column's PairedDeviceKind. Resolve the shared legend once (a sibling UI widget, not a manager — a find is the
     // right tool, same as the InputPromptView sweep); it's hidden while CONTROLS is up and restored on leave.
-    private SettingsLegendBar SharedLegend
+    private UILegendBar SharedLegend
     {
         get
         {
             if (_sharedLegend == null)
-                _sharedLegend = FindFirstObjectByType<SettingsLegendBar>(FindObjectsInactive.Include);
+                _sharedLegend = FindFirstObjectByType<UILegendBar>(FindObjectsInactive.Include);
             return _sharedLegend;
         }
     }

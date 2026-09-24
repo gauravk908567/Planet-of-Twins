@@ -4,7 +4,8 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// The project's Yes/No modal. The settings screen uses three preset confirmations:
+/// The project's shared Yes/No modal (settings screen, save-slot screen, …). The settings screen uses three preset
+/// confirmations:
 ///   • Exit        — "Are you sure you want to exit?" + last-save time (Exit / Cancel).
 ///   • Keep/Revert — after a disruptive display change; auto-reverts on a countdown (Keep / Revert).
 ///   • Restart     — the graphics API only changes on relaunch (Restart Now / Later).
@@ -15,7 +16,7 @@ using TMPro;
 /// screen is open while the game is paused (timeScale 0). Focus lands on the safe choice (Cancel /
 /// Revert / Later) so a stray Submit is never destructive.
 /// </summary>
-public sealed class SettingsConfirmDialog : MonoBehaviour
+public sealed class UIConfirmDialog : MonoBehaviour
 {
     [SerializeField] private GameObject _root;
     [SerializeField] private TMP_Text _titleText;

@@ -313,7 +313,7 @@ public static class UnifiedSettingsScreenBuilder
     }
 
     // ── Legend bar (Phase 1: device-aware nav hints + who-last-moved tag) ──
-    private static SettingsLegendBar BuildLegendBar(RectTransform screenRoot)
+    private static UILegendBar BuildLegendBar(RectTransform screenRoot)
     {
         var bar = NewUI("LegendBar", screenRoot); AnchorBottom(bar, LegendHeight); AddImage(bar.gameObject, CBar);
         var hlg = bar.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -322,13 +322,13 @@ public static class UnifiedSettingsScreenBuilder
         hlg.padding = new RectOffset(24, 24, 8, 8); hlg.spacing = 26;
         hlg.childAlignment = TextAnchor.MiddleLeft;
 
-        var comp = bar.gameObject.AddComponent<SettingsLegendBar>();
+        var comp = bar.gameObject.AddComponent<UILegendBar>();
 
-        var items = new List<(SettingsLegendBar.LegendAction action, Image icon, TMP_Text key, TMP_Text label)>();
+        var items = new List<(UILegendBar.LegendAction action, Image icon, TMP_Text key, TMP_Text label)>();
         var order = new[]
         {
-            SettingsLegendBar.LegendAction.Move, SettingsLegendBar.LegendAction.SwitchTab,
-            SettingsLegendBar.LegendAction.Select, SettingsLegendBar.LegendAction.Back,
+            UILegendBar.LegendAction.Move, UILegendBar.LegendAction.SwitchTab,
+            UILegendBar.LegendAction.Select, UILegendBar.LegendAction.Back,
         };
         foreach (var a in order) items.Add(BuildLegendItem(bar, a));
 
@@ -343,8 +343,8 @@ public static class UnifiedSettingsScreenBuilder
         return comp;
     }
 
-    private static (SettingsLegendBar.LegendAction, Image, TMP_Text, TMP_Text) BuildLegendItem(
-        Transform parent, SettingsLegendBar.LegendAction action)
+    private static (UILegendBar.LegendAction, Image, TMP_Text, TMP_Text) BuildLegendItem(
+        Transform parent, UILegendBar.LegendAction action)
     {
         var group = NewUI("Legend_" + action, parent);
         var hlg = group.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -369,8 +369,8 @@ public static class UnifiedSettingsScreenBuilder
         return (action, icon, key, label);
     }
 
-    private static void WireLegend(SettingsLegendBar comp,
-        List<(SettingsLegendBar.LegendAction action, Image icon, TMP_Text key, TMP_Text label)> items, TMP_Text tag)
+    private static void WireLegend(UILegendBar comp,
+        List<(UILegendBar.LegendAction action, Image icon, TMP_Text key, TMP_Text label)> items, TMP_Text tag)
     {
         var so = new SerializedObject(comp);
         var arr = so.FindProperty("_items");
@@ -388,10 +388,10 @@ public static class UnifiedSettingsScreenBuilder
     }
 
     // ── Confirm dialog ────────────────────────────────────────────────
-    private static GameObject BuildConfirmDialog(RectTransform parent, out SettingsConfirmDialog comp)
+    private static GameObject BuildConfirmDialog(RectTransform parent, out UIConfirmDialog comp)
     {
         var host = NewUI("ConfirmDialog", parent); Stretch(host);
-        comp = host.gameObject.AddComponent<SettingsConfirmDialog>();
+        comp = host.gameObject.AddComponent<UIConfirmDialog>();
 
         var dRoot = NewUI("DialogRoot", host); Stretch(dRoot);
         var dim = NewUI("Dim", dRoot); Stretch(dim); AddImage(dim.gameObject, new Color(0f, 0f, 0f, 0.6f));
@@ -442,7 +442,7 @@ public static class UnifiedSettingsScreenBuilder
     }
 
     private static void WireController(SettingsScreenController ctl, GameObject screenRoot,
-        SettingsTabBar bar, SettingsConfirmDialog dlg, ControlsRebindView controls)
+        SettingsTabBar bar, UIConfirmDialog dlg, ControlsRebindView controls)
     {
         var so = new SerializedObject(ctl);
         so.FindProperty("_screenRoot").objectReferenceValue = screenRoot;
@@ -489,7 +489,7 @@ public static class UnifiedSettingsScreenBuilder
         return null;
     }
 
-    private static void WireDialog(SettingsConfirmDialog dlg, GameObject root, TMP_Text title, TMP_Text msg,
+    private static void WireDialog(UIConfirmDialog dlg, GameObject root, TMP_Text title, TMP_Text msg,
         Button confirm, TMP_Text confirmLbl, Button cancel, TMP_Text cancelLbl)
     {
         var so = new SerializedObject(dlg);

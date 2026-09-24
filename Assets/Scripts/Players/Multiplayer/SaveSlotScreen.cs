@@ -17,7 +17,7 @@ using UnityEngine.UI;
 /// the boot path.</item>
 /// </list>
 /// In both modes an occupied slot can be <b>deleted</b> (pad X / keyboard Delete on the focused slot), also after a
-/// confirmation. The shared <see cref="SettingsConfirmDialog"/> asks both questions; focus starts on its safe choice.</para>
+/// confirmation. The shared <see cref="UIConfirmDialog"/> asks both questions; focus starts on its safe choice.</para>
 ///
 /// <para>On pick: the mode + slot are RECORDED in <see cref="SessionSetup.SetMode"/> — this screen lives in the
 /// FrontEnd scene, which runs BEFORE Persistent loads, so SaveService doesn't exist yet (calling it here was a
@@ -29,7 +29,7 @@ using UnityEngine.UI;
 /// <para><b>Input</b> (BUG-116): the shared EventSystem navigation, same as the Main Menu — ANY device (both pads,
 /// keyboard, mouse) moves the focus glow among pickable slots + Back (<see cref="UINavStyle"/> / <see cref="UINavFocus"/>),
 /// Submit (A / Enter) picks, UI Cancel (B / Esc) = Back (or closes the dialog). Delete = <c>UIDelete</c> on either
-/// player's device (<see cref="PlayerInputRouter.SharedInput"/>). The on-screen <see cref="SettingsLegendBar"/> shows
+/// player's device (<see cref="PlayerInputRouter.SharedInput"/>). The on-screen <see cref="UILegendBar"/> shows
 /// the buttons; its Delete hint appears only while the focused slot holds a save.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -57,9 +57,9 @@ public class SaveSlotScreen : MonoBehaviour
 
     [Header("Confirm + legend")]
     [Tooltip("Yes/No dialog for overwrite + delete (same component the settings screen uses).")]
-    [SerializeField] private SettingsConfirmDialog confirmDialog;
+    [SerializeField] private UIConfirmDialog confirmDialog;
     [Tooltip("Button legend (Select / Delete / Back) — refreshed on show; flips keyboard↔pad live by itself.")]
-    [SerializeField] private SettingsLegendBar legend;
+    [SerializeField] private UILegendBar legend;
     [Tooltip("The legend's Delete chip — shown only while the focused slot holds a save.")]
     [SerializeField] private GameObject deleteHint;
 

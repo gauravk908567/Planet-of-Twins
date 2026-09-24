@@ -3387,7 +3387,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7315e41a00a46c748b6e6ed8ca751700, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SettingsConfirmDialog
+  m_EditorClassIdentifier: Assembly-CSharp::UIConfirmDialog
   _root: {fileID: 1176965904}
   _titleText: {fileID: 945656512}
   _messageText: {fileID: 1381307850}
@@ -3583,7 +3583,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2f4795fd93aa314780259d159910067, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SettingsLegendBar
+  m_EditorClassIdentifier: Assembly-CSharp::UILegendBar
   _items:
   - action: 2
     icon: {fileID: 1379250573}

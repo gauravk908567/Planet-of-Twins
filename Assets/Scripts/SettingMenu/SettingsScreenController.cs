@@ -21,7 +21,7 @@ public sealed class SettingsScreenController : MonoBehaviour
     [Tooltip("The toggled visual root (tab bar + panels). Inactive by default; activated on Open().")]
     [SerializeField] private GameObject _screenRoot;
     [SerializeField] private SettingsTabBar _tabBar;
-    [SerializeField] private SettingsConfirmDialog _confirmDialog;
+    [SerializeField] private UIConfirmDialog _confirmDialog;
     [Tooltip("F6 Phase 3 — the CONTROLS tab's rebind view. Lets Back route per-player while a player is editing.")]
     [SerializeField] private ControlsRebindView _controls;
     [Tooltip("ON only for the copy on the MAIN MENU (FrontEnd): Resume reads \"Back\" and just closes the screen (no " +
