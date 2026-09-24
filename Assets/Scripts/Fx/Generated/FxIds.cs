@@ -175,6 +175,11 @@ public static class FxIds
     }
     public static class Unsorted
     {
+        public static class CueBook_Reactions
+        {
+            public const string betrayed = "betrayed";
+            public const string ally_down = "ally_down";
+        }
         public static class KillParticleBook
         {
             public const string kill_seq = "kill_seq";
@@ -189,11 +194,6 @@ public static class FxIds
             public const string spawn_hit = "spawn_hit";
             public const string spawn_disable = "spawn_disable";
             public const string spawn_portal = "spawn_portal";
-        }
-        public static class CueBook_Reactions
-        {
-            public const string betrayed = "betrayed";
-            public const string ally_down = "ally_down";
         }
     }
 }
