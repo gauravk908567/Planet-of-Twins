@@ -125,35 +125,6 @@ public static class InputGlyphText
 
     private static string Wrap(string glyph, Color c) => $"<color=#{ColorUtility.ToHtmlStringRGB(c)}>{glyph}</color>";
 
-    /// <summary>Inline markup for one action that BOTH players must press (a joint prompt): one glyph when both
-    /// players share a device KIND, else both glyphs side by side (<paramref name="providerA"/>'s first) — the same
-    /// rule as <see cref="ApplyJoint(TMP_Text, IInputProvider, IInputProvider, string)"/>.</summary>
-    public static string GlyphJoint(IInputProvider providerA, IInputProvider providerB, string actionName)
-    {
-        bool sameKind = providerB == null ||
-                        InputGlyphResolver.ResolveKind(providerA) == InputGlyphResolver.ResolveKind(providerB);
-        return sameKind ? Glyph(providerA, actionName)
-                        : Glyph(providerA, actionName) + " " + Glyph(providerB, actionName);
-    }
-
-    /// <summary>Like <see cref="Format"/> but each <c>{Action}</c> token expands via <see cref="GlyphJoint"/> —
-    /// for a sentence both players act on, e.g. <c>"Hold {Cancel} to save checkpoint"</c>.</summary>
-    public static string FormatJoint(string template, IInputProvider providerA, IInputProvider providerB)
-    {
-        if (string.IsNullOrEmpty(template)) return template;
-        return TokenPattern.Replace(template, m => GlyphJoint(providerA, providerB, m.Groups[1].Value));
-    }
-
-    /// <summary>Joint-prompt entry point: assign the sprite asset once, then set <paramref name="label"/> to
-    /// <paramref name="template"/> with every token expanded for both players (<see cref="FormatJoint"/>).</summary>
-    public static void ApplyJointFormat(TMP_Text label, string template, IInputProvider providerA, IInputProvider providerB)
-    {
-        if (label == null) return;
-        var asset = SpriteAsset;
-        if (asset != null && label.spriteAsset != asset) label.spriteAsset = asset;
-        label.text = FormatJoint(template, providerA, providerB);
-    }
-
     // ── Ability-HUD keycap: the KEY as a glowing letter (kb) / device icon (pad) ───────────────────────────────
     // Track D redesign: the ability-HUD keycap drops the Kenney keycap-BOX sprite. For KEYBOARD the bare key LETTER
     // (e.g. "Q") is the glyph — it becomes the clan-colour GLOW hero (a TMP glow material on the label). For a
