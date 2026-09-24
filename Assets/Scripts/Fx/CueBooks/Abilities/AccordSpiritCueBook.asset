@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CueBookData
   timeMode: 1
   effects:
-  - id: on_accspiritknocback
+  - id: on_accspiritknockback
     elements:
     - label: impact
       kind: 0

@@ -16,7 +16,7 @@ public class SummonerEnemy : RangedEnemy
 {
     // ── VFX cue override (EnemyVfxLibrary, R4) — Summoner's own ranged attack ──
     public override CueBookData VfxBook => VfxLibraryProvider.Instance?.Enemy?.Summoner;
-    protected override string RangedAttackCueId => FxIds.Enemy.Summoner.On_smmAttack;
+    protected override string RangedAttackCueId => FxIds.Enemy.Summoner.On_smnAttack;
 
     public bool IsSummoning { get; private set; } = false;
     public bool CanSummon => !IsSummoning

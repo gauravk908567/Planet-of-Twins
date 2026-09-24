@@ -77,7 +77,7 @@ MonoBehaviour:
       timeMode: 0
       canCut: 0
       cuts: []
-  - id: On_smmAttack
+  - id: On_smnAttack
     elements:
     - label: 
       kind: 0

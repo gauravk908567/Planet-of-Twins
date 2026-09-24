@@ -29,7 +29,7 @@ public static class FxIds
         public static class Summoner
         {
             public const string On_smnSummon = "On_smnSummon";
-            public const string On_smmAttack = "On_smmAttack";
+            public const string On_smnAttack = "On_smnAttack";
         }
         public static class TetherBreaker
         {
@@ -49,7 +49,7 @@ public static class FxIds
         }
         public static class Severed
         {
-            public const string On_SevererdAttack = "On_SevererdAttack";
+            public const string On_SeveredAttack = "On_SeveredAttack";
             public const string On_SeveredRage = "On_SeveredRage";
         }
         public static class Siphon
@@ -140,7 +140,7 @@ public static class FxIds
         }
         public static class AccordSpirit
         {
-            public const string on_accspiritknocback = "on_accspiritknocback";
+            public const string on_accspiritknockback = "on_accspiritknockback";
             public const string on_accspiritKai = "on_accspiritKai";
             public const string on_accspiritLyra = "on_accspiritLyra";
             public const string on_accspiritKaiportal = "on_accspiritKaiportal";
@@ -175,6 +175,10 @@ public static class FxIds
     }
     public static class Unsorted
     {
+        public static class KillParticleBook
+        {
+            public const string kill_seq = "kill_seq";
+        }
         public static class RitualSiteCueBook
         {
             public const string On_Occupy = "On_Occupy";

@@ -50,6 +50,6 @@ public class KillParticleSpawner : MonoBehaviour
         if (_cueBook == null) return;
         _fx ??= FxManager.Instance;   // R4
         // sizeScale (enemy bounds vs 2 m humanoid) auto-fits the death helix + burst to the body.
-        _fx?.PlayBook(_cueBook, "kill_seq", new CueContext(deathPosition, scale: sizeScale));
+        _fx?.PlayBook(_cueBook, FxIds.Unsorted.KillParticleBook.kill_seq, new CueContext(deathPosition, scale: sizeScale));
     }
 }

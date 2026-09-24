@@ -18,7 +18,7 @@ public class SeveredEnemy : Enemy
 {
     // ── VFX cue (EnemyVfxLibrary, R4) ──
     public override CueBookData VfxBook => VfxLibraryProvider.Instance?.Enemy?.Severed;
-    protected override string MeleeAttackCueId => FxIds.Enemy.Severed.On_SevererdAttack;
+    protected override string MeleeAttackCueId => FxIds.Enemy.Severed.On_SeveredAttack;
 
     [Header("Severed — injected at spawn, leave empty on prefab")]
     [SerializeField] private SeveredEnemy _partner;

@@ -240,7 +240,7 @@ public class AccordSpiritSystem : MonoBehaviour, IAbilityHUDSource
         _cueBook ??= VfxLibraryProvider.Instance?.Player?.AccordSpirit;  // R4 — book from PlayerVfxLibrary
         if (_cueBook == null) return;
         // Summon knockback burst on the twin (visual only — no hitbox). simSpeed: fast.
-        _fx?.PlayBook(_cueBook, FxIds.Player.AccordSpirit.on_accspiritknocback, CueContext.Follow(twin.transform, simSpeed: 2.5f));
+        _fx?.PlayBook(_cueBook, FxIds.Player.AccordSpirit.on_accspiritknockback, CueContext.Follow(twin.transform, simSpeed: 2.5f));
     }
 
     // Unlocked via DualCast/AccordSpirit node — no Empower dependency

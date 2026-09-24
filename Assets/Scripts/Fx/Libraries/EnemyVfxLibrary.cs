@@ -23,7 +23,7 @@ public class EnemyVfxLibrary : ScriptableObject
     public CueBookData Melee;
     [Tooltip("Ranged enemy — e.g. \"On_RangedAttack\".")]
     public CueBookData Ranged;
-    [Tooltip("Summoner — e.g. \"On_smnSummon\", \"On_smmAttack\".")]
+    [Tooltip("Summoner — e.g. \"On_smnSummon\", \"On_smnAttack\".")]
     public CueBookData Summoner;
 
     [Header("Grab / chain")]
@@ -33,7 +33,7 @@ public class EnemyVfxLibrary : ScriptableObject
     public CueBookData GroupGrab;
 
     [Header("Severed / Siphon")]
-    [Tooltip("Severed — \"On_SevererdAttack\" (rage moves to the Manpu layer later).")]
+    [Tooltip("Severed — \"On_SeveredAttack\" (rage moves to the Manpu layer later).")]
     public CueBookData Severed;
     [Tooltip("Siphon — ranged / ghost-spawn + its bomb's fuse/impact ids (handed to the bomb).")]
     public CueBookData Siphon;
