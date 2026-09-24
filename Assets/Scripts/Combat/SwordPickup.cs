@@ -6,6 +6,7 @@ using UnityEngine;
 /// prefab — R1). There is NO cross-scene reference to the Persistent twin's sword GO (the old `_playerSwordGO`
 /// was R2-broken — Unity nulled it because this pickup lives in the area scene). Checkpoint restore goes
 /// through <c>SoftResetController</c> → the twins' <c>SetHasWeapon</c> directly, not this pickup.
+/// A twin that already has a sword walks through without taking it, so one player can't grab both swords.
 ///
 /// SETUP:
 ///   - Collider on this GO: Is Trigger ON.
@@ -42,6 +43,7 @@ public class SwordPickup : MonoBehaviour
 
         var attackController = other.GetComponentInParent<PlayerAttackController>();
         if (attackController == null) return;
+        if (attackController.HasWeapon) return;   // already armed → leave this sword for the partner (co-op)
 
         attackController.SetHasWeapon(true);   // the twin activates its own sword GO (R1) — no cross-scene ref
         gameObject.SetActive(false);
