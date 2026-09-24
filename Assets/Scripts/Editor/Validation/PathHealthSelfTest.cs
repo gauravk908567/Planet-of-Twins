@@ -15,6 +15,7 @@ using UnityEngine.Rendering.Universal;
 ///   • every Named asset exists exactly once under Assets/, as the type its tool expects;
 ///   • every Create / Scan folder exists (a stale one would silently re-grow the old tree / scan nothing);
 ///   • baked Resources assets land on their runtime key (the Create.BakedResources root is a Resources folder);
+///   • every Scene Health waiver still points at an existing scene (waivers are keyed by scene GUID);
 ///   • the folder-free enemy-prefab scan still finds enemies;
 ///   • no PoTPaths entry goes unchecked (a new key/name without a typed row below is itself a FAIL).
 /// LogError per failure + one summary line. Run after EVERY restructure batch (and before committing one).
@@ -87,6 +88,12 @@ public static class PathHealthSelfTest
         // ── Baked Resources assets resolve on their runtime key ──
         Check(PoTPaths.Create.BakedResources.EndsWith("/Resources"),
               $"PoTPaths.Create.BakedResources '{PoTPaths.Create.BakedResources}' is not a Resources folder — a first bake would be unloadable");
+
+        // ── Scene Health waivers still point at an existing scene (keyed by scene GUID) ──
+        var orphanWaivers = PlanetOfTwins.EditorTools.SceneHealthWaivers.OrphanedKeys();
+        Check(orphanWaivers.Count == 0,
+              $"{orphanWaivers.Count} Scene Health waiver(s) point at no existing scene (deleted, or a pre-GUID path key): " +
+              string.Join(" | ", orphanWaivers));
 
         // ── Folder-free scans still find their content ──
         int enemies = PoTAssetLookup.PrefabsWith<Enemy>().Count;
