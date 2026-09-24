@@ -110,6 +110,8 @@ public class CharacterSelectScreen : MonoBehaviour
     {
         if (controller == null || panel == null || !panel.activeSelf || controller.IsComplete) return;
 
+        if (UINavFocus.CancelPressedThisFrame()) { RaiseBack(); return; }   // B / Esc from any device (BUG-116)
+
         PollSlot(PlayerSlot.One);
         // Slot Two only when a distinct second device is paired (couch). Solo → P2 falls back to P1, so reading
         // it would move both markers off one stick; the mouse handles P2 in that case.

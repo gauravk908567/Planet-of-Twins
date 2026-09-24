@@ -180,6 +180,18 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
         RefreshCounter();
     }
 
+    /// <summary>Save-state restore (§11.1): set the soul counter to the checkpoint value and land in a clean
+    /// idle. <c>_charged</c> is DERIVED (souls ≥ cap), never serialized. Called AFTER skills restore (SC only
+    /// accrues once unlocked) and AFTER the load-time force-end, so the buff window is already off.</summary>
+    public void RestoreSouls(int count)
+    {
+        _abilityActive = false;
+        _chargeProgress = 0f;
+        _soulCount = Mathf.Clamp(count, 0, _soulCap);
+        _charged = _soulCount >= _soulCap;
+        RefreshCounter();
+    }
+
     // ── Update ────────────────────────────────────────────────
     void Update()
     {

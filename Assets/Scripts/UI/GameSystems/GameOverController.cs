@@ -29,6 +29,9 @@ public class GameOverController : MonoBehaviour
 
         if (loadCheckpointButton != null)
             loadCheckpointButton.onClick.AddListener(LoadCheckpoint);
+
+        // Item 1 (controller nav, BUG-116): pad/keyboard-traversable buttons + the shared focus glow.
+        UINavStyle.Apply(gameOverPanel);
     }
 
     private void Start()
@@ -71,6 +74,12 @@ public class GameOverController : MonoBehaviour
 
         RefreshCheckpointButton();
         gameOverPanel?.SetActive(true);
+
+        // Controller focus (BUG-116): any device can pick. Land on Load Checkpoint when one exists (the respawn
+        // path), else Restart. Wrap wired after interactability is settled so a disabled button is skipped.
+        UINavStyle.WireWrap(gameOverPanel);
+        bool canLoad = loadCheckpointButton != null && loadCheckpointButton.interactable;
+        UINavFocus.Focus(canLoad ? loadCheckpointButton : restartButton);
 
         // FIX: disable raycast blocking on all sibling panels in the same canvas.
         // Other HUD panels (RescuePanel, SoulTimerPanel, AbilitiesHUD etc.) sit in

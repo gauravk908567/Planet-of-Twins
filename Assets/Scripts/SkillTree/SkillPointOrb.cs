@@ -25,7 +25,13 @@
 //   - On the far side of the arena from spawn = forces traversal
 //   - Never directly at the twins' starting position
 // ─────────────────────────────────────────────────────────────────────────────
-public class SkillPointOrb : MonoBehaviour
+//
+// SAVE-STATE (game.md §11.1): collecting sets a world flag (auto-keyed scene+position, or _worldFlagKey
+// override). Collect HIDES the orb (renderers/colliders off) instead of destroying it, so it stays
+// registered: Continue / area re-stream keeps a collected orb hidden (no double point), and a respawn
+// that rolls points back to the checkpoint also rolls the orb back (re-shown — the point isn't lost).
+// ─────────────────────────────────────────────────────────────────────────────
+public class SkillPointOrb : MonoBehaviour, WorldFlagRegistry.IWorldFlagObject
 {
     [Header("Inject — OPTIONAL same-scene slot. Leave empty in area scenes (resolves at runtime, R4).")]
     [Tooltip("SkillTreeManager lives in Persistent now — do NOT drag it across scenes (R2). " +
@@ -44,13 +50,50 @@ public class SkillPointOrb : MonoBehaviour
     [SerializeField] private float _bobAmplitude = 0.15f;
     [SerializeField] private float _bobSpeed = 2.0f;
 
+    [Header("Save-state (§11.1)")]
+    [Tooltip("OPTIONAL override. Empty = auto-key from scene + authored position (recommended for bulk orbs). " +
+             "Set only if this orb must keep its identity after being moved in the editor.")]
+    [SerializeField] private string _worldFlagKey = "";
+
     private Vector3 _basePosition;
     private bool _collected = false;
+    private string _key;
+    private Renderer[] _renderers;   // incl. the root VFXRenderer
+    private Collider[] _colliders;
 
     void Awake()
     {
         _pointBank = _pointBankMono as IPointBank;   // optional same-scene slot (R1)
         _basePosition = transform.position;
+        _key = string.IsNullOrEmpty(_worldFlagKey)
+            ? WorldFlagRegistry.PositionKey("orb", gameObject, _basePosition)
+            : _worldFlagKey;
+        _renderers = GetComponentsInChildren<Renderer>(true);
+        _colliders = GetComponentsInChildren<Collider>(true);
+    }
+
+    // R5: self-register + self-apply on stream-in (covers restore-before-stream); Restore() re-applies live orbs.
+    void OnEnable()
+    {
+        WorldFlagRegistry.Instance?.Register(this);
+        ApplyWorldFlags();
+    }
+
+    void OnDisable() => WorldFlagRegistry.Instance?.Unregister(this);
+
+    /// <summary>WorldFlagRegistry hook — collected iff the flag is set. Two-way: a respawn that restores an
+    /// older flag set re-shows an orb collected after the checkpoint (its point was rolled back too).</summary>
+    public void ApplyWorldFlags()
+    {
+        bool collected = WorldFlagRegistry.Instance != null && WorldFlagRegistry.Instance.IsSet(_key);
+        _collected = collected;
+        SetPresent(!collected);
+    }
+
+    void SetPresent(bool present)
+    {
+        foreach (var r in _renderers) if (r != null) r.enabled = present;
+        foreach (var c in _colliders) if (c != null) c.enabled = present;
     }
 
     void Start()
@@ -81,9 +124,12 @@ public class SkillPointOrb : MonoBehaviour
         _collected = true;
 
         _pointBank?.AddPoints(1);
+        var reg = WorldFlagRegistry.Instance;
+        reg?.Set(_key);        // persist the pickup (§11.1)
+        reg?.Register(this);   // idempotent — covers direct-play, where OnEnable ran before Persistent existed
 
         // TODO: play collect sound / VFX here
-        Destroy(gameObject);
+        SetPresent(false);   // hide, don't Destroy — must stay registered so a respawn can roll it back
     }
 
     void OnDrawGizmosSelected()

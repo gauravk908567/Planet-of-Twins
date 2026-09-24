@@ -47,6 +47,10 @@ public class SkyStateDriver : MonoBehaviour
 
     private Coroutine _blend;
     private VolumetricFogVolumeComponent _fogComp;   // resolved from _fogProfile in Awake (null = fog untouched)
+    private string _currentStateId;                  // the last state applied/targeted — the save-state snapshot value (§11.1)
+
+    /// <summary>The id of the current sky state (last ApplyState/BlendTo target) — captured into the save slot.</summary>
+    public string CurrentStateId => _currentStateId;
 
 #if UNITY_EDITOR
     private Material _editorSnapshot;   // exact-value restore so play mode never dirties the asset
@@ -113,6 +117,7 @@ public class SkyStateDriver : MonoBehaviour
         if (s == null) return;
         if (_blend != null) { StopCoroutine(_blend); _blend = null; }
         Write(s, s, 1f);
+        _currentStateId = id;
         DynamicGI.UpdateEnvironment();
     }
 
@@ -122,6 +127,7 @@ public class SkyStateDriver : MonoBehaviour
         var target = Find(id);
         if (target == null) return;
         if (_blend != null) StopCoroutine(_blend);
+        _currentStateId = id;   // the sky's logical destination — what a mid-blend checkpoint should save
         _blend = StartCoroutine(BlendRoutine(target, Mathf.Max(0.01f, seconds)));
     }
 

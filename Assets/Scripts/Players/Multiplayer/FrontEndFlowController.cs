@@ -5,9 +5,10 @@ using UnityEngine;
 /// Couch M2 — front-end sequencer (Persistent, R3 singleton). Runs the pre-game flow:
 /// <b>Start Menu → (New Game | Continue) → Save-Slot select → Character Select → writes PlayerRoster → done</b>.
 ///
-/// <para><see cref="GameBootstrapper"/> calls <see cref="Begin"/> after Persistent loads (so the roster
-/// exists) and waits on <see cref="IsFrontEndComplete"/> before loading the area. It then reads
-/// <see cref="SaveService.PendingLoad"/> to branch: New Game → intro/cutscene, Continue → load the saved area.
+/// <para><see cref="GameBootstrapper"/> calls <see cref="Begin"/> (FrontEnd scene, BEFORE Persistent loads) and
+/// waits on <see cref="IsFrontEndComplete"/>. The choice travels via <see cref="SessionSetup"/> (mode + slot +
+/// twin pick); the bootstrapper branches on <see cref="SessionSetup.Mode"/>: New Game → intro/cutscene,
+/// Continue → load Persistent + the saved area (SaveService stages the save from SessionSetup on Awake).
 /// Both front-end modes run Character Select (the user may swap seats between sessions — the save is progress,
 /// not seat assignment). <b>Fail-open</b>: if the core UI refs are unwired it logs and completes immediately so
 /// boot still reaches gameplay; the save-slot screen is <b>optional</b> (unwired → skip straight to select).</para>
@@ -68,11 +69,11 @@ public class FrontEndFlowController : MonoBehaviour
         if (saveSlots != null) { saveSlots.SlotChosen += OnSlotChosen; saveSlots.BackRequested += OnSlotBack; }
         characterSelect.BackRequested += OnBack;
 
-        // Save/Continue feature gate: the save-slot screen appears only when the feature is live. While it's
-        // dormant (SaveService.enableSaving off — world-state contract deferred), the flow is menu → New Game →
-        // Character Select, exactly as before slice 4. Continue is greyed by MainMenuController in that state, so
-        // only New Game can fire here.
-        bool useSlots = saveSlots != null && SaveService.Instance != null && SaveService.Instance.SavingEnabled;
+        // The save-slot screen runs whenever it's wired. (It used to be gated on SaveService.SavingEnabled, but this
+        // scene runs BEFORE Persistent loads → SaveService.Instance was always null → the slot screen was always
+        // skipped and no slot was ever chosen.) The chosen mode + slot are recorded in SessionSetup; Persistent's
+        // SaveService applies them on load. enableSaving remains the kill switch for disk WRITES.
+        bool useSlots = saveSlots != null;
 
         // Loop: Start Menu → (Save-Slot) → Character Select. Back from either sub-screen returns to the menu;
         // Character-Select completion (both twins assigned) exits.

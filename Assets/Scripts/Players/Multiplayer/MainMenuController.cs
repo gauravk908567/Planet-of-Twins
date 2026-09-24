@@ -49,7 +49,16 @@ public class MainMenuController : MonoBehaviour
     public void Show()
     {
         // Re-evaluate Continue each time the menu shows — a save may have been written since the last visit.
-        if (continueButton != null) continueButton.interactable = AnySaveExists();
+        // BUG-118: the art is authored in its normal (lit) state; "no save" dims the WHOLE button (bg + label) —
+        // the Button's ColorTint alone only tints the background, leaving a bright label that reads as clickable.
+        if (continueButton != null)
+        {
+            bool canContinue = AnySaveExists();
+            continueButton.interactable = canContinue;
+            var cg = continueButton.GetComponent<CanvasGroup>();
+            if (cg == null) cg = continueButton.gameObject.AddComponent<CanvasGroup>();
+            cg.alpha = canContinue ? 1f : 0.35f;
+        }
         if (panel != null) panel.SetActive(true);
 
         // P-C (controller nav): wire wrap-around AFTER Continue's interactable is set this showing, so a
@@ -65,10 +74,11 @@ public class MainMenuController : MonoBehaviour
 
     private static bool AnySaveExists()
     {
-        // Feature gate: while save/Continue is dormant, Continue stays disabled even if a stale test-save file
-        // lingers on disk (see SaveService.enableSaving — world-state contract deferred until post-couch).
-        if (SaveService.Instance == null || !SaveService.Instance.SavingEnabled) return false;
-        for (int i = 0; i < SaveSystem.SlotCount; i++) if (SaveSystem.HasSave(i)) return true;
+        // FrontEnd runs BEFORE Persistent loads, so SaveService doesn't exist here (the old SaveService gate was
+        // always null → Continue was permanently greyed). Gate on the disk instead: Continue lights up only when a
+        // slot holds a save that would actually LOAD (current version, parseable) — a stale v1 / corrupt file never
+        // enables a Continue that then fails.
+        for (int i = 0; i < SaveSystem.SlotCount; i++) if (SaveSystem.HasLoadableSave(i)) return true;
         return false;
     }
 

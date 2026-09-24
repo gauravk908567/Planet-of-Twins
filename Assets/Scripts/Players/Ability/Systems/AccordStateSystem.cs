@@ -166,6 +166,9 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
 
     // ── Public accessors (HUD / slider) ──────────────────────
     public float BarProgress => BarCap > 0f ? Mathf.Clamp01(_barPoints / BarCap) : 0f;
+    /// <summary>Raw accord bar points (0..BarCap) — the save-state value (§11.1). Restoring raw points rather
+    /// than the 0..1 progress keeps precision and is correct even though BarCap is upgrade-derived.</summary>
+    public float BarPoints => _barPoints;
     public float ChargeProgress => _chargeProgress;
     public float ActiveTimeRemaining => Mathf.Max(0f, ActiveDuration - _activeTimer);
     public float ActiveProgress => ActiveDuration > 0f
@@ -309,6 +312,10 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         // Block if teleport cancel window is open — X is claimed by teleport cancel
         if (IsTeleportCancelWindowOpen()) return;
 
+        // Block if a dual-node checkpoint is claiming X for its save-hold (game.md §11.2) — while both twins
+        // stand on the checkpoint nodes, X means "save", not "charge Accord".
+        if (CheckpointManager.Instance != null && CheckpointManager.Instance.InputClaimActive) return;
+
         if (!JointCancelHeld()) return;
 
         _chargeProgress = 0f;
@@ -340,6 +347,15 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
 
         // Cancel charge if teleport cancel window opens mid-charge
         if (IsTeleportCancelWindowOpen())
+        {
+            StopChargeVFX();
+            _chargeProgress = 0f;
+            _chargeState = ChargeState.Idle;
+            return;
+        }
+
+        // Cancel charge if a checkpoint claims X mid-charge (§11.2) — the save-hold takes X over Accord.
+        if (CheckpointManager.Instance != null && CheckpointManager.Instance.InputClaimActive)
         {
             StopChargeVFX();
             _chargeProgress = 0f;
@@ -451,6 +467,18 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
     {
         _barPoints = Mathf.Min(_barPoints + points, BarCap);
         if (_barPoints >= BarCap) _barFull = true;
+    }
+
+    /// <summary>Save-state restore (§11.1): set the accord bar to the checkpoint value and land in a clean
+    /// idle. <c>_barFull</c> is DERIVED (points ≥ BarCap), never serialized. Called AFTER skills restore so
+    /// <see cref="BarCap"/> reflects the restored upgrade level, and AFTER the load-time force-end.</summary>
+    public void RestoreBar(float points)
+    {
+        _isActive = false;
+        _chargeState = ChargeState.Idle;
+        _chargeProgress = 0f;
+        _barPoints = Mathf.Clamp(points, 0f, BarCap);
+        _barFull = _barPoints >= BarCap;
     }
 
     // ── Activation ────────────────────────────────────────────

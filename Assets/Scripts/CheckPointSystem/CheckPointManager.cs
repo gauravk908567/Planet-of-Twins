@@ -31,6 +31,18 @@ public class CheckpointManager : MonoBehaviour
     // ── State ─────────────────────────────────────────────────
     public bool HasCheckpoint { get; private set; } = false;
     private CheckpointData _saved;
+    /// <summary>Diagnostic view of the last in-memory checkpoint (GameDebuggerV2). Read-only by convention — never mutate.</summary>
+    public CheckpointData LastSaved => _saved;
+
+    // ── Checkpoint input claim (§11.2) ────────────────────────
+    // A DualCheckpoint claims X (the Accord button) while both twins stand on its nodes, so the hold means
+    // "save" and not "charge Accord". AccordStateSystem reads InputClaimActive and blocks itself. Ref-counted
+    // so overlapping claims can't clear each other early (only one checkpoint can hold both twins at a time,
+    // but the count is the robust, R5-clean mediator for the area→Persistent hop).
+    private int _inputClaims;
+    public bool InputClaimActive => _inputClaims > 0;
+    public void RequestInputClaim() => _inputClaims++;
+    public void ReleaseInputClaim() { if (_inputClaims > 0) _inputClaims--; }
 
     // ── Public API ────────────────────────────────────────────
     public void SaveCheckpoint(Vector3 leftPos, Vector3 rightPos, WorldLocationSO location = null)
@@ -48,7 +60,17 @@ public class CheckpointManager : MonoBehaviour
                                 ?? SkillTreeRuntimeState.Snapshot.Empty,
             leftHasSword = leftAttack?.HasWeapon ?? false,
             rightHasSword = rightAttack?.HasWeapon ?? false,
-            checkpointLocation = location
+            checkpointLocation = location,
+
+            // ── Save-State Contract (§11.1) — snapshot meters + world ambience + one-shot flags ──
+            soulCount = SoulConvergenceSystem.Instance != null ? SoulConvergenceSystem.Instance.SoulCount : 0,
+            accordBarPoints = AccordStateSystem.Instance != null ? AccordStateSystem.Instance.BarPoints : 0f,
+            worldCorruption = WorldAmbienceDriver.Instance != null ? WorldAmbienceDriver.Instance.Progress : 0f,
+            storyGradeId = StoryGradeDirector.Instance != null ? StoryGradeDirector.Instance.CurrentGradeId : null,
+            storyProgress = StoryGradeDirector.Instance != null ? StoryGradeDirector.Instance.StoryProgress : 0f,
+            skyStateId = SkyStateDriver.Instance != null ? SkyStateDriver.Instance.CurrentStateId : null,
+            worldFlags = WorldFlagRegistry.Instance != null
+                         ? WorldFlagRegistry.Instance.Snapshot() : System.Array.Empty<string>(),
         };
 
         HasCheckpoint = true;

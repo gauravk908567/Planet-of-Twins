@@ -96,6 +96,8 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
             _actions = clone;
         }
 
+        LoadBindingOverrides();   // before the asset enables (OnEnable) — the player's saved rebinds apply from frame 1
+
         _move        = Find("Gameplay/Move");
         _attack      = Find("Gameplay/Attack");
         _switch      = Find("Gameplay/Switch");
@@ -437,9 +439,8 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     }
 
     // ── F7 — restore default keybinds ──────────────────────────────────
-    // Clears every runtime binding override on the whole asset, returning to the authored
-    // defaults. No-op today (no rebinding UI exists yet — F6); the pause "Restore Default
-    // Keybinds" button calls this so F6 can rely on it existing.
+    // Clears every runtime binding override on the whole asset, returning to the authored defaults, and forgets
+    // this player's persisted rebinds (so defaults survive a restart too).
     public void ResetBindingsToDefault()
     {
         if (_actions == null)
@@ -448,6 +449,41 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
             return;
         }
         _actions.RemoveAllBindingOverrides();
+        PlayerPrefs.DeleteKey(BindingPrefsKey);
+        PlayerPrefs.Save();
+    }
+
+    // ── Rebind persistence (save-system §4(d)) ─────────────────────────
+    // Rebinds are SETTINGS, not progress → PlayerPrefs per PLAYER (P1 = the shared reader, P2 = the non-shared
+    // clone), never inside a save slot: New Game / slot choice must not reset a player's controls. Only the
+    // override delta is stored (SaveBindingOverridesAsJson), keyed by binding id — authored defaults changing
+    // later still apply to every binding the player never touched. The P2 clone is built from ToJson(), which
+    // carries no overrides, so P1's rebinds can never leak into P2 (each loads its own key).
+    private string BindingPrefsKey => _isShared ? "pot_bindings_p1" : "pot_bindings_p2";
+
+    private void LoadBindingOverrides()
+    {
+        string json = PlayerPrefs.GetString(BindingPrefsKey, "");
+        if (string.IsNullOrEmpty(json)) return;
+        try
+        {
+            _actions.LoadBindingOverridesFromJson(json, removeExisting: true);
+        }
+        catch (System.Exception e)
+        {
+            // Corrupt/incompatible prefs must never brick input — drop them and run on authored defaults.
+            Debug.LogWarning($"[TwinInputReader] Saved rebinds for '{BindingPrefsKey}' unreadable ({e.Message}) — " +
+                             "reverting to defaults.", this);
+            _actions.RemoveAllBindingOverrides();
+            PlayerPrefs.DeleteKey(BindingPrefsKey);
+        }
+    }
+
+    private void SaveBindingOverrides()
+    {
+        if (_actions == null) return;
+        PlayerPrefs.SetString(BindingPrefsKey, _actions.SaveBindingOverridesAsJson());
+        PlayerPrefs.Save();   // flush now — "changes saved live" must hold even if the game is killed
     }
 
     // ── F6 Phase 3 — CONTROLS edit-mode UI reads + interactive rebind ──────────────────
@@ -544,7 +580,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
                     }
                 });
             }
-            op = op.OnComplete(o => { _activeRebind = null; o.Dispose(); action.Enable(); onDone?.Invoke(); })
+            op = op.OnComplete(o => { _activeRebind = null; o.Dispose(); action.Enable(); SaveBindingOverrides(); onDone?.Invoke(); })
                    .OnCancel(o => { _activeRebind = null; o.Dispose(); action.Enable(); onDone?.Invoke(); });
 
             _activeRebind = op;

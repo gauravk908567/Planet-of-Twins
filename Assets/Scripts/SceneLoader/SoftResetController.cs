@@ -106,6 +106,12 @@ public class SoftResetController : MonoBehaviour
         // 7. Restore skill tree
         RestoreSkillTree(data);
 
+        // 7b. Restore ability meters + world ambience + one-shot world flags to the checkpoint's values
+        //     (§11.1). AFTER skills (SC accrues only when unlocked; Accord cap is upgrade-derived). A soft
+        //     reset reloads no scene, so the story beats never re-fire — no suppression needed here.
+        SaveService.RestoreWorldAndMeters(data.soulCount, data.accordBarPoints, data.worldCorruption,
+            data.storyGradeId, data.storyProgress, data.skyStateId, data.worldFlags);
+
         // 8. Ensure checkpoint area is loaded before teleporting
         if (data.checkpointLocation != null && SceneFlowManager.Instance != null
             && !SceneFlowManager.Instance.IsLoaded(data.checkpointLocation))

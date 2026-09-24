@@ -69,7 +69,12 @@ namespace PlanetOfTwins.EditorTools
         public const string Timelines = "Timelines";
         public const string Volumes = "Volumes";
         public const string References = "References";
-        public static readonly string[] SceneRecipes = { MustHaves, FeatureWiring, Counts, Timelines, Volumes, References };
+        public const string Checkpoints = "Checkpoints";
+        public static readonly string[] SceneRecipes = { MustHaves, FeatureWiring, Counts, Timelines, Volumes, References, Checkpoints };
+
+        // Full-health bond range (CLAUDE.md: DistanceHealthSystem ≤6 m full). Dual nodes farther apart than this
+        // make the save pose itself drain the shared pool — a WARN the designer can waive.
+        private const float BondFullRange = 6f;
 
         public const string EnemyPrefabs = "Enemy prefabs";
         public const string BuildSettings = "Build Settings";
@@ -95,6 +100,7 @@ namespace PlanetOfTwins.EditorTools
             report.Recipes.Add(CheckTimelines(scene, comps));                       // any scene can host a director
             report.Recipes.Add(isArea || isPersistent ? CheckVolumes(scene, comps, isPersistent) : NA(Volumes));
             report.Recipes.Add(CheckReferences(scene, comps));                      // R2 + null-required, any scene
+            report.Recipes.Add(CheckCheckpoints(scene, comps));                     // any scene that hosts one (TestLab too)
             return report;
         }
 
@@ -232,19 +238,7 @@ namespace PlanetOfTwins.EditorTools
             // Spawn-point POIs: same cue-book slot recipe.
             CountCueBookSlots<SpawnPointPOI>(comps, r, parts, "SpawnPOI");
 
-            // Checkpoints: trigger collider present.
-            var checkpoints = comps.Where(c => c.GetType().Name == "CheckPointTrigger").ToList();
-            if (checkpoints.Count > 0)
-            {
-                int wired = 0;
-                foreach (var cp in checkpoints)
-                {
-                    var col = cp.GetComponent<Collider>();
-                    if (col != null && col.isTrigger) wired++;
-                    else r.Add(ValidationSeverity.Warning, $"CheckPointTrigger '{cp.name}' has no trigger collider.", cp, PathOf(cp));
-                }
-                parts.Add($"Checkpoint {wired}/{checkpoints.Count}");
-            }
+            // Checkpoints: moved to their own "Checkpoints" recipe (location + nodes + collider — §11.1/§11.2).
 
             // Tutorial presence (steps resolve at runtime via TutorialStepContext — here only presence).
             int tutorial = comps.Count(c => c.GetType().Name == "TutorialDirector");
@@ -286,6 +280,96 @@ namespace PlanetOfTwins.EditorTools
             parts.Add($"{label} {wired}/{pois.Count}");
         }
 
+        // ── Recipe: checkpoints (save-state §11.1 / dual-node §11.2) ──────────────
+        // Every checkpoint in the scene: is `location` wired, and WHERE does it point. FAIL = no location (a save
+        // there can't stream its area on Continue/respawn); WARN = points at a different scene's location (legit for
+        // a border checkpoint — waive it — otherwise respawn streams the wrong area) or dual-node authoring gaps.
+        // Each checkpoint also gets an INFO "→ location" line so the cell doubles as the where-does-it-point list.
+        private static RecipeResult CheckCheckpoints(Scene scene, List<Component> comps)
+        {
+            var singles = comps.OfType<CheckpointTrigger>().ToList();
+            var duals = comps.OfType<DualCheckpoint>().ToList();
+            if (singles.Count == 0 && duals.Count == 0) return NA(Checkpoints);
+
+            var r = new RecipeResult(Checkpoints);
+            int located = 0;
+
+            foreach (var cp in singles)
+            {
+                var owner = cp.GetComponentInParent<DualCheckpoint>(true);
+                if (owner != null)   // BUG-117: saves on one twin's touch — runtime ignores it, but it must be removed
+                {
+                    r.Add(ValidationSeverity.Error, $"CheckpointTrigger '{cp.name}' is inside DualCheckpoint '{owner.name}' — it would save on ONE twin's touch (ignored at runtime). Remove the component.", cp, PathOf(cp));
+                    continue;
+                }
+                if (CheckLocation(r, scene, cp, cp.Location, "Single")) located++;
+                var col = cp.GetComponent<Collider>();
+                if (col == null || !col.isTrigger)
+                    r.Add(ValidationSeverity.Error, $"CheckpointTrigger '{cp.name}' has no trigger collider — it can never save.", cp, PathOf(cp));
+            }
+
+            foreach (var dc in duals)
+            {
+                if (CheckLocation(r, scene, dc, dc.Location, "Dual")) located++;
+
+                var a = dc.NodeA;
+                var b = dc.NodeB;
+                if (a == null || b == null)
+                {
+                    r.Add(ValidationSeverity.Error, $"DualCheckpoint '{dc.name}' node {(a == null ? "A" : "B")} unassigned — it disables itself.", dc, PathOf(dc));
+                    continue;
+                }
+                if (a == b)
+                {
+                    r.Add(ValidationSeverity.Error, $"DualCheckpoint '{dc.name}' has the SAME node in A and B — both twins can never be present.", dc, PathOf(dc));
+                    continue;
+                }
+                foreach (var n in new[] { a, b })
+                {
+                    var col = n.GetComponent<Collider>();
+                    if (col == null || !col.isTrigger)
+                        r.Add(ValidationSeverity.Error, $"CheckpointNode '{n.name}' collider missing or not IsTrigger — occupancy never registers.", n, PathOf(n));
+                }
+                float dist = Vector3.Distance(a.transform.position, b.transform.position);
+                if (dist > BondFullRange)
+                    r.Add(ValidationSeverity.Warning,
+                        $"DualCheckpoint '{dc.name}' nodes are {dist:0.0} m apart — beyond the ~{BondFullRange:0} m full-health bond range, so the save pose drains health.",
+                        dc, PathOf(dc));
+                if (dc.PromptText == null)
+                    r.Add(ValidationSeverity.Info, $"DualCheckpoint '{dc.name}' has no prompt text — players get no 'Hold X' hint.", dc, PathOf(dc));
+                if (Application.isPlaying)
+                    r.Add(ValidationSeverity.Info,
+                        $"LIVE '{dc.name}': {dc.CurrentState}" +
+                        $" · A={(a.Occupant != null ? a.Occupant.name : "—")} B={(b.Occupant != null ? b.Occupant.name : "—")}" +
+                        (dc.IsSpent ? " · spent (saved once)" : ""), dc, PathOf(dc));
+            }
+
+            int total = singles.Count + duals.Count;
+            r.Summary = $"{located}/{total} located · {singles.Count} single · {duals.Count} dual";
+            return r;
+        }
+
+        // Returns true when a location is wired. Adds the FAIL / cross-scene WARN / "→ where" INFO line.
+        private static bool CheckLocation(RecipeResult r, Scene scene, Component cp, WorldLocationSO loc, string kind)
+        {
+            if (loc == null)
+            {
+                r.Add(ValidationSeverity.Error,
+                    $"{kind} checkpoint '{cp.name}' has NO location — a save here can't stream its area on Continue/respawn (§11.1).",
+                    cp, PathOf(cp));
+                return false;
+            }
+            string target = loc.scene.Name;
+            if (!string.IsNullOrEmpty(target) && target != scene.name)
+                r.Add(ValidationSeverity.Warning,
+                    $"{kind} checkpoint '{cp.name}' lives in '{scene.name}' but its location '{loc.name}' points at scene '{target}' — " +
+                    "fine for a border checkpoint (waive it), otherwise respawn/Continue streams the wrong area.",
+                    cp, PathOf(cp));
+            else
+                r.Add(ValidationSeverity.Info, $"{kind} '{cp.name}' → {loc.name} (scene '{target}')", cp, PathOf(cp));
+            return true;
+        }
+
         // ── Recipe: content counts (info-only density view) ──────────────────────
         private static RecipeResult CheckCounts(Scene scene, List<Component> comps)
         {
@@ -294,7 +378,8 @@ namespace PlanetOfTwins.EditorTools
             int pois = comps.Count(c => c is SpawnPointPOI || c is RitualSitePOI || c.GetType().Name == "BarrierPOI");
             int traps = comps.Count(c => c.GetType().Name.Contains("Trap") && c is MonoBehaviour && !(c.GetType().Name.Contains("Trigger")));
             int orbs = comps.Count(c => c.GetType().Name == "SkillPointOrb");
-            int checkpoints = comps.Count(c => c.GetType().Name == "CheckPointTrigger");
+            // Typed (the old "CheckPointTrigger" name-string never matched the real class `CheckpointTrigger` → always 0).
+            int checkpoints = comps.OfType<CheckpointTrigger>().Count() + comps.OfType<DualCheckpoint>().Count();
             r.Summary = $"{zones} zones · {pois} POIs · {traps} traps · {orbs} orbs · {checkpoints} checkpoints";
             r.Add(ValidationSeverity.Info, $"Density: {r.Summary}", null, scene.name);
             return r;

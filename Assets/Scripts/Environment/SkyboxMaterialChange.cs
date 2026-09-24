@@ -61,6 +61,13 @@ public class SkyboxMaterialChange : MonoBehaviour
     public void Fire()
     {
         if (_fired) return;
+
+        // §11.1 break #2: on a Continue load, the world ambience is restored directly from the save. An
+        // area-embedded beat that auto-fires on stream-in must NOT stomp that restored state. The suppression
+        // window is only open for the load's settle frames — don't latch, so a genuine forward-progress
+        // (re-)activation after the window still fires normally.
+        if (SaveService.Instance != null && SaveService.Instance.SuppressStoryBeats) return;
+
         bool anyRan = false;
 
         if (_driveCorruption)

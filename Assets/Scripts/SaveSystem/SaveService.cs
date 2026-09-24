@@ -31,22 +31,51 @@ public class SaveService : MonoBehaviour
     public bool IsResumingSave { get; private set; }
 
     [Header("Feature gate")]
-    [Tooltip("MASTER SWITCH for save/Continue. OFF (default) = the whole feature is DORMANT: AutoSave never " +
-             "writes, the Continue button stays disabled (even if a stale test-save exists on disk), and the " +
-             "front-end skips the save-slot screen. This is deliberate: a checkpoint sits AFTER a timeline that " +
-             "mutates a large amount of world state (skybox/lighting, story grading, Weaver's Gate QTE " +
-             "completion, and a long tail of per-system flags) that the current snapshot does NOT capture — a " +
-             "half-restored Continue is worse than none. The real save-state CONTRACT is deferred until after " +
-             "the couch conversion (which changes WHAT state exists). Flip this ON only alongside that contract.")]
+    [Tooltip("Kill switch for DISK WRITES. OFF = AutoSave never writes a slot (checkpoints still work in-memory " +
+             "for respawn). ON since the Save-State Contract landed (game.md §11.1, 2026-09-23). NOTE: the front-end " +
+             "(FrontEnd scene) can't read this — it runs before Persistent loads — so the slot screen + Continue are " +
+             "gated on the DISK instead (SaveSystem.HasLoadableSave): with this OFF no new saves appear, so Continue " +
+             "only lights for saves written while it was ON.")]
     [SerializeField] private bool enableSaving = false;
 
-    /// <summary>Master switch — see <see cref="enableSaving"/>. When false the feature is fully inert.</summary>
+    /// <summary>Disk-write kill switch — see <see cref="enableSaving"/>.</summary>
     public bool SavingEnabled => enableSaving;
+
+    /// <summary>True only during a Continue load's settle window. Area-embedded story beats
+    /// (<see cref="SkyboxMaterialChange"/>) that auto-fire on scene load read this and skip, so they can't
+    /// stomp the world ambience the load just restored (§11.1 break #2). Forward-progress beats fire normally
+    /// once the window closes. Set/cleared by <see cref="GameBootstrapper"/> around the load.</summary>
+    public bool SuppressStoryBeats { get; private set; }
+    public void BeginLoadSuppressBeats() => SuppressStoryBeats = true;
+    public void EndLoadSuppressBeats() => SuppressStoryBeats = false;
 
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        ApplySessionSetup();
+    }
+
+    // The front-end (FrontEnd scene) runs BEFORE Persistent exists, so it records its New Game / Continue + slot
+    // choice in SessionSetup; we apply it the moment Persistent loads (same handoff PlayerRoster uses for the twin
+    // pick). Awake = self-wiring from a static — no other Persistent object is needed (R8). Before the Continue
+    // boot path reads PendingLoad: GameBootstrapper awaits the Persistent load, so Awake has always run by then.
+    // No slot chosen (dev-direct boot, direct area play, TestLab) → ActiveSlot stays NoSlot → nothing hits disk.
+    private void ApplySessionSetup()
+    {
+        int slot = SessionSetup.SaveSlot;
+        if (!SaveSystem.IsValidSlot(slot)) return;
+
+        if (SessionSetup.Mode == SessionSetup.BootMode.Continue)
+        {
+            if (!BeginContinue(slot))
+                Debug.LogError($"[SaveService] Front-end chose Continue on slot {slot} but it's unreadable now — " +
+                               "the boot path will fall back to a New Game in that slot.", this);
+        }
+        else
+        {
+            BeginNewGame(slot);
+        }
     }
 
     private void OnDestroy() { if (Instance == this) Instance = null; }
@@ -62,6 +91,7 @@ public class SaveService : MonoBehaviour
         ActiveSlot = SaveSystem.IsValidSlot(slot) ? slot : NoSlot;
         PendingLoad = null;
         IsResumingSave = false;
+        WorldFlagRegistry.Instance?.Clear();   // a fresh start carries no opened-gate / one-shot world flags
         Debug.Log($"[SaveService] New Game → active slot {ActiveSlot}.");
     }
 
@@ -84,11 +114,32 @@ public class SaveService : MonoBehaviour
     // ── Auto-save (CheckpointManager calls this after building its checkpoint) ──
     public void AutoSave(CheckpointData cp)
     {
-        if (!enableSaving) return;   // feature dormant — see enableSaving (world-state contract deferred)
+        if (!enableSaving) return;   // feature dormant until enableSaving is flipped (SCOPE 1)
         if (ActiveSlot == NoSlot || cp == null) return;
+
+        // Invariant diagnostic (§11.1): checkpoints sit in calm zones, so no ability should be live at save
+        // time. This never force-ends the running session (force-end is load-only) — it just flags a mislaid
+        // checkpoint. Coalesce is EXEMPT (passive, enemy-tied).
+        WarnIfAbilityActiveAtSave();
+
         IEnumerable<string> active = SceneFlowManager.Instance != null
             ? SceneFlowManager.Instance.LoadedLocationIds : null;
         SaveSystem.Write(ActiveSlot, GameSaveData.FromCheckpoint(cp, active));
+    }
+
+    private static void WarnIfAbilityActiveAtSave()
+    {
+        bool active =
+            (SoulConvergenceSystem.Instance != null && SoulConvergenceSystem.Instance.IsAbilityActive) ||
+            (AccordStateSystem.Instance != null && (AccordStateSystem.Instance.IsAccordActive ||
+                (AccordStateSystem.Instance.VoidStrikeActiveState?.IsAbilityActive ?? false) ||
+                (AccordStateSystem.Instance.RadiantSeekerActiveState?.IsAbilityActive ?? false))) ||
+            (SetsunaSystem.Instance != null && SetsunaSystem.Instance.IsAbilityActive) ||
+            (EmpowerSystem.Instance != null && EmpowerSystem.Instance.IsAbilityActive);
+        if (active)
+            Debug.LogWarning("[SaveService] Checkpoint auto-saved while an ability was ACTIVE — a checkpoint " +
+                             "should sit in a calm zone (§11.1). Saving progression state anyway; the load " +
+                             "path force-ends abilities regardless.");
     }
 
     // ── Load-apply (Continue) — skills/points/sword. Positions + area streaming are the boot path's job
@@ -97,8 +148,39 @@ public class SaveService : MonoBehaviour
     public void ApplyProgress(GameSaveData data)
     {
         if (data == null) return;
-        RestoreSkills(data);
+        RestoreSkills(data);   // skills FIRST — SC only accrues once unlocked, Accord's cap is upgrade-derived (§11.1)
         RestoreSwords(data);
+        RestoreWorldAndMeters(data.soulCount, data.accordBarPoints, data.worldCorruption,
+                              data.storyGradeId, data.storyProgress, data.skyStateId, data.worldFlags);
+    }
+
+    /// <summary>Restore the §11.1 contract's runtime state — ability meters + the 3 world-ambience drivers +
+    /// one-shot world flags — to the checkpoint's values. Shared by the Continue load (<see cref="ApplyProgress"/>,
+    /// from <see cref="GameSaveData"/>) and death→respawn (<see cref="SoftResetController"/>, from
+    /// <see cref="CheckpointData"/>): both pass identical primitives, so restore is identical either way.
+    /// Callers MUST have restored skills first. Instant, no beat replay. Safe when any singleton is absent.</summary>
+    public static void RestoreWorldAndMeters(int soulCount, float accordBarPoints,
+        float worldCorruption, string storyGradeId, float storyProgress, string skyStateId,
+        string[] worldFlags)
+    {
+        // Meters (derived flags _charged/_barFull recomputed inside each Restore*).
+        SoulConvergenceSystem.Instance?.RestoreSouls(soulCount);
+        AccordStateSystem.Instance?.RestoreBar(accordBarPoints);
+
+        // World ambience — the 3 story drivers, applied instantly.
+        WorldAmbienceDriver.Instance?.SetProgress(worldCorruption);
+        var grade = StoryGradeDirector.Instance;
+        if (grade != null)
+        {
+            grade.SetStoryProgress(storyProgress);
+            // Re-pick the EXACT saved grade after setting progress — event-only grades (minProgress < 0,
+            // e.g. "shock") can't be reached by progress alone (§11.1).
+            if (!string.IsNullOrEmpty(storyGradeId)) grade.PlayGrade(storyGradeId);
+        }
+        if (!string.IsNullOrEmpty(skyStateId)) SkyStateDriver.Instance?.ApplyState(skyStateId);
+
+        // One-shot world flags (opened gates, one-time doors) — set keys + re-apply to live area objects.
+        WorldFlagRegistry.Instance?.Restore(worldFlags);
     }
 
     private static void RestoreSkills(GameSaveData data)

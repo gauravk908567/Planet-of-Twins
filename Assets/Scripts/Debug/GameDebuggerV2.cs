@@ -236,6 +236,7 @@ public class GameDebuggerV2 : MonoBehaviour
         DrawGradingSection();
         DrawWorldSkySection();
         DrawGrayscaleSection();
+        DrawCheckpointSection();
         DrawMetaSection();
         GUILayout.EndScrollView();
 
@@ -742,6 +743,71 @@ public class GameDebuggerV2 : MonoBehaviour
             if (_grayscaleVolume.sharedProfile != null) Destroy(_grayscaleVolume.sharedProfile);
             Destroy(_grayscaleVolume.gameObject);
         }
+    }
+
+    // Checkpoint / save bench (§11.1/§11.2): every checkpoint in the LOADED scenes — location wired + where it points
+    // (red when missing), dual-node live state — plus the last in-memory checkpoint and the save slot. The static,
+    // all-scenes authoring view of the same data is the Scene Health Dashboard "Checkpoints" column.
+    private readonly List<CheckpointTrigger> _cpSingles = new List<CheckpointTrigger>();
+    private readonly List<DualCheckpoint> _cpDuals = new List<DualCheckpoint>();
+    private string[] _cpFlags = System.Array.Empty<string>();
+    private float _cpNextScan;   // UNSCALED — throttles the scene sweep + flag snapshot (OnGUI runs per event)
+
+    private void DrawCheckpointSection()
+    {
+        GUILayout.Space(6);
+        GUILayout.Label("── Checkpoints & Save ──");
+
+        if (Time.unscaledTime >= _cpNextScan)   // debug-only scene-scoped sweep (R4 allows it), 1 Hz
+        {
+            _cpNextScan = Time.unscaledTime + 1f;
+            _cpSingles.Clear(); _cpSingles.AddRange(FindObjectsByType<CheckpointTrigger>(FindObjectsSortMode.None));
+            _cpDuals.Clear();   _cpDuals.AddRange(FindObjectsByType<DualCheckpoint>(FindObjectsSortMode.None));
+            _cpFlags = WorldFlagRegistry.Instance != null ? WorldFlagRegistry.Instance.Snapshot() : System.Array.Empty<string>();
+        }
+
+        var prev = GUI.color;
+        foreach (var cp in _cpSingles)
+        {
+            if (cp == null) continue;
+            GUI.color = cp.Location == null ? Color.red : prev;
+            GUILayout.Label($"Single '{cp.name}' [{cp.gameObject.scene.name}] → {LocationLabel(cp.Location, cp.gameObject.scene.name)}");
+        }
+        foreach (var dc in _cpDuals)
+        {
+            if (dc == null) continue;
+            GUI.color = dc.Location == null ? Color.red : prev;
+            string a = dc.NodeA != null && dc.NodeA.Occupant != null ? dc.NodeA.Occupant.name : "—";
+            string b = dc.NodeB != null && dc.NodeB.Occupant != null ? dc.NodeB.Occupant.name : "—";
+            GUILayout.Label($"Dual '{dc.name}' [{dc.gameObject.scene.name}] → {LocationLabel(dc.Location, dc.gameObject.scene.name)}" +
+                            $"  · {dc.CurrentState} A={a} B={b} hold {dc.HoldProgress:P0}{(dc.IsSpent ? " · spent" : "")}");
+        }
+        GUI.color = prev;
+        if (_cpSingles.Count == 0 && _cpDuals.Count == 0) GUILayout.Label("(no checkpoints in the loaded scenes)");
+
+        var svc = SaveService.Instance;
+        GUILayout.Label(svc == null ? "SaveService: (not loaded)"
+            : $"Save slot: {(svc.ActiveSlot >= 0 ? svc.ActiveSlot.ToString() : "none — nothing writes to disk")} · saving {(svc.SavingEnabled ? "ON" : "OFF")}");
+
+        var cpm = CheckpointManager.Instance;
+        var d = cpm != null ? cpm.LastSaved : null;
+        GUILayout.Label(d == null ? "Last checkpoint: none this session"
+            : $"Last checkpoint: {(d.checkpointLocation != null ? d.checkpointLocation.name : "NO LOCATION")} · pts {d.skillPoints} · souls {d.soulCount}" +
+              $" · bar {d.accordBarPoints:0} · corr {d.worldCorruption:0.00} · grade '{d.storyGradeId}' · sky '{d.skyStateId}' · flags {d.worldFlags?.Length ?? 0}");
+        GUILayout.Label($"World flags live ({_cpFlags.Length}): {(_cpFlags.Length == 0 ? "—" : string.Join(", ", _cpFlags))}");
+
+        // Soft-reset bench: the REAL death→respawn restore path (SoftResetController) without having to die —
+        // tests the §11.1 respawn half (meters/ambience/flags/orbs roll back) on one controller.
+        GUI.enabled = cpm != null && cpm.HasCheckpoint;
+        if (GUILayout.Button("Respawn at last checkpoint (soft reset)")) cpm.TryRespawnAtCheckpoint();
+        GUI.enabled = true;
+    }
+
+    private static string LocationLabel(WorldLocationSO loc, string hostScene)
+    {
+        if (loc == null) return "NO LOCATION (save can't resolve its area)";
+        string target = loc.scene.Name;
+        return target == hostScene ? $"{loc.name} ✔" : $"{loc.name} (scene '{target}' ≠ host — border?)";
     }
 
     private void DrawMetaSection()

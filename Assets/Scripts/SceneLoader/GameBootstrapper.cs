@@ -116,10 +116,14 @@ public class GameBootstrapper : MonoBehaviour
             // loads under the intro, so nothing collides.
             yield return UnloadIfLoaded(frontEndSceneName);
 
-            // New Game → the intro (IntroController loads Persistent + first area + cutscene, exactly as it always
-            // did). Continue is dormant while the save system is inert (SessionSetup.Mode stays NewGame); when
-            // saves are re-enabled, this branch will instead load Persistent + LoadGamePath here.
-            if (introScene.IsValid)
+            // Continue → load Persistent (SaveService stages the save from SessionSetup in Awake) and boot straight
+            // into the saved area — NO intro. New Game → the intro (IntroController loads Persistent + first area +
+            // cutscene, exactly as it always did).
+            if (SessionSetup.Mode == SessionSetup.BootMode.Continue && SaveSystem.IsValidSlot(SessionSetup.SaveSlot))
+            {
+                yield return ContinueBoot();
+            }
+            else if (introScene.IsValid)
             {
                 yield return LoadAdditive(introScene.Name);
                 Debug.Log("[GameBootstrapper] Front-end complete — handed off to the intro.");
@@ -211,6 +215,30 @@ public class GameBootstrapper : MonoBehaviour
         }
     }
 
+    /// <summary>Continue entry (menu-first): load Persistent, lock the twins (Persistent has no floor), then hand the
+    /// staged save to <see cref="LoadGamePath"/>. If SaveService couldn't stage it (file vanished/corrupted between the
+    /// slot screen and now) fall back to a New Game in the same slot via the intro — never boot into nothing.</summary>
+    private IEnumerator ContinueBoot()
+    {
+        if (!IsLoaded(persistentScene.Name))
+            yield return LoadAdditive(persistentScene.Name);
+        SetTwinsMovementLocked(true);
+
+        var svc = SaveService.Instance;
+        var save = svc != null ? svc.PendingLoad : null;
+        if (save == null)
+        {
+            Debug.LogError("[GameBootstrapper] Continue chosen but no save staged (SaveService missing or slot " +
+                           "unreadable) — starting a New Game in that slot via the intro.");
+            svc?.BeginNewGame(SessionSetup.SaveSlot);
+            if (introScene.IsValid) yield return LoadAdditive(introScene.Name);
+            else yield return LocalBoot();
+            yield break;
+        }
+
+        yield return LoadGamePath(save);
+    }
+
     /// <summary>Continue (couch M2): boot straight into a saved area with saved progress — NO intro cutscene.
     /// Persistent + the front-end have already run and the twins are locked. Streams the saved area, places the
     /// twins at their saved positions, seeds occupancy, applies skills/points/sword, unfreezes. The tutorial is
@@ -223,9 +251,17 @@ public class GameBootstrapper : MonoBehaviour
         if (area == null || !area.IsValid)
         {
             Debug.LogError($"[GameBootstrapper] Continue: saved area '{save.areaId}' unresolved — falling back to intro.");
+            // The save is unusable (area renamed/removed) → a clean New Game in the same slot. Without this the
+            // session keeps IsResumingSave=true and the intro path would SKIP the tutorial on a fresh start.
+            var svc = SaveService.Instance;
+            svc?.BeginNewGame(svc.ActiveSlot);   // also drops PendingLoad; twins stay locked — the intro owns placement
             yield return LoadAdditive(introScene.Name);
             yield break;
         }
+
+        // Suppress area-embedded story beats that auto-fire on stream-in, so they can't stomp the ambience
+        // this load restores (§11.1 break #2). Released a couple of frames after restore, below.
+        SaveService.Instance?.BeginLoadSuppressBeats();
 
         string areaName = area.scene.Name;
         if (!IsLoaded(areaName))
@@ -244,9 +280,25 @@ public class GameBootstrapper : MonoBehaviour
         if (scene.IsValid() && scene.isLoaded)
             SceneManager.SetActiveScene(scene);
 
-        // Apply saved progress (skills / points / sword) — positions were placed above.
+        // Apply saved progress — skills/points/sword AND the §11.1 runtime state (meters + world ambience +
+        // one-shot flags). Positions were placed above; drivers already booted with Persistent.
         SaveService.Instance?.ApplyProgress(save);
         SaveService.Instance?.ClearPendingLoad();
+
+        // Camera (save-state: DERIVED, not saved — game.md §11.1). The active cam is re-picked every frame by
+        // CameraSwitcher from twin distance and the follow cams track the twins, so there is no vcam/position to
+        // store. What Continue MUST fix: Persistent's switcher boots in TUTORIAL mode and only the L1 tutorial
+        // timeline's end signal (or L1's TutorialDirector skip) turns that off — a save in any other area would
+        // resume on the tutorial cams forever. Force gameplay mode + re-apply authored rotations (BUG-037 flip
+        // guard) here. Scene-scoped non-singleton sweeps (R4 note; same idiom as TutorialDirector.SkipTutorial).
+        FindAnyObjectByType<CameraSwitcher>()?.SetTutorialMode(false);
+        FindAnyObjectByType<CameraRotationGuard>()?.RestoreAll();
+
+        // Let any load-time beat auto-fire land inside the suppression window, then release so
+        // forward-progress beats fire normally.
+        yield return null;
+        yield return null;
+        SaveService.Instance?.EndLoadSuppressBeats();
 
         OnBootstrapComplete?.Invoke();
         Debug.Log($"[GameBootstrapper] Continue complete — area '{areaName}', progress applied.");

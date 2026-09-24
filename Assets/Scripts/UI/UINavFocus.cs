@@ -40,6 +40,18 @@ public static class UINavFocus
         if (target != null) Focus(target.gameObject);
     }
 
+    /// <summary>True on the frame the current EventSystem's UI <b>Cancel</b> fired (pad East / Esc) from ANY device —
+    /// the UI module's actions are unpaired, so both couch players count. For "B = back" on screens whose Back is a
+    /// button. False when there's no Input-System UI module (null-safe).</summary>
+    public static bool CancelPressedThisFrame()
+    {
+        var es = EventSystem.current;
+        if (es == null) return false;
+        var module = es.currentInputModule as UnityEngine.InputSystem.UI.InputSystemUIInputModule;
+        var action = module != null && module.cancel != null ? module.cancel.action : null;
+        return action != null && action.WasPressedThisFrame();
+    }
+
     /// <summary>
     /// Re-assert focus if the screen is open but nothing is selected (e.g. a mouse click on empty space
     /// cleared the selection, then the player reaches for the pad). Call from a screen's Update while open.

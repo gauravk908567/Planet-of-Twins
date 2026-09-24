@@ -29,4 +29,20 @@ public class CheckpointData
 
     // Which world-chunk scenes were loaded when this checkpoint was saved.
     public WorldLocationSO[] activeLocations;
+
+    // ── Save-State Contract (game.md §11.1) — restored on BOTH Continue and death→respawn from here ──
+
+    // Ability meters (progression toward the powers). _charged / _barFull are DERIVED, never stored.
+    public int soulCount;          // SoulConvergenceSystem.SoulCount
+    public float accordBarPoints;  // AccordStateSystem.BarPoints (raw points; cap is upgrade-derived)
+
+    // World ambience = the 3 global story drivers. A Continue boots past the story beats that set these,
+    // so they are snapshot + restored directly.
+    public float worldCorruption;  // WorldAmbienceDriver.Progress
+    public string storyGradeId;    // StoryGradeDirector.CurrentGradeId (re-applied so event-only grades survive)
+    public float storyProgress;    // StoryGradeDirector.StoryProgress
+    public string skyStateId;      // SkyStateDriver.CurrentStateId
+
+    // One-shot world flags (opened gates, one-time doors) — re-applied on area load, no beat replay.
+    public string[] worldFlags;
 }

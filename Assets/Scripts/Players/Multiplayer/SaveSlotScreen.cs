@@ -17,13 +17,16 @@ using UnityEngine.UI;
 /// the boot path.</item>
 /// </list></para>
 ///
-/// <para>On pick: NewGame → <see cref="SaveService.BeginNewGame"/>; Continue → <see cref="SaveService.BeginContinue"/>
-/// (a false return keeps the screen up). Then <see cref="SlotChosen"/> fires and <see cref="FrontEndFlowController"/>
-/// advances to Character Select. Back → <see cref="BackRequested"/> (returns to the Start Menu).</para>
+/// <para>On pick: the mode + slot are RECORDED in <see cref="SessionSetup.SetMode"/> — this screen lives in the
+/// FrontEnd scene, which runs BEFORE Persistent loads, so SaveService doesn't exist yet (calling it here was a
+/// silent no-op → no slot was ever chosen → nothing was written to disk). Persistent's SaveService applies the
+/// choice in Awake. Continue validates the slot is loadable first (a stale/corrupt file keeps the screen up).
+/// Then <see cref="SlotChosen"/> fires and <see cref="FrontEndFlowController"/> advances to Character Select.
+/// Back → <see cref="BackRequested"/> (returns to the Start Menu).</para>
 ///
-/// <para><b>Input</b> mirrors <see cref="CharacterSelectScreen"/>: mouse clicks the slot/back buttons; P1's paired
-/// device navigates (stick up/down among pickable slots) and Attack confirms. Back is mouse-only (parity with the
-/// other front-end screens, whose Back is also button-only).</para>
+/// <para><b>Input</b> (BUG-116): the shared EventSystem navigation, same as the Main Menu — ANY device (both pads,
+/// keyboard, mouse) moves the focus glow among pickable slots + Back (<see cref="UINavStyle"/> / <see cref="UINavFocus"/>),
+/// Submit (A / Enter) picks, UI Cancel (B / Esc) = Back. (Replaced a P1-only stick index that drew no highlight.)</para>
 /// </summary>
 [DisallowMultipleComponent]
 public class SaveSlotScreen : MonoBehaviour
@@ -57,13 +60,7 @@ public class SaveSlotScreen : MonoBehaviour
     public event Action BackRequested;
 
     private Mode _mode;
-    private int _highlight = -1;
     private int _armedOverwrite = -1;   // NewGame two-press guard: the occupied slot currently armed (-1 = none)
-
-    // P1 nav edge-latch: the stick must return toward centre before it moves the highlight again.
-    private bool _navEngaged;
-    private const float NavEngage = 0.5f;
-    private const float NavRelease = 0.3f;
 
     private void Awake()
     {
@@ -76,6 +73,9 @@ public class SaveSlotScreen : MonoBehaviour
             if (_slotButtons[i] != null) _slotButtons[i].onClick.AddListener(() => OnSlotClicked(slot));
         }
         if (backButton != null) backButton.onClick.AddListener(RaiseBack);
+
+        // Item 1 (controller nav): pad/keyboard-traversable cards + the shared focus glow.
+        UINavStyle.Apply(panel);
     }
 
     private void OnDestroy()
@@ -89,12 +89,16 @@ public class SaveSlotScreen : MonoBehaviour
     {
         _mode = mode;
         _armedOverwrite = -1;
-        _navEngaged = false;
         if (panel != null) panel.SetActive(true);
         if (titleText != null)
             titleText.text = mode == Mode.NewGame ? "NEW GAME — CHOOSE A SLOT" : "CONTINUE — CHOOSE A SAVE";
-        _highlight = FirstPickable();
         Refresh();
+
+        // Wrap AFTER Refresh settles interactability (Continue greys empty slots → skipped), then land the focus on
+        // the first pickable slot (Back if none) so any device can drive the screen immediately.
+        UINavStyle.WireWrap(panel);
+        int first = FirstPickable();
+        UINavFocus.Focus(first >= 0 && _slotButtons[first] != null ? _slotButtons[first] : backButton);
     }
 
     public void Hide()
@@ -102,31 +106,26 @@ public class SaveSlotScreen : MonoBehaviour
         if (panel != null) panel.SetActive(false);
     }
 
-    // ── Per-device input (P1) ──────────────────────────────────
+    // ── Input: navigation/submit are the EventSystem's; this only adds Back + the overwrite-guard reset ──
     private void Update()
     {
         if (panel == null || !panel.activeSelf) return;
-        var input = PlayerInputRouter.ForSlot(PlayerSlot.One);
-        if (input == null) return;
 
-        Vector2 m = input.GetMovementInput();
-        if (!_navEngaged && Mathf.Abs(m.y) > NavEngage)
-        {
-            _navEngaged = true;
-            MoveHighlight(m.y < 0f ? +1 : -1);   // stick down = next slot (down the list), up = previous
-        }
-        else if (_navEngaged && m.magnitude < NavRelease)
-        {
-            _navEngaged = false;
-        }
+        if (UINavFocus.CancelPressedThisFrame()) { RaiseBack(); return; }   // B / Esc from any device
 
-        if (input.GetAttackDown() && _highlight >= 0)
-            OnSlotClicked(_highlight);
+        // Moving the focus off the armed slot cancels the pending overwrite (the old index-nav did this too).
+        if (_armedOverwrite >= 0)
+        {
+            var sel = UnityEngine.EventSystems.EventSystem.current != null
+                ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
+            var armed = _slotButtons[_armedOverwrite];
+            if (sel != null && armed != null && sel != armed.gameObject) { _armedOverwrite = -1; Refresh(); }
+        }
     }
 
-    // NewGame: every valid slot is pickable. Continue: only occupied slots.
+    // NewGame: every valid slot is pickable. Continue: only slots holding a LOADABLE save (stale v1 / corrupt = greyed).
     private bool IsPickable(int slot) =>
-        SaveSystem.IsValidSlot(slot) && (_mode == Mode.NewGame || SaveSystem.HasSave(slot));
+        SaveSystem.IsValidSlot(slot) && (_mode == Mode.NewGame || SaveSystem.HasLoadableSave(slot));
 
     private int FirstPickable()
     {
@@ -137,24 +136,10 @@ public class SaveSlotScreen : MonoBehaviour
 
     private int SlotCount => _slotButtons != null ? _slotButtons.Length : 0;
 
-    private void MoveHighlight(int dir)
-    {
-        int n = SlotCount;
-        if (n == 0) return;
-        for (int step = 0; step < n; step++)
-        {
-            _highlight = ((_highlight + dir) % n + n) % n;
-            if (IsPickable(_highlight)) break;
-        }
-        _armedOverwrite = -1;   // moving cancels a pending overwrite arm
-        Refresh();
-    }
-
     // ── Commit ─────────────────────────────────────────────────
     private void OnSlotClicked(int slot)
     {
         if (!IsPickable(slot)) { Status("That slot is empty."); return; }
-        _highlight = slot;
 
         // Occupied + New Game: require a second press on the same slot before overwriting (greybox guard).
         if (_mode == Mode.NewGame && SaveSystem.HasSave(slot) && _armedOverwrite != slot)
@@ -170,14 +155,15 @@ public class SaveSlotScreen : MonoBehaviour
 
     private void Commit(int slot)
     {
-        var svc = SaveService.Instance;
+        // Record only — SaveService (Persistent) isn't loaded yet; it applies this in Awake (SessionSetup handoff).
         if (_mode == Mode.Continue)
         {
-            if (svc == null || !svc.BeginContinue(slot)) { Status("Couldn't read that save."); return; }
+            if (!SaveSystem.HasLoadableSave(slot)) { Status("Couldn't read that save."); return; }
+            SessionSetup.SetMode(SessionSetup.BootMode.Continue, slot);
         }
         else
         {
-            svc?.BeginNewGame(slot);
+            SessionSetup.SetMode(SessionSetup.BootMode.NewGame, slot);
         }
         SlotChosen?.Invoke(slot);
     }

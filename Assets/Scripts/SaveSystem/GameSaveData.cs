@@ -14,7 +14,10 @@ using UnityEngine;
 [Serializable]
 public class GameSaveData
 {
-    public const int CurrentVersion = 1;
+    // v1 → v2 (2026-09-23): added the Save-State Contract fields (meters + world ambience + world flags,
+    // game.md §11.1). v1 slots were test-only (saving was never enabled for a real playthrough) → invalidated
+    // on read in SaveSystem, so no field-level migration is needed.
+    public const int CurrentVersion = 2;
 
     public int version = CurrentVersion;
     public string savedAtUtc = "";        // ISO-8601 (round-trip "o") — the slot card's timestamp
@@ -29,6 +32,15 @@ public class GameSaveData
     public bool rightHasSword;
 
     public SkillLevelEntry[] skillLevels = Array.Empty<SkillLevelEntry>();
+
+    // ── Save-State Contract (§11.1) — mirrors the new CheckpointData fields ──
+    public int soulCount;
+    public float accordBarPoints;
+    public float worldCorruption;
+    public string storyGradeId = "";
+    public float storyProgress;
+    public string skyStateId = "";
+    public string[] worldFlags = Array.Empty<string>();
 
     /// <summary>An empty slot has no area — Continue/load is offered only for non-empty slots.</summary>
     public bool IsEmpty => string.IsNullOrEmpty(areaId);
@@ -58,6 +70,15 @@ public class GameSaveData
             leftHasSword = cp.leftHasSword,
             rightHasSword = cp.rightHasSword,
             skillLevels = SkillEntriesOf(cp.skillTreeSnapshot),
+
+            // §11.1 contract fields (SO-free primitives/ids — mirror straight across)
+            soulCount = cp.soulCount,
+            accordBarPoints = cp.accordBarPoints,
+            worldCorruption = cp.worldCorruption,
+            storyGradeId = cp.storyGradeId ?? "",
+            storyProgress = cp.storyProgress,
+            skyStateId = cp.skyStateId ?? "",
+            worldFlags = cp.worldFlags ?? Array.Empty<string>(),
         };
     }
 
