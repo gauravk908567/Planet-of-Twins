@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 /// (cross-scene — cannot be serialized in Inspector). Leave it blank in Persistent.
 /// When null, every input is allowed unconditionally (fail-open).
 ///
-/// SETUP: assign _actions = Assets/Settings/Input/PlanetOfTwins.inputactions
+/// SETUP: assign _actions = Assets/_PoT/Settings/Input/PlanetOfTwins.inputactions
 /// (Gameplay + UI maps). Missing asset/actions ⇒ LogError + that input is dead (R4 fail-loud).
 /// </summary>
 public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstanceGuard
@@ -84,7 +84,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         if (_actions == null)
         {
             Debug.LogError("[TwinInputReader] InputActionAsset not assigned — ALL input is dead. " +
-                           "Wire Assets/Settings/Input/PlanetOfTwins.inputactions.", this);
+                           "Wire Assets/_PoT/Settings/Input/PlanetOfTwins.inputactions.", this);
             enabled = false;   // OnEnable never runs → actions never enable
             return;
         }

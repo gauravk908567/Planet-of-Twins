@@ -47,7 +47,7 @@ public static class PoTPaths
         public const string AreaScenes        = "Assets/_PoT/Scenes/Areas";             // Area Tools: <root>/<Area>/<Area>.unity + kit
         public const string SpawnAreaConfigs  = "Assets/Scripts/SpawnSystem/SpawnArea"; // Area Tools ▸ Setup Zone: <root>/<scene>/
         public const string WorldLocations    = "Assets/Scripts/SceneLoader/Data";      // Scene Health fix: Location_<scene>.asset
-        public const string GradeProfiles     = "Assets/Settings/Grading";              // GradeProfileAuthoring
+        public const string GradeProfiles     = "Assets/_PoT/Settings/Grading";         // GradeProfileAuthoring
         public const string PoiEnergyProfiles = "Assets/Scripts/AIFramework/PlanetOfTwinsAI/AI/POI/Data"; // PoiEcologyAuthoring
         public const string FxIds             = "Assets/Scripts/Fx/Generated";          // must stay inside the PoT.Fx asmdef folder
         public const string BakedResources    = "Assets/Resources";                     // must be a Resources folder (see below)

@@ -100,7 +100,7 @@ public interface IInputProvider
 
     /// <summary>
     /// F7 — clear all runtime binding overrides on the action asset, restoring the authored
-    /// defaults (Assets/Settings/Input/PlanetOfTwins.inputactions). Safe no-op today (no
+    /// defaults (Assets/_PoT/Settings/Input/PlanetOfTwins.inputactions). Safe no-op today (no
     /// rebinding UI exists yet — that lands in F6); wired now so the pause "Restore Default
     /// Keybinds" button and future F6 rebinding can rely on it.
     /// </summary>
