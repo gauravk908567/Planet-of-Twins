@@ -22186,7 +22186,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
         - m_Target: {fileID: 5356363175251631410}
-          m_TargetAssemblyTypeName: PlayerMovementController, Assembly-CSharp
+          m_TargetAssemblyTypeName: PlayerMovementController, PoT.Gameplay
           m_MethodName: set_enabled
           m_Mode: 6
           m_Arguments:
@@ -22198,7 +22198,7 @@ MonoBehaviour:
             m_BoolArgument: 0
           m_CallState: 2
         - m_Target: {fileID: 6010000878629759777}
-          m_TargetAssemblyTypeName: Player, Assembly-CSharp
+          m_TargetAssemblyTypeName: Player, PoT.Gameplay
           m_MethodName: set_enabled
           m_Mode: 6
           m_Arguments:
@@ -22224,7 +22224,7 @@ MonoBehaviour:
             m_BoolArgument: 1
           m_CallState: 2
         - m_Target: {fileID: 5356363175251631410}
-          m_TargetAssemblyTypeName: PlayerMovementController, Assembly-CSharp
+          m_TargetAssemblyTypeName: PlayerMovementController, PoT.Gameplay
           m_MethodName: set_enabled
           m_Mode: 6
           m_Arguments:
@@ -22236,7 +22236,7 @@ MonoBehaviour:
             m_BoolArgument: 1
           m_CallState: 2
         - m_Target: {fileID: 6010000878629759777}
-          m_TargetAssemblyTypeName: Player, Assembly-CSharp
+          m_TargetAssemblyTypeName: Player, PoT.Gameplay
           m_MethodName: set_enabled
           m_Mode: 6
           m_Arguments:

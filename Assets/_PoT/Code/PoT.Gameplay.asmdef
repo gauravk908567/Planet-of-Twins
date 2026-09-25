@@ -1,0 +1,30 @@
+{
+    "name": "PoT.Gameplay",
+    "rootNamespace": "",
+    "references": [
+        "PoT.Framework",
+        "PoT.Fx",
+        "PoT.Manpu",
+        "Unity.InputSystem",
+        "Unity.Cinemachine",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.AI.Navigation",
+        "Unity.Localization",
+        "Unity.ResourceManager",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.Timeline",
+        "Unity.VisualEffectGraph.Runtime",
+        "com.cqf.urpvolumetricfog.runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

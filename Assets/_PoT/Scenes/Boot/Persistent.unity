@@ -6474,7 +6474,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1344690000}
-        m_TargetAssemblyTypeName: SkillPreviewModal, Assembly-CSharp
+        m_TargetAssemblyTypeName: SkillPreviewModal, PoT.Gameplay
         m_MethodName: Close
         m_Mode: 1
         m_Arguments:
@@ -77408,7 +77408,7 @@ MonoBehaviour:
     - m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 1776615701}
-          m_TargetAssemblyTypeName: CameraSwitcher, Assembly-CSharp
+          m_TargetAssemblyTypeName: CameraSwitcher, PoT.Gameplay
           m_MethodName: SetTutorialMode
           m_Mode: 6
           m_Arguments:
@@ -80337,7 +80337,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1344690000}
-        m_TargetAssemblyTypeName: SkillPreviewModal, Assembly-CSharp
+        m_TargetAssemblyTypeName: SkillPreviewModal, PoT.Gameplay
         m_MethodName: Close
         m_Mode: 1
         m_Arguments:
