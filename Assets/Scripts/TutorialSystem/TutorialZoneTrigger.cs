@@ -58,6 +58,10 @@ public class TutorialZoneTrigger : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (fireOnce && _fired) return;
+        // A finished tutorial (completed, Continue-resumed or dev-skipped) is never pulled back to an earlier stage.
+        // Skips land on Complete without these zones having fired, so without this guard walking through them
+        // re-arms stage-gated systems such as TutorialBoundary (BUG-133).
+        if (TutorialContext.Instance != null && TutorialContext.Instance.CurrentStage == TutorialStage.Complete) return;
 
         var player = other.GetComponent<Player>();
         if (player == null || player is SoulPlayer) return;

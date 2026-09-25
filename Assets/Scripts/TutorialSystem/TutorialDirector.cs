@@ -44,6 +44,15 @@ public class TutorialDirector : MonoBehaviour
             return;
         }
 
+        // The tutorial was already finished in this save/session (its completion world flag is set): e.g. the area
+        // streamed out and back in. Same bypass as Continue, so it never replays (BUG-133).
+        if (TutorialContext.Instance != null && TutorialContext.Instance.IsCompletedInSave)
+        {
+            Debug.Log("[TutorialDirector] Tutorial already completed (world flag) — skipping the tutorial.");
+            SkipTutorial(ownsLevelGos: true);
+            return;
+        }
+
         context.inputGate?.LockAll();
     }
 
