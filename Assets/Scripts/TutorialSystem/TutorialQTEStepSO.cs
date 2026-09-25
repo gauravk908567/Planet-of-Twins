@@ -16,6 +16,10 @@ public class TutorialQTEStepSO : TutorialStepBase
     {
         ApplyCommonSetup(ctx);
 
+        // The QTE's outcome already stands (its gate is open): BeginQTE won't start it, so no success event would
+        // ever arrive. End the step instead of waiting forever (BUG-132).
+        if (ctx.qteAnchor != null && ctx.qteAnchor.IsCompleted) yield break;
+
         // Show overlay prompt first — time pauses, player watches the video
         bool promptDone = false;
         string t = promptTitle.IsEmpty ? "" : promptTitle.GetLocalizedString();

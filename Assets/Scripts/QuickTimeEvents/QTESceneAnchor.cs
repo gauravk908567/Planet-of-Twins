@@ -64,6 +64,24 @@ public class QTESceneAnchor : MonoBehaviour
     public TMP_Text      InstructionLabel => instructionLabel;
     public TMP_Text      CountdownLabel  => countdownLabel;
 
+    /// <summary>True when this QTE's outcome already stands: it has at least one activatable and every one reports
+    /// <see cref="IActivatable.IsActivated"/> (e.g. a gate re-opened from a save's world flags). A completed QTE is
+    /// never offered again (BUG-132); a resettable gate that was deactivated reports false, so its QTE comes back.</summary>
+    public bool IsCompleted
+    {
+        get
+        {
+            bool any = false;
+            foreach (var a in _activatables)
+            {
+                if (a == null) continue;
+                if (!a.IsActivated) return false;
+                any = true;
+            }
+            return any;
+        }
+    }
+
     private void Awake()
     {
         _activatables = new IActivatable[activatableMono?.Length ?? 0];
@@ -80,6 +98,12 @@ public class QTESceneAnchor : MonoBehaviour
         {
             Debug.LogError("[QTESceneAnchor] QTEManager not found. " +
                            "Is it in Persistent.unity?", this);
+            return;
+        }
+        if (IsCompleted)
+        {
+            Debug.Log($"[QTESceneAnchor] '{name}' is already completed (its activatables are open, e.g. restored " +
+                      "from a save) — QTE not offered.", this);
             return;
         }
         QTEManager.Instance.BeginQTE(this);
