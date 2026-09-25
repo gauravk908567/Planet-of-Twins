@@ -61,7 +61,7 @@ public static class PoTPaths
     public static class Scan
     {
         public const string FirstPartyCode  = "Assets/Scripts";            // Code lint + Cue Id Verifier read every .cs here
-        public const string InputGlyphAtlas = "Assets/Art/UI/InputGlyphs"; // Kenney PNGs: <root>/<Keyboard|Xbox|…>/<stem>.png
+        public const string InputGlyphAtlas = "Assets/_PoT/Art/UI/InputGlyphs"; // Kenney PNGs: <root>/<Keyboard|Xbox|…>/<stem>.png
     }
 #endif
 }

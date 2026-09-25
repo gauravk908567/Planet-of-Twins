@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// restyle an instance through the serialized colour/sprite dials and the public setters.
 ///
 /// Drives a <c>UnityEngine.UI.Image</c> whose material uses the <c>PoT/UIBar</c> shader
-/// (Assets/Art/Shaders/PoTUIBar.shader) and, optionally, a second plain-tint <c>Image</c> for
+/// (Assets/_PoT/Art/Shaders/PoTUIBar.shader) and, optionally, a second plain-tint <c>Image</c> for
 /// the frame/outline sprite drawn above it.
 ///
 /// Two ORTHOGONAL channels are exposed, and this class never lets one leak into the other:
