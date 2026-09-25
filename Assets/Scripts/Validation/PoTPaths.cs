@@ -50,7 +50,7 @@ public static class PoTPaths
         public const string GradeProfiles     = "Assets/_PoT/Settings/Grading";         // GradeProfileAuthoring
         public const string PoiEnergyProfiles = "Assets/_PoT/Data/AI/POI";              // PoiEcologyAuthoring
         public const string FxIds             = "Assets/Scripts/Fx/Generated";          // must stay inside the PoT.Fx asmdef folder
-        public const string BakedResources    = "Assets/Resources";                     // must be a Resources folder (see below)
+        public const string BakedResources    = "Assets/_PoT/Resources";                   // must be a Resources folder (see below)
 
         /// <summary>Where a baker creates a Resources asset that does not exist yet: <c>&lt;BakedResources&gt;/&lt;key&gt;.asset</c>,
         /// so the runtime key resolves by construction. Bakers overwrite the EXISTING asset (wherever it lives) first.</summary>
