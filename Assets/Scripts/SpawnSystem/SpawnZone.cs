@@ -129,16 +129,20 @@ public class SpawnZone : MonoBehaviour
     }
 
     // ── Self-registration (multi-scene) ────────────────────
+    // Unity-null checks, never `?.`: `?.` skips Unity's destroyed-object check, so at teardown a dead registry would
+    // still fire OnZoneUnregistered into an already-destroyed EnemySpawner (BUG-130).
     private void OnEnable()
     {
-        SpawnZoneRegistry.Instance?.Register(this);
+        if (SpawnZoneRegistry.Instance != null)
+            SpawnZoneRegistry.Instance.Register(this);
         if (SoftResetController.Instance != null)
             SoftResetController.Instance.OnSoftReset += ClearOccupants;
     }
 
     private void OnDisable()
     {
-        SpawnZoneRegistry.Instance?.Unregister(this);
+        if (SpawnZoneRegistry.Instance != null)
+            SpawnZoneRegistry.Instance.Unregister(this);
         if (SoftResetController.Instance != null)
             SoftResetController.Instance.OnSoftReset -= ClearOccupants;
     }

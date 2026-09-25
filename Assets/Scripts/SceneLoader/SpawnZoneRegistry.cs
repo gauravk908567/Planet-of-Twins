@@ -33,6 +33,16 @@ public class SpawnZoneRegistry : MonoBehaviour
         Instance = this;
     }
 
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+        Instance = null;
+        // Teardown order is undefined: a subscriber destroyed after this registry can no longer unsubscribe (it sees
+        // Instance == null), so drop every subscriber here rather than keep delegates to dead objects (BUG-130).
+        OnZoneRegistered = null;
+        OnZoneUnregistered = null;
+    }
+
     public void Register(SpawnZone zone)
     {
         if (zone == null || _zones.Contains(zone)) return;
