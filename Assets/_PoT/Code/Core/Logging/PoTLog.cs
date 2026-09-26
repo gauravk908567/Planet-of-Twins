@@ -10,8 +10,9 @@ using UnityEngine;
 ///   • Warnings and errors stay <c>Debug.LogWarning</c> / <c>Debug.LogError</c> (fail loud). The session log
 ///     captures them whatever the channels say.
 ///
-/// Which channels are on: DevConfig ▸ Log Channels in the Editor and Development builds (needs Master ON). A
-/// release build starts with every channel off; the player's "Detailed logging" setting arrives in phase 3.
+/// Which channels are on: DevConfig ▸ Log Channels in the Editor and Development builds (needs Master ON), plus
+/// every channel while the player's "Detailed logging" setting is on (<see cref="DetailedLogging"/>). A release
+/// build ignores DevConfig, so there only the setting counts.
 /// </summary>
 public static class PoTLog
 {
@@ -52,8 +53,20 @@ public static class PoTLog
                 LogChannelRegistry.Get(flag.ToString()).Enabled = (mask & flag) != 0;
     }
 
-    /// <summary>Re-reads the channel mask from DevConfig (called when the active DevConfig changes).</summary>
-    public static void RefreshChannels() => ApplyChannelMask(DevConfig.LogChannels);
+    /// <summary>Re-reads the channel mask: DevConfig's channels, or all of them while Detailed logging is on.
+    /// Called at startup, when the active DevConfig changes, and when the setting changes.</summary>
+    public static void RefreshChannels() =>
+        ApplyChannelMask(DetailedLogging.Enabled ? AllChannels : DevConfig.LogChannels);
+
+    private static PoTLogChannels AllChannels
+    {
+        get
+        {
+            var all = PoTLogChannels.None;
+            foreach (PoTLogChannels flag in System.Enum.GetValues(typeof(PoTLogChannels))) all |= flag;
+            return all;
+        }
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void ApplyStartupChannels() => RefreshChannels();

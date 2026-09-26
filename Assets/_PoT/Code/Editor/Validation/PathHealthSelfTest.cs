@@ -48,6 +48,8 @@ public static class PathHealthSelfTest
         (PoTPaths.Named.SeekEnergyUtilProfile,   typeof(UtilityWeightProfile)),
         (PoTPaths.Named.DefaultPoiEnergyProfile, typeof(PoiEnergyProfile)),
         (PoTPaths.Named.FxIdsScript,             typeof(MonoScript)),
+        (PoTPaths.Named.UnifiedSettingsPrefab,   typeof(GameObject)),
+        (PoTPaths.Named.ReportScreenPrefab,      typeof(GameObject)),
     };
 
     [MenuItem("Planet of Twins Tools/Validation/Path Health")]

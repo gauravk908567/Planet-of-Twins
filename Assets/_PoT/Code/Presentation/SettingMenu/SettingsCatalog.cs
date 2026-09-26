@@ -17,6 +17,9 @@ public static class SettingsCatalog
     // Gameplay
     public const string Language         = "gameplay.language";
     public const string Cursor           = "gameplay.cursor";
+    // Gameplay · Support (bug reports, game.md §27)
+    public const string ReportProblem    = "support.report";
+    public const string DetailedLogging  = "support.detailedlogging";
     // Video · Display
     public const string WindowMode       = "video.windowmode";
     public const string Resolution       = "video.resolution";
@@ -42,6 +45,7 @@ public static class SettingsCatalog
 
     // ── Section (sub-header) names ──────────────────────────────────────────────────
     private const string General  = "General";
+    private const string Support  = "Support";
     private const string Display  = "Display";
     private const string Quality  = "Quality";
     private const string Volume   = "Volume";
@@ -55,6 +59,12 @@ public static class SettingsCatalog
         new SettingDefinition(Language, SettingTab.Gameplay, General, "Language",
             SettingControlType.Dropdown),                       // options filled at runtime
         new SettingDefinition(Cursor, SettingTab.Gameplay, General, "Show Cursor",
+            SettingControlType.Toggle),
+
+        // ── GAMEPLAY · Support (on the tab Pause opens on, so the report button is one press away) ──
+        new SettingDefinition(ReportProblem, SettingTab.Gameplay, Support, "Report a Problem",
+            SettingControlType.Button),
+        new SettingDefinition(DetailedLogging, SettingTab.Gameplay, Support, "Detailed Logging (for bug reports)",
             SettingControlType.Toggle),
 
         // ── VIDEO · Display ─────────────────────────────────────────────────────────

@@ -21,4 +21,6 @@ public static class PoTCrumb
     public const string Settings = "Settings";
     /// <summary>A device connected or disconnected; P1/P2 pairing.</summary>
     public const string Input = "Input";
+    /// <summary>The report screen: opened, saved, the crash notice dismissed. Same category the collector uses.</summary>
+    public const string Report = PoT.Diagnostics.ReportCollector.CrumbCategory;
 }

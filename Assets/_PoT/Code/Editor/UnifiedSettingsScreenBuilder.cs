@@ -131,6 +131,97 @@ public static class UnifiedSettingsScreenBuilder
                   "Check any unresolved asset refs on SettingsScreenController, then SAVE the scene to persist.");
     }
 
+    // ── Incremental: new catalog rows into the existing prefab ───────
+    /// <summary>Adds a row for every <see cref="SettingsCatalog"/> setting that has no <see cref="SettingBinding"/> yet
+    /// in the UnifiedSettings prefab: after the last row of its section, or at the end of its tab under a new section
+    /// header. Existing rows, their styling and the scene instances are untouched, so a catalog addition doesn't need
+    /// a full rebuild. Idempotent.</summary>
+    [MenuItem("Planet of Twins Tools/Settings/Add Missing Catalog Rows to Prefab")]
+    public static void AddMissingRowsToPrefab()
+    {
+        string path = PoTAssetLookup.FindUniquePath<GameObject>(PoTPaths.Named.UnifiedSettingsPrefab);
+        if (string.IsNullOrEmpty(path)) return;   // PoTAssetLookup logged why
+
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            int added = AddMissingRows(root);
+            if (added > 0) PrefabUtility.SaveAsPrefabAsset(root, path);
+            Debug.Log($"[UnifiedSettingsScreenBuilder] {path}: added {added} missing row(s).");
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+    }
+
+    private static int AddMissingRows(GameObject root)
+    {
+        var bar = root.GetComponentInChildren<SettingsTabBar>(true);
+        if (bar == null)
+        {
+            Debug.LogError("[UnifiedSettingsScreenBuilder] The prefab has no SettingsTabBar; run the full build instead.");
+            return 0;
+        }
+
+        var existing = new HashSet<string>();
+        foreach (var b in root.GetComponentsInChildren<SettingBinding>(true))
+            if (b != null && !string.IsNullOrEmpty(b.Id)) existing.Add(b.Id);
+
+        int added = 0;
+        foreach (var def in SettingsCatalog.Definitions)
+        {
+            if (existing.Contains(def.Id)) continue;
+            if (def.Tab == SettingTab.Controls)
+            {
+                Debug.LogWarning($"[UnifiedSettingsScreenBuilder] '{def.Id}' is on the CONTROLS tab, which is a bespoke " +
+                                 "view, not catalog rows; add it there by hand.");
+                continue;
+            }
+            var panel = PanelFor(bar, def.Tab);
+            if (panel == null)
+            {
+                Debug.LogError($"[UnifiedSettingsScreenBuilder] No panel for tab {def.Tab}; '{def.Id}' was not added.");
+                continue;
+            }
+            var scroll = panel.GetComponent<ScrollRect>();
+            var content = scroll != null && scroll.content != null ? scroll.content : panel.transform;
+
+            int insertAt = -1;   // just after the last row of the same section
+            for (int i = 0; i < content.childCount; i++)
+            {
+                var row = content.GetChild(i).GetComponent<SettingBinding>();
+                var rowDef = row != null ? FindDef(row.Id) : null;
+                if (rowDef != null && rowDef.Section == def.Section) insertAt = i + 1;
+            }
+            if (insertAt < 0) { AddSectionHeader(content, def.Section); insertAt = content.childCount; }
+
+            BuildRow(content, def);
+            content.GetChild(content.childCount - 1).SetSiblingIndex(insertAt);
+            existing.Add(def.Id);
+            added++;
+        }
+        return added;
+    }
+
+    private static GameObject PanelFor(SettingsTabBar bar, SettingTab tab)
+    {
+        var tabs = new SerializedObject(bar).FindProperty("_tabs");
+        for (int i = 0; i < tabs.arraySize; i++)
+        {
+            var el = tabs.GetArrayElementAtIndex(i);
+            if (el.FindPropertyRelative("tab").enumValueIndex == (int)tab)
+                return el.FindPropertyRelative("panel").objectReferenceValue as GameObject;
+        }
+        return null;
+    }
+
+    private static SettingDefinition FindDef(string id)
+    {
+        foreach (var def in SettingsCatalog.Definitions) if (def.Id == id) return def;
+        return null;
+    }
+
     // ── Panels ────────────────────────────────────────────────────────
     private static GameObject BuildPanel(SettingTab tab, RectTransform contentParent)
     {

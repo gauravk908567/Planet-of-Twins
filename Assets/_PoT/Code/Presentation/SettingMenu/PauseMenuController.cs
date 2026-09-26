@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using PoT.Diagnostics;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -6,11 +8,15 @@ using UnityEngine.SceneManagement;
 /// pause/settings screen (Resume | tabs | Exit on one page — SettingsScreenController).
 ///
 /// ESC/Back priority (each press resolves exactly ONE layer, highest first):
-///   1. Tutorial overlay open        → TriggerContinue
-///   2. SkillPreviewModal open        → close modal
-///   3. Unified settings screen open  → its own Back state machine (HandleBack; also takes pad-B)
-///   4. Skill tree open               → close skill tree
-///   5. Nothing open                  → open pause (the unified screen)
+///   1. Report screen open            → its Back (ends typing, else closes; also takes pad-B)
+///   2. Tutorial overlay open         → TriggerContinue
+///   3. SkillPreviewModal open        → close modal
+///   4. Unified settings screen open  → its own Back state machine (HandleBack; also takes pad-B)
+///   5. Skill tree open               → close skill tree
+///   6. Nothing open                  → open pause (the unified screen)
+///
+/// Opening pause keeps the finished gameplay frame for bug reports (game.md §27.3): the screen opens at the end of
+/// the frame ESC was pressed in, right after that frame is copied, so the menu isn't in the picture.
 ///
 /// SETUP: add to a Screen-Space-Overlay canvas (sort 25). This controller has NO serialized UI refs —
 /// it is purely the pause entry + ESC/Back arbiter. Resume/Exit live on the unified screen's
@@ -29,6 +35,12 @@ public class PauseMenuController : MonoBehaviour
     // Pause opens the unified settings screen directly (Resume | tabs | Exit on one page). The retired
     // flat pause card (_pauseRoot) is disabled in the scene and is no longer the pause surface.
     public bool IsPauseOpen => SettingsScreenController.Instance != null && SettingsScreenController.Instance.IsOpen;
+
+    private static readonly WaitForEndOfFrame EndOfFrame = new WaitForEndOfFrame();
+    // Pause was asked for and opens at the end of that frame. If end-of-frame never comes (the Editor's Game view
+    // isn't drawing), Update opens it two frames later without a screenshot.
+    private bool _openPending;
+    private int _openRequestedFrame;
 
     private void Awake()
     {
@@ -49,7 +61,13 @@ public class PauseMenuController : MonoBehaviour
 
     private void Update()
     {
-        if (_input == null) return;
+        // A frame of slack: a request from outside the player loop (an editor tool) resumes at the end of the NEXT frame.
+        if (_openPending && Time.frameCount > _openRequestedFrame + 1)   // end of frame never came
+        {
+            PoTLog.UI?.Info("pause opened without a screenshot (the end of the frame never came)");
+            OpenPauseNow();
+        }
+        if (_input == null || _openPending) return;
 
         bool esc = _input.GetPauseDown();   // Esc / pad Start
         // Pad B (<Gamepad>/buttonEast) is bound to UICancel, NOT Pause — so it never reached this arbiter and the
@@ -59,7 +77,14 @@ public class PauseMenuController : MonoBehaviour
         if (!back) return;
 
         // Centralised ESC/Back arbiter — each press resolves exactly one layer (priority: highest first).
-        // Non-settings layers respond to Esc/Start only; the settings screen also takes pad-B.
+        // Non-settings layers respond to Esc/Start only; the settings screen and the report screen on top of it
+        // also take pad-B.
+        if (ReportProblemScreen.Instance != null && ReportProblemScreen.Instance.IsOpen)
+        {
+            ReportProblemScreen.Instance.HandleBack();
+            return;
+        }
+
         if (esc && TutorialOverlayController.Instance != null && TutorialOverlayController.Instance.IsOpen)
         {
             TutorialOverlayController.Instance.TriggerContinue();
@@ -94,8 +119,26 @@ public class PauseMenuController : MonoBehaviour
     }
 
     // ── Public API ────────────────────────────────────────────
+    /// <summary>Opens pause at the end of this frame, after keeping the frame for bug reports.</summary>
     public void OpenPause()
     {
+        if (_openPending || IsPauseOpen) return;
+        _openPending = true;
+        _openRequestedFrame = Time.frameCount;
+        StartCoroutine(CaptureThenOpen());
+    }
+
+    private IEnumerator CaptureThenOpen()
+    {
+        yield return EndOfFrame;
+        if (!_openPending) yield break;   // Update already opened it (this frame would show the menu)
+        ScreenshotCapture.CaptureNow();
+        OpenPauseNow();
+    }
+
+    private void OpenPauseNow()
+    {
+        _openPending = false;
         // Open the unified pause/settings screen (the arbiter still owns timescale/audio/cursor below).
         if (SettingsScreenController.Instance == null)
         {

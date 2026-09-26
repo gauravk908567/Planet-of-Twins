@@ -28,6 +28,9 @@ public class FrontEndFlowController : MonoBehaviour
     [Tooltip("Optional — the main-menu copy of the unified settings screen (UnifiedSettings prefab, Menu Context ON). " +
              "Unwired → Options just logs.")]
     [SerializeField] private SettingsScreenController settings;
+    [Tooltip("Optional — the main-menu copy of the ReportProblemScreen prefab (Menu Context ON). Unwired → Report a " +
+             "Problem just logs.")]
+    [SerializeField] private ReportProblemScreen report;
 
     /// <summary>True once the flow has finished (both twins assigned) — GameBootstrapper waits on this.</summary>
     public bool IsFrontEndComplete { get; private set; }
@@ -39,6 +42,9 @@ public class FrontEndFlowController : MonoBehaviour
     private bool _backRequested;
     private bool _optionsRequested;
     private bool _settingsClosed;
+    private bool _reportRequested;
+    private bool _reportFromCrash;
+    private bool _reportClosed;
     private bool _running;
 
     private void Awake()
@@ -49,13 +55,18 @@ public class FrontEndFlowController : MonoBehaviour
 
     private void OnDestroy() { if (Instance == this) Instance = null; }
 
-    // Back while the settings screen is open: the in-game PauseMenuController arbiter does this in Persistent; the menu
-    // has no pause controller, so route the same inputs (Esc / pad Start = Pause, pad B = UICancel) to its Back logic.
+    // Back while the settings or report screen is open: the in-game PauseMenuController arbiter does this in Persistent;
+    // the menu has no pause controller, so route the same inputs (Esc / pad Start = Pause, pad B = UICancel) to their
+    // Back logic. The report screen goes first: it opens on top of the settings screen from its Support row.
     private void Update()
     {
-        if (settings == null || !settings.IsOpen) return;
+        bool reportOpen = report != null && report.IsOpen;
+        bool settingsOpen = settings != null && settings.IsOpen;
+        if (!reportOpen && !settingsOpen) return;
         var input = PlayerInputRouter.SharedInput;   // either player's device
-        if (input != null && (input.GetPauseDown() || input.GetUICancelDown())) settings.HandleBack();
+        if (input == null || !(input.GetPauseDown() || input.GetUICancelDown())) return;
+        if (reportOpen) report.HandleBack();
+        else settings.HandleBack();
     }
 
     /// <summary>Start the flow (idempotent). No-op if already running or complete.</summary>
@@ -80,6 +91,7 @@ public class FrontEndFlowController : MonoBehaviour
         mainMenu.NewGameRequested  += OnNewGame;
         mainMenu.ContinueRequested += OnContinue;
         mainMenu.OptionsRequested  += OnOptions;
+        mainMenu.ReportRequested   += OnReport;
         if (saveSlots != null) { saveSlots.SlotChosen += OnSlotChosen; saveSlots.BackRequested += OnSlotBack; }
         characterSelect.BackRequested += OnBack;
 
@@ -94,12 +106,23 @@ public class FrontEndFlowController : MonoBehaviour
         while (!selection.IsComplete)
         {
             // ── Start Menu ──
-            _newGameRequested = _continueRequested = _optionsRequested = false;
+            _newGameRequested = _continueRequested = _optionsRequested = _reportRequested = false;
             characterSelect.Hide();
             saveSlots?.Hide();
             mainMenu.Show();
-            yield return new WaitUntil(() => _newGameRequested || _continueRequested || _optionsRequested);
+            yield return new WaitUntil(() => _newGameRequested || _continueRequested || _optionsRequested || _reportRequested);
             mainMenu.Hide();
+
+            // ── Report a Problem → the report screen; closing it re-shows the Start Menu (the crash notice refreshes:
+            //    a sent report clears it). ──
+            if (_reportRequested)
+            {
+                _reportClosed = false;
+                report.Closed += OnReportClosed;
+                if (report.Open(_reportFromCrash)) yield return new WaitUntil(() => _reportClosed);
+                report.Closed -= OnReportClosed;
+                continue;
+            }
 
             // ── Options → the same settings screen as in-game (menu copy: Resume = "Back", no Exit). Back closes it
             //    and the loop re-shows the Start Menu with focus. ──
@@ -135,6 +158,7 @@ public class FrontEndFlowController : MonoBehaviour
         mainMenu.NewGameRequested  -= OnNewGame;
         mainMenu.ContinueRequested -= OnContinue;
         mainMenu.OptionsRequested  -= OnOptions;
+        mainMenu.ReportRequested   -= OnReport;
         if (saveSlots != null) { saveSlots.SlotChosen -= OnSlotChosen; saveSlots.BackRequested -= OnSlotBack; }
         characterSelect.BackRequested -= OnBack;
 
@@ -148,6 +172,18 @@ public class FrontEndFlowController : MonoBehaviour
     private void OnSlotBack()       => _slotBackRequested = true;
     private void OnBack()           => _backRequested = true;
     private void OnSettingsClosed() => _settingsClosed = true;
+    private void OnReportClosed()   => _reportClosed = true;
+
+    private void OnReport(bool fromCrashNotice)
+    {
+        if (report == null)
+        {
+            Debug.LogWarning("[FrontEndFlowController] Report a Problem pressed but no report screen is wired.", this);
+            return;
+        }
+        _reportFromCrash = fromCrashNotice;
+        _reportRequested = true;
+    }
 
     private void OnOptions()
     {

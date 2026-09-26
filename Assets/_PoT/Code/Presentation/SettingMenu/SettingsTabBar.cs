@@ -292,10 +292,14 @@ public sealed class SettingsTabBar : MonoBehaviour
 
     // LB/RB shoulder walk along the whole bar. This is the pause overlay (menu context), so it reads the New Input
     // System device directly; the IInputProvider/tutorial-gate rule governs GAMEPLAY input, not menus.
+    // A screen opened on top (the report screen) owns the focus: don't walk the bar while the selection sits outside
+    // this settings screen.
     private void Update()
     {
         var pad = UnityEngine.InputSystem.Gamepad.current;
         if (pad == null) return;
+        var sel = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+        if (sel != null && _screen != null && !sel.transform.IsChildOf(_screen.transform)) return;
         if (pad.rightShoulder.wasPressedThisFrame) ShiftBar(+1);
         else if (pad.leftShoulder.wasPressedThisFrame) ShiftBar(-1);
     }

@@ -220,14 +220,19 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     private bool InteractAllowed => _gate == null || _gate.IsInteractAllowed;
 
     // ── Action-read helpers (null-safe: a missing action reads as silence, LogError'd once in Awake) ──
-    private static bool Down(InputAction a) => a != null && a.WasPressedThisFrame();
-    private static bool Held(InputAction a) => a != null && a.IsPressed();
-    private static bool Released(InputAction a) => a != null && a.WasReleasedThisFrame();
+    // While a text box has the keyboard (UITextEntry), every read is silent: typed letters are text, not game keys.
+    // Only Pause and UI Cancel read through (DownAlways): they end the typing via the scene's Back arbiter.
+    private static bool Down(InputAction a) => a != null && !UITextEntry.IsTyping && a.WasPressedThisFrame();
+    private static bool Held(InputAction a) => a != null && !UITextEntry.IsTyping && a.IsPressed();
+    private static bool Released(InputAction a) => a != null && !UITextEntry.IsTyping && a.WasReleasedThisFrame();
+    private static bool DownAlways(InputAction a) => a != null && a.WasPressedThisFrame();
+    private static Vector2 Read2(InputAction a) =>
+        a == null || UITextEntry.IsTyping ? Vector2.zero : a.ReadValue<Vector2>();
 
     // ── IInputProvider ────────────────────────────────────────
     // Move composites use 2DVector mode=1 (Digital, NOT normalized) to match legacy
     // GetAxisRaw exactly — diagonals read (±1, ±1); GetMovementDirection normalizes.
-    public Vector2 GetMovementInput() => _gameplayFrozen ? Vector2.zero : _move?.ReadValue<Vector2>() ?? Vector2.zero;
+    public Vector2 GetMovementInput() => _gameplayFrozen ? Vector2.zero : Read2(_move);
 
     public Vector3 GetMovementDirection()
     {
@@ -272,8 +277,8 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     public bool GetOverviewDown() => Down(_overview);
     public bool GetOverviewHeld() => Held(_overview);
 
-    // Pause / back — ESC (PauseMenuController's priority chain stays the sole consumer)
-    public bool GetPauseDown() => Down(_pause);
+    // Pause / back — ESC (PauseMenuController's priority chain stays the sole consumer). Reads while typing: it ends it.
+    public bool GetPauseDown() => DownAlways(_pause);
 
     // Skill tree toggle — Tab (SkillTreeUI; ESC-close stays in PauseMenuController's chain)
     public bool GetSkillTreeToggleDown() => Down(_skillTree);
@@ -289,6 +294,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     // literally anything — honouring couch pairing (a device-restricted reader only skips on its own devices).
     public bool GetAnySkipDown()
     {
+        if (UITextEntry.IsTyping) return false;
         if (Down(_anySkip)) return true;
 
         if (_actions != null && _actions.devices.HasValue)
@@ -324,7 +330,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     public bool GetUITabLeftDown() => Down(_uiTabLeft);
     public bool GetUITabRightDown() => Down(_uiTabRight);
     public bool GetInstantBuyDown() => Down(_instantBuy);
-    public bool GetUICancelDown() => Down(_uiCancel);
+    public bool GetUICancelDown() => DownAlways(_uiCancel);   // reads while typing: pad B ends it
     public bool GetUIPreviewDown() => Down(_uiPreview);
     public bool GetUIDeleteDown() => Down(_uiDelete);
 
@@ -518,7 +524,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     // These read/rebind THIS reader's own (per-player, device-restricted) asset, so P1's keyboard and P2's pad
     // each drive their own column cursor and their own overrides — no cross-talk. Menu context (game paused),
     // so the tutorial gate doesn't apply. Never frozen: the settings screen is a menu, not gameplay.
-    public Vector2 GetUINavigate() => _uiNavigate?.ReadValue<Vector2>() ?? Vector2.zero;
+    public Vector2 GetUINavigate() => Read2(_uiNavigate);
     public bool GetUISubmitDown() => Down(_uiSubmit);
     public bool GetUISubmitHeld() => Held(_uiSubmit);
 

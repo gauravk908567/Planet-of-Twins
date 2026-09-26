@@ -30,6 +30,7 @@ namespace PoT.Diagnostics
             SessionLog.ResetStatics();
             Breadcrumbs.Clear();
             CrashMarker.ResetStatics();
+            ScreenshotCapture.ResetStatics();
             LogsFolder = null;
         }
 

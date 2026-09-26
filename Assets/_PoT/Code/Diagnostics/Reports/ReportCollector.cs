@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace PoT.Diagnostics
@@ -10,7 +11,8 @@ namespace PoT.Diagnostics
     ///   1. <see cref="Collect"/> (main thread): the package's sections (app, system, logs, crash), the breadcrumb
     ///      trail, the screenshot, then the game's sections from the request. Files are only planned.
     ///   2. <see cref="ReportPackage.WriteZip"/> (any thread): reads, trims and redacts the files and zips them.
-    /// <see cref="BuildZip"/> does both on the calling thread (the editor test menu uses it).
+    /// <see cref="WriteZipAsync"/> runs step 2 on a worker thread (the report screen uses it); <see cref="BuildZip"/>
+    /// does both on the calling thread (the editor test menu uses it).
     ///
     /// Zips go to <c>persistentDataPath/Reports/</c>; the newest <see cref="KeepReports"/> are kept.
     /// </summary>
@@ -56,15 +58,32 @@ namespace PoT.Diagnostics
             return path;
         }
 
+        /// <summary>Main thread: starts writing a collected package's zip on a worker thread, then prunes old
+        /// reports there too. The task's result is the zip path; a failed write faults the task.</summary>
+        public static Task<string> WriteZipAsync(ReportPackage package)
+        {
+            if (package == null) throw new ArgumentNullException(nameof(package));
+            string path = ZipPathFor(package);   // Application paths are read here, on the main thread
+            string folder = ReportsFolder;
+            return Task.Run(() =>
+            {
+                package.WriteZip(path);
+                PruneReports(folder, KeepReports);
+                return path;
+            });
+        }
+
         /// <summary><c>Reports/report_&lt;local time&gt;_&lt;id&gt;.zip</c>: sorts by time, and the id is in the name.</summary>
         public static string ZipPathFor(ReportPackage package) =>
             Path.Combine(ReportsFolder, string.Format(CultureInfo.InvariantCulture, "{0}{1:yyyyMMdd_HHmmss}_{2}.zip",
                                                       FilePrefix, package.CreatedUtc.ToLocalTime(), package.ReportId));
 
         /// <summary>Deletes all but the newest <paramref name="keep"/> report zips.</summary>
-        public static void PruneReports(int keep = KeepReports)
+        public static void PruneReports(int keep = KeepReports) => PruneReports(ReportsFolder, keep);
+
+        // Any thread (no Unity API).
+        private static void PruneReports(string folder, int keep)
         {
-            string folder = ReportsFolder;
             if (!Directory.Exists(folder)) return;
             var files = Directory.GetFiles(folder, FilePrefix + "*.zip");
             Array.Sort(files, StringComparer.Ordinal);   // oldest first (the name starts with the time)

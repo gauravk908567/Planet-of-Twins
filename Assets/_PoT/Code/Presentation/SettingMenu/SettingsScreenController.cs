@@ -75,6 +75,7 @@ public sealed class SettingsScreenController : MonoBehaviour
         _handlers.Add(_graphics);
         _handlers.Add(new DisplaySettingsHandler());
         _handlers.Add(new ControlsSettingsHandler());
+        _handlers.Add(new SupportSettingsHandler());
         foreach (var h in _handlers) h.Initialize(config);
 
         _graphics.SnapshotAssets();                    // editor-only body; no-op in builds

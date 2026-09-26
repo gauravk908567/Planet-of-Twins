@@ -68,6 +68,7 @@ public class SkillPointDebug : MonoBehaviour
 
     void Update()
     {
+        if (UITextEntry.IsTyping) return;   // typed text (the report screen) is not a debug key
         if (Input.GetKeyDown(KeyCode.L)) Add(1);
         if (Input.GetKeyDown(KeyCode.O)) Add(10);
         if (Input.GetKeyDown(KeyCode.P)) Add(100);

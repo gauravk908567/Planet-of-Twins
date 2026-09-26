@@ -55,6 +55,8 @@ public class DamageDealerDebug : MonoBehaviour
 
     private void Update()
     {
+        if (UITextEntry.IsTyping) return;   // typed text (the report screen) is not a debug key
+
         // ── D: Damage ─────────────────────────────────────
         if (Cat(KeyCode.D))
         {
