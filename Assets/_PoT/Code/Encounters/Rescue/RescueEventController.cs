@@ -164,6 +164,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     /// </summary>
     public void ForceReset()
     {
+        RecallActiveSouls();   // BUG-138: a respawn must not keep a deployed soul (and soul mode) alive
         if (_state == RescueState.Idle && _activeTarget == null) return;
 
         // Unfreeze grabbed player if mid-rescue
@@ -778,6 +779,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                 // before EnterState), so the tutorial step's Failed poll still fires.
                 if (!SuppressFailGameOver)
                     OnRescueFailed?.Invoke();   // fires BEFORE cleanup resets state
+                RecallActiveSouls();            // BUG-138: nothing left to rescue — send the soul home now
                 CleanupRescueEvent();
                 break;
 
@@ -788,6 +790,25 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                 // TransitionTo already fires it after EnterState returns.
                 // Player still trapped â _activeTarget preserved for retry.
                 break;
+        }
+    }
+
+    /// <summary>
+    /// BUG-138: a lost rescue (Failed) or a hard reset leaves a deployed soul nothing to do. End every still-active
+    /// Weaver's Gate: its normal return choreography plays, the cooldown starts, and the twins leave soul mode
+    /// (the gate's time-factor effect) at once. Before this, the soul stayed out for its full duration after a
+    /// failed rescue, so both twins stayed frozen and the tutorial retry met a leftover soul. A soul already
+    /// flying home (inactive ability) is left alone. Success is NOT routed here: the soul's post-rescue return
+    /// is by design (BUG-082).
+    /// </summary>
+    private void RecallActiveSouls()
+    {
+        for (int i = 0; i < _teleportAbilities.Count; i++)
+        {
+            var gate = _teleportAbilities[i];
+            if (gate == null || !gate.IsActive) continue;
+            PoTLog.Crumb(PoTCrumb.Rescue, "soul recalled (rescue over)");
+            gate.ForceEnd();
         }
     }
 
