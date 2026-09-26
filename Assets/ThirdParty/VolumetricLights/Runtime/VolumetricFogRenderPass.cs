@@ -355,7 +355,7 @@ public sealed class VolumetricFogRenderPass : ScriptableRenderPass
 		else
 			volumetricFogMaterial.EnableKeyword("_ADDITIONAL_LIGHTS_CONTRIBUTION_DISABLED");
 		
-		UpdateLightsParameters(volumetricFogMaterial, fogVolume, enableMainLightContribution, enableAdditionalLightsContribution, mainLightIndex, visibleLights);
+		UpdateLightsParameters(volumetricFogMaterial, fogVolume, enableMainLightContribution, enableAdditionalLightsContribution, mainLightIndex, additionalLightsCount, visibleLights);
 
 		volumetricFogMaterial.SetInteger(FrameCountId, Time.renderedFrameCount % 64);
 		volumetricFogMaterial.SetInteger(CustomAdditionalLightsCountId, additionalLightsCount);
@@ -381,19 +381,24 @@ public sealed class VolumetricFogRenderPass : ScriptableRenderPass
 	/// <param name="enableAdditionalLightsContribution"></param>
 	/// <param name="mainLightIndex"></param>
 	/// <param name="visibleLights"></param>
-	private static void UpdateLightsParameters(Material volumetricFogMaterial, VolumetricFogVolumeComponent fogVolume, bool enableMainLightContribution, bool enableAdditionalLightsContribution, int mainLightIndex, NativeArray<VisibleLight> visibleLights)
+	// LOCAL PATCH (Planet of Twins, BUG-141, 2026-09-26): URP shades at most maxVisibleAdditionalLights additional lights,
+	// and the shader reads the main light's values at that capped count (_CustomAdditionalLightsCount). The original code
+	// used the raw visible-light count, which ran past the arrays (IndexOutOfRangeException, the pass failed) once more
+	// than 256 lights were in view. Now: the main light goes where the shader reads it, and lights past the cap are
+	// skipped, exactly as URP skips them. Below the cap nothing changes. Re-apply after updating this package.
+	private static void UpdateLightsParameters(Material volumetricFogMaterial, VolumetricFogVolumeComponent fogVolume, bool enableMainLightContribution, bool enableAdditionalLightsContribution, int mainLightIndex, int additionalLightsCount, NativeArray<VisibleLight> visibleLights)
 	{
 		if (enableMainLightContribution)
 		{
-			Anisotropies[visibleLights.Length - 1] = fogVolume.anisotropy.value;
-			Scatterings[visibleLights.Length - 1] = fogVolume.scattering.value;
+			Anisotropies[additionalLightsCount] = fogVolume.anisotropy.value;
+			Scatterings[additionalLightsCount] = fogVolume.scattering.value;
 		}
 
 		if (enableAdditionalLightsContribution)
 		{
 			int additionalLightIndex = 0;
 
-			for (int i = 0; i < visibleLights.Length; ++i)
+			for (int i = 0; i < visibleLights.Length && additionalLightIndex < additionalLightsCount; ++i)
 			{
 				if (i == mainLightIndex)
 					continue;
