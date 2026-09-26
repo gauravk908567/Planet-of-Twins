@@ -342,6 +342,39 @@ public sealed class SettingsScreenController : MonoBehaviour
         RefreshValues();
     }
 
+    // ── Bug reports (game.md §27) ─────────────────────────────────────
+    /// <summary>Every setting's current value as "id: value", read through the same handlers the screen uses (so it
+    /// works while the screen is closed). Dropdowns give the option's label; a row with a readout adds it too.</summary>
+    public void DescribeForReport(List<(string Key, string Value)> into)
+    {
+        var defs = SettingsCatalog.Definitions;
+        for (int i = 0; i < defs.Count; i++)
+        {
+            var def = defs[i];
+            if (def.Type == SettingControlType.Button) continue;
+            var h = HandlerFor(def.Id);
+            if (h == null) { into.Add((def.Id, "(no handler)")); continue; }
+
+            switch (def.Type)
+            {
+                case SettingControlType.Dropdown:
+                    int index = h.GetInt(def.Id);
+                    IReadOnlyList<string> options = h.BuildDynamicOptions(def.Id) ?? def.Options;
+                    into.Add((def.Id, options != null && index >= 0 && index < options.Count
+                        ? options[index] : $"option {index}"));
+                    string readout = h.GetReadout(def.Id);
+                    if (readout != null) into.Add((def.Id + " (readout)", readout));
+                    break;
+                case SettingControlType.Slider:
+                    into.Add((def.Id, h.GetFloat(def.Id).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)));
+                    break;
+                case SettingControlType.Toggle:
+                    into.Add((def.Id, h.GetBool(def.Id) ? "on" : "off"));
+                    break;
+            }
+        }
+    }
+
     // ── Lookups ───────────────────────────────────────────────────────
     private ISettingHandler HandlerFor(string id)
     {

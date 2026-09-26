@@ -11,13 +11,15 @@ namespace PoT.Diagnostics
     /// </summary>
     public static class SystemSnapshot
     {
-        /// <summary>Product, company, version, build GUID, Unity version, platform, build type, system language.</summary>
+        /// <summary>Product, company, version, build GUID, commit stamp, Unity version, platform, build type,
+        /// system language.</summary>
         public static void AppendApp(List<(string Key, string Value)> into)
         {
             into.Add(("Product", Application.productName));
             into.Add(("Company", Application.companyName));
             into.Add(("Version", Application.version));
             into.Add(("Build GUID", string.IsNullOrEmpty(Application.buildGUID) ? "(editor)" : Application.buildGUID));
+            BuildStamp.AppendTo(into);
             into.Add(("Unity", Application.unityVersion));
             into.Add(("Platform", Application.platform.ToString()));
             into.Add(("Build type", Application.isEditor ? "Editor" : Debug.isDebugBuild ? "Development" : "Release"));

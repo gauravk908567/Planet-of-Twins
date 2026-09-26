@@ -194,7 +194,8 @@ namespace PoT.Diagnostics
             _writer = null;
         }
 
-        private static string[] ListSessionLogs(string folder)
+        /// <summary>The session logs in <paramref name="folder"/>, oldest first.</summary>
+        internal static string[] ListSessionLogs(string folder)
         {
             if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return Array.Empty<string>();
             var files = Directory.GetFiles(folder, FilePrefix + "*" + FileExtension);

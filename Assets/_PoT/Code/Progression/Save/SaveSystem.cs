@@ -14,7 +14,8 @@ public static class SaveSystem
 {
     public const int SlotCount = 3;
 
-    private static string PathFor(int slot) =>
+    /// <summary>The slot's file path (it may not exist). Public for bug reports, which attach the save file (game.md §27).</summary>
+    public static string PathFor(int slot) =>
         Path.Combine(Application.persistentDataPath, $"pot_slot_{slot}.json");
 
     public static bool IsValidSlot(int slot) => slot >= 0 && slot < SlotCount;

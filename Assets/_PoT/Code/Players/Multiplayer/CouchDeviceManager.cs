@@ -187,6 +187,18 @@ public class CouchDeviceManager : MonoBehaviour
     private static string Describe(InputDevice[] d) =>
         d == null || d.Length == 0 ? "all" : string.Join("+", d.Select(x => x.displayName));
 
+    /// <summary>Bug reports (game.md §27): solo or couch, and each player's devices and rebinds. Read-only.</summary>
+    public void DescribeForReport(List<(string Key, string Value)> into)
+    {
+        into.Add(("Mode", IsCouchActive ? "couch (two devices)" : "solo (one device drives both twins)"));
+        into.Add(("Auto-assign", !_autoAssign ? "off" : _autoAssignSuspended ? "on (suspended: settings open)" : "on"));
+        var p1 = _p1Reader != null ? _p1Reader : TwinInputReader.Instance;   // _p1Reader is resolved in Start
+        if (p1 != null) p1.DescribeForReport("P1", into);
+        else into.Add(("P1", "no reader"));
+        if (_p2Reader != null) _p2Reader.DescribeForReport("P2", into);
+        else into.Add(("P2", "no reader wired (solo only)"));
+    }
+
     // Dumps every connected device with the TYPE the Input System classifies it as (Gamepad / Joystick /
     // Keyboard / …). A controller that shows as 'Joystick' won't match the asset's <Gamepad> bindings — switch
     // it to XInput/gamepad mode so it registers as 'Gamepad', or it needs dedicated <Joystick> bindings.

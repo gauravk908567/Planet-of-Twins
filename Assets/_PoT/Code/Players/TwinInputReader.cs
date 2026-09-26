@@ -437,6 +437,35 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         }
     }
 
+    /// <summary>Bug reports (game.md §27): whether this reader is on, the devices it is restricted to, and each
+    /// rebind as "Map/Action.part: default → now". Read-only.</summary>
+    public void DescribeForReport(string player, System.Collections.Generic.List<(string Key, string Value)> into)
+    {
+        if (_actions == null) { into.Add(($"{player} actions", "missing")); return; }
+        into.Add(($"{player} reader", enabled ? "on" : "off"));
+
+        string devices = "all";
+        if (_actions.devices.HasValue && _actions.devices.Value.Count > 0)
+        {
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var d in _actions.devices.Value) names.Add(d.displayName);
+            devices = string.Join(" + ", names);
+        }
+        into.Add(($"{player} devices", devices));
+
+        int rebinds = 0;
+        foreach (var action in _actions)
+            foreach (var binding in action.bindings)
+            {
+                if (string.IsNullOrEmpty(binding.overridePath)) continue;
+                rebinds++;
+                string part = binding.isPartOfComposite ? "." + binding.name : string.Empty;
+                into.Add(($"{player} rebind {rebinds}",
+                          $"{action.actionMap.name}/{action.name}{part}: {binding.path} → {binding.overridePath}"));
+            }
+        if (rebinds == 0) into.Add(($"{player} rebinds", "none"));
+    }
+
     // ── F7 — restore default keybinds ──────────────────────────────────
     // Clears every runtime binding override on the whole asset, returning to the authored defaults, and forgets
     // this player's persisted rebinds (so defaults survive a restart too).

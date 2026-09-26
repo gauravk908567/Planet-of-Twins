@@ -302,6 +302,10 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
 
     public IReadOnlyCollection<WorldLocationSO> LoadedLocations => _loadedLocations;
 
+    /// <summary>Where each tracked actor (both twins and the rescue soul) currently is. Read-only; bug reports use it
+    /// (game.md §27).</summary>
+    public IReadOnlyDictionary<Player, WorldLocationSO> ActorLocations => _currentLocation;
+
 #if UNITY_EDITOR
     [Header("Debug")]
     [SerializeField] private bool showDebugOverlay = false;
