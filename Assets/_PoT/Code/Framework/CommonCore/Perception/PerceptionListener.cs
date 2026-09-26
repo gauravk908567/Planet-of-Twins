@@ -110,18 +110,12 @@ namespace CommonCore
                 return false;
 
             if ((Faction == null) || (InPerceivable.Faction == null))
-            {
-                Debug.LogWarning($"[CanDetect] blocked — listenerFaction={Faction?.Definition?.DisplayName ?? "NULL"} " +
-                                 $"perceivableFaction={InPerceivable.Faction?.Definition?.DisplayName ?? "NULL"} " +
-                                 $"listener={Owner.name} perceivable={InPerceivable.Owner.name}", Owner);
                 return false;
-            }
 
             if ((SupportedRelationships == null) || (SupportedRelationships.Count == 0))
                 return true;
 
-            var Relationship = Faction.GetRelationshipTo(InPerceivable.Faction);
-            return SupportedRelationships.Contains(Relationship);
+            return SupportedRelationships.Contains(Faction.GetRelationshipTo(InPerceivable.Faction));
         }
 
         public void OnNotifyBestPerceivable(IPerceivable InPerceivable, float InDetectionStrength, float InLastDetectionTime, Vector3 InLastDetectionLocation)

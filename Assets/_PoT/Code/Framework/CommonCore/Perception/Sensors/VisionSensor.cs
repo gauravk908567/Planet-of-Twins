@@ -94,9 +94,7 @@ namespace CommonCore
                 var Config = ListenerConfigs[Listener] as VisionSensorConfig;
 
                 float Strength = float.MinValue;
-                bool queryResult = RunQuery(InDeltaTime, Listener, Perceivable, Config, out Strength);
-
-                if (queryResult && (Strength > 0))
+                if (RunQuery(InDeltaTime, Listener, Perceivable, Config, out Strength) && (Strength > 0))
                     InManager.ReportDetection(Listener, Perceivable, this, Strength);
             }
         }
@@ -118,20 +116,14 @@ namespace CommonCore
 
             // are we out of range?
             if (VectorToPerceivable.sqrMagnitude > (InConfig.VisionConeRange * InConfig.VisionConeRange))
-            {
-                Debug.LogWarning($"[VisionQuery] RANGE FAIL dist={VectorToPerceivable.magnitude:F1} max={InConfig.VisionConeRange} listener={InListener.Owner.name} perceivable={InPerceivable.Owner.name}");
                 return false;
-            }
 
             VectorToPerceivable.Normalize();
 
             // are we out of the vision cone?
             float DotProduct = Vector3.Dot(VectorToPerceivable, InListener.SensorFacing);
             if (DotProduct < InConfig.CosVisionConeAngle)
-            {
-                Debug.LogWarning($"[VisionQuery] CONE FAIL dot={DotProduct:F2} minDot={InConfig.CosVisionConeAngle:F2} listener={InListener.Owner.name} perceivable={InPerceivable.Owner.name}");
                 return false;
-            }
 
             // raycast to the target
             RaycastHit HitResult;
@@ -144,14 +136,6 @@ namespace CommonCore
 
                     return true;
                 }
-
-                Debug.LogWarning($"[VisionRaycast] WRONG_GO hit={HitResult.collider.gameObject.name} (layer={HitResult.collider.gameObject.layer}) " +
-                                 $"expected={InPerceivable.Owner.name} listener={InListener.Owner.name} " +
-                                 $"listenerPos={InListener.SensorLocation} perceivablePos={InPerceivable.Position} hitPoint={HitResult.point}", HitResult.collider.gameObject);
-            }
-            else
-            {
-                Debug.LogWarning($"[VisionRaycast] MISS — no collider hit between {InListener.Owner.name} and {InPerceivable.Owner.name}");
             }
 
             return false;
