@@ -3929,6 +3929,7 @@ MonoBehaviour:
   _resultText: {fileID: 6857992483583757321}
   _openFolderButton: {fileID: 3157276667357326794}
   _doneButton: {fileID: 7889344741258059361}
+  _config: {fileID: 11400000, guid: 4b7d52a0977951d42a8036296fdcc555, type: 2}
 --- !u!1 &6606140044964580030
 GameObject:
   m_ObjectHideFlags: 0

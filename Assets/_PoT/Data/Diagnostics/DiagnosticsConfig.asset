@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eef4a7dfa6093554ab5b7faed0f299a5, type: 3}
+  m_Name: DiagnosticsConfig
+  m_EditorClassIdentifier: PoT.Diagnostics::PoT.Diagnostics.DiagnosticsConfig
+  _relayUrl: https://script.google.com/macros/s/AKfycbzqiEvOaW40oVSMbvVz2j_KkwKnqX35VhJITZHnOOjy3n6g8pJ1y7EhL1z1jcaQC36f8Q/exec
+  _fallbackEmail: saviourgravy@gmail.com
+  _timeoutSeconds: 60
+  _maxUploadMegabytes: 18

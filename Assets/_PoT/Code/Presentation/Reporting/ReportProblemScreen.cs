@@ -21,7 +21,9 @@ using UnityEngine.UI;
 /// sent.</para>
 ///
 /// <para>Send collects the report on the main thread (<see cref="ReportCollector.Collect"/>), writes the zip on a
-/// worker thread, then shows the report id. Phase 3 keeps the zip on this PC; phase 4 adds the upload.</para>
+/// worker thread (it always stays on this PC too), then sends it through the <see cref="DiagnosticsConfig"/>'s
+/// uploader (the Apps Script relay, game.md §27.4) and shows the report id. If sending fails, or there's no relay,
+/// "Email It to Us" opens the zip's folder and a prefilled email (the fallback, §27.2).</para>
 ///
 /// <para>Back (Esc, pad B or Start) arrives through <see cref="HandleBack"/> from the scene's arbiter
 /// (PauseMenuController in-game, FrontEndFlowController on the Main Menu). The screen runs while the game is paused
@@ -73,8 +75,13 @@ public sealed class ReportProblemScreen : MonoBehaviour
     [Header("Result")]
     [SerializeField] private TMP_Text _resultTitle;
     [SerializeField] private TMP_Text _resultText;
+    [Tooltip("Shown when the report stays on this PC: 'Email It to Us' when the config has an address, else 'Open Folder'.")]
     [SerializeField] private Button _openFolderButton;
     [SerializeField] private Button _doneButton;
+
+    [Header("Sending")]
+    [Tooltip("Where reports go (relay URL, fallback address). Missing = reports are only saved on this PC.")]
+    [SerializeField] private DiagnosticsConfig _config;
 
     /// <summary>Raised after the screen closes.</summary>
     public event Action Closed;
@@ -90,6 +97,9 @@ public sealed class ReportProblemScreen : MonoBehaviour
     private bool _editingLastFrame;   // an input field was being typed in last frame (Esc may have just ended it)
     private string _statusOverride;   // an error to show instead of the hint, until the form changes
     private string _savedFolder;
+    private string _mailtoUrl;        // set when the result offers "Email It to Us"
+    private IReportUploader _uploader;
+    private TMP_Text _folderButtonLabel;
     private GameObject _returnFocus;
     private readonly List<Selectable> _chipBuffer = new List<Selectable>(8);
 
@@ -123,7 +133,16 @@ public sealed class ReportProblemScreen : MonoBehaviour
         _sendButton.onClick.AddListener(OnSendClicked);
         _doneButton.onClick.AddListener(Close);
         if (_privacyButton != null) _privacyButton.onClick.AddListener(OnPrivacyClicked);
-        if (_openFolderButton != null) _openFolderButton.onClick.AddListener(OnOpenFolderClicked);
+        if (_openFolderButton != null)
+        {
+            _openFolderButton.onClick.AddListener(OnOpenFolderClicked);
+            _folderButtonLabel = _openFolderButton.GetComponentInChildren<TMP_Text>(true);
+        }
+
+        if (_config == null)
+            Debug.LogError("[ReportProblemScreen] No DiagnosticsConfig assigned: reports are only saved on this PC. " +
+                           "Assign it on the prefab (Planet of Twins Tools ▸ Diagnostics ▸ Wire Diagnostics Config).", this);
+        _uploader = _config != null ? _config.CreateUploader() : null;
 
         UINavStyle.Apply(_screenRoot);   // visible focus tint; navigation itself is wired explicitly below
         _screenRoot.SetActive(false);
@@ -230,8 +249,9 @@ public sealed class ReportProblemScreen : MonoBehaviour
         Bullet(sb, _menuContext ? "Your save files" : "Your save file and where you are in the game");
         if (_includeScreenshot) Bullet(sb, "A screenshot from when you paused");
         if (_includeCrash) Bullet(sb, "Crash data from last time (the crash file itself can't have your user name removed)");
-        sb.Append("<size=50%>\n</size><size=85%>We remove your Windows user name, your PC's name and email addresses " +
-                  "from the logs.</size>");
+        sb.Append("<size=50%>\n</size><size=85%>");
+        if (_uploader != null) sb.Append("It goes to our team's inbox through Google. ");
+        sb.Append("We remove your Windows user name, your PC's name and email addresses from the logs.</size>");
         return sb.ToString();
     }
 
@@ -380,29 +400,82 @@ public sealed class ReportProblemScreen : MonoBehaviour
             Fail(write.Exception != null ? write.Exception.GetBaseException() : new OperationCanceledException());
             yield break;
         }
-        Succeed(package, write.Result);
+        string zipPath = write.Result;
+
+        ReportUploadResult upload = null;
+        if (_uploader != null)
+        {
+            if (_statusText != null) _statusText.text = "Sending your report…";
+            yield return StartCoroutine(_uploader.Send(package, zipPath, result => upload = result));
+        }
+        Succeed(package, zipPath, upload);
     }
 
-    private void Succeed(ReportPackage package, string zipPath)
+    /// <summary>The zip is saved; <paramref name="upload"/> is null when there's no relay to send it to.</summary>
+    private void Succeed(ReportPackage package, string zipPath, ReportUploadResult upload)
     {
-        if (_includeCrash) CrashMarker.ClearPendingCrash();   // it's in this report now
+        if (_includeCrash) CrashMarker.ClearPendingCrash();   // it's in this report now (and in the saved zip)
         _savedFolder = Path.GetDirectoryName(zipPath);
         _description.text = string.Empty;   // the contact stays, for the next report this session
         foreach (var chip in _chips)
             if (chip.toggle != null) chip.toggle.SetIsOnWithoutNotify(false);
-        PoTLog.Crumb(PoTCrumb.Report, $"report {package.ReportId} saved");
+
+        string id = package.ReportId;
+        var outcome = upload != null ? upload.Outcome : ReportUploadResult.Status.NotSent;
+        bool sent = outcome == ReportUploadResult.Status.Sent;
+        _mailtoUrl = !sent && _config != null && _config.HasFallbackEmail
+            ? ReportMail.MailtoUrl(_config.FallbackEmail, Application.productName, package, Path.GetFileName(zipPath))
+            : null;
+
+        string keepHint = _mailtoUrl != null
+            ? "Press <b>Email It to Us</b>: your mail app opens with our address, and the report's folder opens so " +
+              "you can attach the file."
+            : "Press <b>Open Folder</b> to find it.";
+        string title, text;
+        if (upload == null)
+        {
+            PoTLog.Crumb(PoTCrumb.Report, $"report {id} saved (no relay configured)");
+            title = "Report saved";
+            text = $"Thank you! Your report ID is <b>{id}</b>.\n\nIt's saved on this PC. " + keepHint;
+        }
+        else if (sent)
+        {
+            PoTLog.Crumb(PoTCrumb.Report, $"report {id} sent");
+            PoTLog.UI?.Info($"report {id} sent through the {_uploader.Name}\n{upload.TraceText}");
+            title = "Report sent";
+            text = $"Thank you! Your report ID is <b>{id}</b>.\n\nIt's on its way to our team. If you left an email " +
+                   "address, we may write back.";
+        }
+        else if (outcome == ReportUploadResult.Status.Unconfirmed)
+        {
+            PoTLog.Crumb(PoTCrumb.Report, $"report {id} sent, unconfirmed: {upload.Message}");
+            Debug.LogWarning($"[ReportProblemScreen] Report {id} was sent but not confirmed ({upload.Message}).\n" +
+                             upload.TraceText, this);
+            title = "Report sent";
+            text = $"Thank you! Your report ID is <b>{id}</b>.\n\nIt reached our server, but the confirmation didn't " +
+                   "come back. It's also saved on this PC, in case it went missing. " + keepHint;
+        }
+        else
+        {
+            PoTLog.Crumb(PoTCrumb.Report, $"report {id} saved, not sent: {upload.Message}");
+            Debug.LogWarning($"[ReportProblemScreen] Report {id} was saved on this PC but not sent ({upload.Message}).\n" +
+                             upload.TraceText, this);
+            title = "Report saved, not sent";
+            text = $"Your report ID is <b>{id}</b>. It couldn't be sent: {upload.Message}.\n\nIt's saved on this PC. " +
+                   keepHint;
+        }
 
         _state = State.Result;
         _formRoot.SetActive(false);
         _resultRoot.SetActive(true);
-        if (_resultTitle != null) _resultTitle.text = "Report saved";
-        if (_resultText != null)
-            _resultText.text = $"Thank you! Your report ID is <b>{package.ReportId}</b>.\n\n" +
-                               "It's saved on this PC for now. Sending it to us straight from the game " +
-                               "comes in a later update.";
-        if (_openFolderButton != null) _openFolderButton.gameObject.SetActive(!string.IsNullOrEmpty(_savedFolder));
+        if (_resultTitle != null) _resultTitle.text = title;
+        if (_resultText != null) _resultText.text = text;
+
+        bool showFolder = !sent && !string.IsNullOrEmpty(_savedFolder);
+        if (_openFolderButton != null) _openFolderButton.gameObject.SetActive(showFolder);
+        if (_folderButtonLabel != null) _folderButtonLabel.text = _mailtoUrl != null ? "Email It to Us" : "Open Folder";
         WireResultNavigation();
-        UINavFocus.Focus(_doneButton);
+        UINavFocus.Focus(showFolder && _openFolderButton != null ? _openFolderButton : _doneButton);
     }
 
     private void Fail(Exception e)
@@ -419,9 +492,11 @@ public sealed class ReportProblemScreen : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(_privacyNoticeUrl)) Application.OpenURL(_privacyNoticeUrl);
     }
 
+    // "Open Folder", or "Email It to Us": the folder (to drag the zip from) + a prefilled email (mailto can't attach).
     private void OnOpenFolderClicked()
     {
         if (!string.IsNullOrEmpty(_savedFolder) && Directory.Exists(_savedFolder)) Application.OpenURL(_savedFolder);
+        if (_mailtoUrl != null) Application.OpenURL(_mailtoUrl);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────

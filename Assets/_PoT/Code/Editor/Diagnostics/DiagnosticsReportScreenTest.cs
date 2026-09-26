@@ -27,7 +27,7 @@ using UnityEngine.UI;
 /// </summary>
 public static class DiagnosticsReportScreenTest
 {
-    private const double TimeoutSeconds = 30.0;
+    private const double TimeoutSeconds = 150.0;   // a relay send makes two web requests of up to 60 s each
     private const string Description = "Automated test report from the Diagnostics menu.";
     private const string ScreenshotCopy = "Temp/ReportTest_screenshot.jpg";
 

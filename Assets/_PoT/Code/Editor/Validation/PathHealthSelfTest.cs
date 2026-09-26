@@ -50,6 +50,7 @@ public static class PathHealthSelfTest
         (PoTPaths.Named.FxIdsScript,             typeof(MonoScript)),
         (PoTPaths.Named.UnifiedSettingsPrefab,   typeof(GameObject)),
         (PoTPaths.Named.ReportScreenPrefab,      typeof(GameObject)),
+        (PoTPaths.Named.DiagnosticsConfig,       typeof(PoT.Diagnostics.DiagnosticsConfig)),
     };
 
     [MenuItem("Planet of Twins Tools/Validation/Path Health")]
