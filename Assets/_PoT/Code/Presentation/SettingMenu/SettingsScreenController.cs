@@ -287,6 +287,7 @@ public sealed class SettingsScreenController : MonoBehaviour
     private void OnDropdownChanged(string id, int value)
     {
         if (_pushing) return;
+        PoTLog.Crumb(PoTCrumb.Settings, $"{id} = option {value}");
         var def = FindDef(id);
         if (def != null && def.ApplyMode == SettingApplyMode.Deferred) { StageDeferred(id, value); return; }
         HandlerFor(id)?.SetInt(id, value);
@@ -303,6 +304,7 @@ public sealed class SettingsScreenController : MonoBehaviour
     private void OnToggleChanged(string id, bool value)
     {
         if (_pushing) return;
+        PoTLog.Crumb(PoTCrumb.Settings, $"{id} = {(value ? "on" : "off")}");
         HandlerFor(id)?.SetBool(id, value);
         RefreshValues();
     }

@@ -160,6 +160,7 @@ public class QTEManager : MonoBehaviour
             tp.OnPlayerReleased += HandlePlayerReleased;
         }
 
+        PoTLog.Crumb(PoTCrumb.QTE, $"started '{ActiveDef?.eventId}'");
         Debug.Log($"[QTEManager] QTE started: '{ActiveDef?.eventId}' " +
                   $"mode={(ActiveDef?.isTimedApproach ?? false ? "Timed" : "Infinite")}");
     }
@@ -283,6 +284,7 @@ public class QTEManager : MonoBehaviour
 
         StartCoroutine(UnfreezeAfterDelay(1.5f));
         OnQTESucceeded?.Invoke(eventId);
+        PoTLog.Crumb(PoTCrumb.QTE, $"succeeded '{eventId}'");
         Debug.Log($"[QTEManager] QTE succeeded: '{eventId}'");
 
         StartCoroutine(ResetToInactive());
@@ -302,6 +304,7 @@ public class QTEManager : MonoBehaviour
         _freezeService?.UnfreezeAll();
 
         OnQTEFailed?.Invoke(eventId);
+        PoTLog.Crumb(PoTCrumb.QTE, $"failed '{eventId}'");
         Debug.Log($"[QTEManager] QTE failed: '{eventId}'");
 
         StartCoroutine(ResetAfterFail());

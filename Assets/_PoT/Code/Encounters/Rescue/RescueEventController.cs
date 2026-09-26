@@ -433,6 +433,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         // controls the free twin. (Was: ForceSelect(otherTwin) when the grabbed twin was the selected
         // one.) Twin-switching no longer exists after the S5 teardown.
         OnPlayerInDanger?.Invoke(grabbedPlayer);
+        PoTLog.Crumb(PoTCrumb.Rescue, $"{grabbedPlayer?.name} grabbed by '{(target as MonoBehaviour)?.name}'");
 
         if (_debugRescue)
             Debug.Log($"[Rescue] BEGAN — '{grabbedPlayer?.name}' grabbed by " +
@@ -680,6 +681,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     // State machine
     private void TransitionTo(RescueState next)
     {
+        PoTLog.Crumb(PoTCrumb.Rescue, $"{_state} → {next} (player={_activeTarget?.GrabbedPlayer?.name ?? "none"})");
         if (_debugRescue)
             Debug.Log($"[Rescue] {_state} → {next}  " +
                       $"(target={(_activeTarget as MonoBehaviour)?.name ?? "none"}, " +

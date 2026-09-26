@@ -7,6 +7,7 @@ using UnityEngine;
 ///
 ///   • Trainer        — skill-point hack (keys + UI) and other debug UI/overlays.
 ///   • SkipTutorial   — skip the tutorial + cutscene (and dev-boot straight to the start area).
+///   • Log Channels   — which detailed PoTLog channels write (game.md §27).
 ///
 /// SHIP SAFETY (per-build, no code change): a flag only takes effect where debug is ALLOWED — the Editor, or a
 /// **Development Build** (the Build Settings checkbox). A **release** build (checkbox off) forces every flag
@@ -30,6 +31,12 @@ public class DevConfig : ScriptableObject
     [Tooltip("Skip the tutorial + cutscene and dev-boot straight into the start area (GameBootstrapper). " +
              "OFF = normal intro/tutorial flow.")]
     [SerializeField] private bool skipTutorial = false;
+
+    [Header("Logging (game.md §27)")]
+    [Tooltip("Which detailed log channels write (PoTLog.AI?.Info …) in the Editor and Development builds. " +
+             "Warnings, errors and breadcrumbs are always captured, whatever this says. A release build " +
+             "ignores it (channels there follow the player's 'Detailed logging' setting). Needs Master ON.")]
+    [SerializeField] private PoTLogChannels logChannels = (PoTLogChannels)~0;
 
     // ── runtime accessor ────────────────────────────────────────────────────────
     // Resolved from Resources/DevConfig by default, but a scene component (e.g. GameBootstrapper) can call
@@ -60,6 +67,7 @@ public class DevConfig : ScriptableObject
         if (config == null) return;
         _instance = config;
         _loaded = true;
+        PoTLog.RefreshChannels();
     }
 
     /// <summary>Is ANY dev/debug allowed to run? Requires: an asset exists, its master fail-safe is ON, AND the
@@ -82,4 +90,6 @@ public class DevConfig : ScriptableObject
     public static bool Trainer      => MasterOn && Instance.trainer;
     /// <summary>Skip tutorial + dev-boot to the start area. Independent of Trainer; both need Master ON.</summary>
     public static bool SkipTutorial => MasterOn && Instance.skipTutorial;
+    /// <summary>Enabled detailed log channels (PoTLog). None when Master is OFF or in a release build.</summary>
+    public static PoTLogChannels LogChannels => MasterOn ? Instance.logChannels : PoTLogChannels.None;
 }

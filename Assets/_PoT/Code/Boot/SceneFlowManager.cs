@@ -131,6 +131,8 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
     public void NotifyTwinEntered(WorldLocationSO location, Player actor)
     {
         if (location == null || actor == null) return;
+        if (!_currentLocation.TryGetValue(actor, out var previous) || previous != location)
+            PoTLog.Crumb(PoTCrumb.Area, $"{actor.name} entered '{location.name}'");
         _currentLocation[actor] = location;
         RecalculateLoadedSet();
     }
@@ -142,6 +144,7 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
     public void NotifyTeleported(Player actor, WorldLocationSO destination)
     {
         if (actor == null || destination == null) return;
+        PoTLog.Crumb(PoTCrumb.Area, $"{actor.name} teleported to '{destination.name}'");
         _currentLocation[actor] = destination;
         RecalculateLoadedSet();
     }

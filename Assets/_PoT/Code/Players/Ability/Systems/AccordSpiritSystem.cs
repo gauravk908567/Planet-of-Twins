@@ -165,6 +165,7 @@ public class AccordSpiritSystem : MonoBehaviour, IAbilityHUDSource
     private void SummonSpirits()
     {
         _cooldownTimer = _cooldown;
+        PoTLog.Crumb(PoTCrumb.Power, "Accord Spirits summoned");
 
         // Knockback pulse VFX on both twins at summon
         PlayKnockbackVFX(_leftTwin);

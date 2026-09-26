@@ -92,6 +92,7 @@ public class SaveService : MonoBehaviour
         PendingLoad = null;
         IsResumingSave = false;
         WorldFlagRegistry.Instance?.Clear();   // a fresh start carries no opened-gate / one-shot world flags
+        PoTLog.Crumb(PoTCrumb.Flow, $"New Game (slot {ActiveSlot})");
         Debug.Log($"[SaveService] New Game → active slot {ActiveSlot}.");
     }
 
@@ -104,6 +105,7 @@ public class SaveService : MonoBehaviour
         ActiveSlot = slot;
         PendingLoad = data;
         IsResumingSave = true;
+        PoTLog.Crumb(PoTCrumb.Flow, $"Continue (slot {slot}, area '{data.areaId}')");
         Debug.Log($"[SaveService] Continue → slot {slot}, area '{data.areaId}'.");
         return true;
     }

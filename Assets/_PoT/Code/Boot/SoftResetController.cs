@@ -68,6 +68,7 @@ public class SoftResetController : MonoBehaviour
             Debug.LogWarning("[SoftResetController] Reset already in progress — ignoring.");
             return;
         }
+        PoTLog.Crumb(PoTCrumb.Save, "respawn: soft reset started");
         StartCoroutine(ResetSequence(data));
     }
 
@@ -130,6 +131,7 @@ public class SoftResetController : MonoBehaviour
         yield return StartCoroutine(Fade(1f, 0f, fadeInDuration));
 
         _resetting = false;
+        PoTLog.Crumb(PoTCrumb.Save, "respawn: soft reset complete");
         Debug.Log("[SoftResetController] Soft reset complete.");
     }
 

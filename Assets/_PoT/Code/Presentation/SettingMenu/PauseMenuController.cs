@@ -104,6 +104,7 @@ public class PauseMenuController : MonoBehaviour
             return;
         }
         SettingsScreenController.Instance.Open();
+        PoTLog.Crumb(PoTCrumb.Pause, "paused");
 
         TimeScaleService.Instance?.Request(this, 0f);
         // F4/F7 — halt gameplay audio (owner set, sole AudioListener.pause writer) + duck to the
@@ -117,6 +118,7 @@ public class PauseMenuController : MonoBehaviour
 
     public void Resume()
     {
+        PoTLog.Crumb(PoTCrumb.Pause, "resumed");
         SettingsScreenController.Instance?.Close();
         TimeScaleService.Instance?.Release(this);
         AudioManager.Instance?.ReleasePaused(this);
@@ -127,6 +129,7 @@ public class PauseMenuController : MonoBehaviour
 
     public void ExitGame()
     {
+        PoTLog.Crumb(PoTCrumb.Flow, "exit game (pause menu)");
         TimeScaleService.Instance?.ReleaseAll();
         AudioManager.Instance?.ReleasePaused(this);
         AudioManager.Instance?.ReleaseSnapshot(this);

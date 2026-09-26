@@ -331,6 +331,7 @@ public class EmpowerSystem : MonoBehaviour, IAbilityActiveState, IAbilityHUDSour
         _anchoringTwin = selected;
         _empoweredTwin = selected == _leftTwin ? _rightTwin : _leftTwin;
         _state = EmpowerState.Active;
+        PoTLog.Crumb(PoTCrumb.Power, $"Empower on (caster {selected.name})");
         _activeTimer = 0f;
         _chargeProgress = 0f;
         _cancelProgress = 0f;

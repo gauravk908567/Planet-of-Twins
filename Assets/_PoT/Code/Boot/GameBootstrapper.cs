@@ -99,6 +99,8 @@ public class GameBootstrapper : MonoBehaviour
         //   • LEGACY (intro only, no front-end): straight to the intro. FALLBACK: LocalBoot().
         bool devDirect = DevConfig.SkipTutorial && devStartArea.IsValid;
         bool menuFirst = useFrontEnd && !devDirect && !string.IsNullOrEmpty(frontEndSceneName);
+        PoTLog.Crumb(PoTCrumb.Flow, devDirect ? $"boot: dev-direct to '{devStartArea.Name}'"
+                                    : menuFirst ? "boot: front-end" : "boot: intro");
 
         if (devDirect)
         {

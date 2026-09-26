@@ -246,6 +246,7 @@ public class SoulConvergenceSystem : MonoBehaviour, IDamageMultiplier, IAbilityA
     // ── Activation ────────────────────────────────────────────
     void Activate()
     {
+        PoTLog.Crumb(PoTCrumb.Power, "Soul Convergence on");
         _abilityActive = true;
         _chargeProgress = 0f;
         _powerTimer = CurrentPowerDuration;

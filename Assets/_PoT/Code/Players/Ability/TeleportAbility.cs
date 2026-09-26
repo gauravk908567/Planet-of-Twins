@@ -191,6 +191,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         // a deadlock where teleport was blocked before rescue could even start.
         if (_rescueActive != null && !_rescueActive.HasActiveRescueTarget)
         {
+            PoTLog.Crumb(PoTCrumb.Power, $"Gate blocked for {_caster.name}: no twin in danger");
             UnityEngine.Debug.Log("[TeleportAbility] Blocked — no twin in danger.");
             return false;
         }
@@ -200,6 +201,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         // soul onto itself, so the partner can no longer run the rescue (couch two-soul model; user-reported).
         if (_rescueActive != null && _rescueActive.ActiveGrabbedPlayer == _caster)
         {
+            PoTLog.Crumb(PoTCrumb.Power, $"Gate blocked for {_caster.name}: the grabbed twin can't cast");
             UnityEngine.Debug.Log("[TeleportAbility] Blocked — the grabbed twin can't cast its own gate; the partner rescues.");
             return false;
         }
@@ -207,6 +209,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         // Double teleport guard — soul is already active, don't fire again
         if (_soul != null && _soul.gameObject.activeSelf && isActive)
         {
+            PoTLog.Crumb(PoTCrumb.Power, $"Gate blocked for {_caster.name}: soul already active");
             UnityEngine.Debug.Log("[TeleportAbility] Blocked — soul already active.");
             return false;
         }
@@ -222,6 +225,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         // BUG-082: soul is now committed to deploy — enemies stay frozen until it is home again
         // (cleared at the end of ReturnSequence). A re-cast re-enters here and re-sets true.
         IsSoulDeployed = true;
+        PoTLog.Crumb(PoTCrumb.Power, $"Gate cast by {_caster.name}");
 
         _timeFactorController?.TriggerEffect();
         _soulHasArrived = false;
@@ -307,6 +311,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         _activationTime = UnityEngine.Time.time;
         _activeTeleportCoroutine = null;
         _soul.Movement?.SetMovementLocked(false);
+        PoTLog.Crumb(PoTCrumb.Power, $"{_caster.name}'s soul arrived");
         OnSoulArrived?.Invoke();
 
         // Start soul pulse — applies fear/slow (and burn in Accord)
@@ -438,6 +443,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         SetTwinsMovementLocked(false);
         IsSoulDeployed = false;   // BUG-082: soul is home — release the enemy freeze extension
         _activeTeleportCoroutine = null;
+        PoTLog.Crumb(PoTCrumb.Power, $"{_caster.name}'s soul home");
     }
 
     // Twin movement lock for the return beat. Re-entrancy safe: Activate() force-releases a

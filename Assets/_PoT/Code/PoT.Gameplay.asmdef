@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "PoT.Framework",
+        "PoT.Diagnostics",
         "PoT.Fx",
         "PoT.Manpu",
         "Unity.InputSystem",

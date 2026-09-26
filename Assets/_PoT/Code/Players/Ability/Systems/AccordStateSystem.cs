@@ -499,6 +499,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         FireShockwave(_rightTwin.transform.position);
 
         OnAccordActivated?.Invoke();
+        PoTLog.Crumb(PoTCrumb.Power, "Accord on");
         Debug.Log("[AccordStateSystem] Accord State ACTIVATED");
     }
 
@@ -517,6 +518,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         // SC continues independently if its power state is still running —
         // this system never touches SC state on deactivation.
         OnAccordDeactivated?.Invoke();
+        PoTLog.Crumb(PoTCrumb.Power, "Accord off");
         Debug.Log("[AccordStateSystem] Accord State DEACTIVATED");
     }
 

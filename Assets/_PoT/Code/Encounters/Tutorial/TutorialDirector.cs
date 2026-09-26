@@ -82,6 +82,8 @@ public class TutorialDirector : MonoBehaviour
         _skipped = true;
         _started = true;                       // block any later StartTutorial() (e.g. a timeline signal)
         StopAllCoroutines();                   // halt a running step sequence
+        PoTLog.Crumb(PoTCrumb.Tutorial, ownsLevelGos ? "skipped (dev skip, Continue or already done)"
+                                                     : "skipped (Ctrl+F9 panic)");
 
         // ── Canonical "tutorial complete" end-state (mirrors TutorialUnlockAllStepSO) ──
         // Open the gate AND detach it from the reader: detaching is race-proof — a null gate = all input allowed
@@ -176,6 +178,7 @@ public class TutorialDirector : MonoBehaviour
             // SwitchWait / SwitchCheckpoint, the ONLY SwitchUnlocked-stage steps — are skipped. Nothing gates
             // on the SwitchUnlocked stage (verified), so movement flows straight into the next teaching step.
             if (step.stage == TutorialStage.SwitchUnlocked) continue;
+            PoTLog.Crumb(PoTCrumb.Tutorial, $"step '{step.name}' ({step.stage})");
             yield return step.Execute(context, this);
         }
     }

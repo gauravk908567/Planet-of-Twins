@@ -280,6 +280,7 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
     // ── Activation ────────────────────────────────────────────
     private void Activate()
     {
+        PoTLog.Crumb(PoTCrumb.Power, "Setsuna on");
         _state = State.Active;
         _activeTimer = 0f;
 

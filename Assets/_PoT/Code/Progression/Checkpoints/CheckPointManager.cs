@@ -80,6 +80,7 @@ public class CheckpointManager : MonoBehaviour
         SaveService.Instance?.AutoSave(_saved);
 
         flashUI?.Flash("Checkpoint saved");
+        PoTLog.Crumb(PoTCrumb.Save, $"checkpoint saved at '{(location != null ? location.name : "?")}'");
         Debug.Log($"[CheckpointManager] Saved at L={leftPos} R={rightPos} " +
                   $"pts={_saved.skillPoints} " +
                   $"swords=({_saved.leftHasSword},{_saved.rightHasSword})");

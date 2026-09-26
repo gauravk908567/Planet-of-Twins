@@ -95,14 +95,14 @@ public class CouchDeviceManager : MonoBehaviour
 
     private void OnDeviceChange(InputDevice device, InputDeviceChange change)
     {
-        if (!_autoAssign || _autoAssignSuspended) return;
         switch (change)
         {
             case InputDeviceChange.Added:
             case InputDeviceChange.Removed:
             case InputDeviceChange.Reconnected:
             case InputDeviceChange.Disconnected:
-                AssignAuto();
+                PoTLog.Crumb(PoTCrumb.Input, $"{change}: '{device.displayName}'");
+                if (_autoAssign && !_autoAssignSuspended) AssignAuto();
                 break;
         }
     }
@@ -168,6 +168,7 @@ public class CouchDeviceManager : MonoBehaviour
         _router.SetP2Provider(_p2Reader);
         IsCouchActive = true;
 
+        PoTLog.Crumb(PoTCrumb.Input, $"couch pairing: P1={Describe(p1Devices)}, P2={Describe(p2Devices)}");
         Debug.Log($"[CouchDeviceManager] Couch ON — P1={Describe(p1Devices)}  P2={Describe(p2Devices)}");
     }
 
@@ -179,6 +180,7 @@ public class CouchDeviceManager : MonoBehaviour
         if (_p2Reader != null) _p2Reader.enabled = false;
         IsCouchActive = false;
 
+        PoTLog.Crumb(PoTCrumb.Input, "solo: one device drives both twins");
         Debug.Log("[CouchDeviceManager] Solo — one device drives both twins.");
     }
 
