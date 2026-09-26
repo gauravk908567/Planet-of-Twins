@@ -6,13 +6,16 @@ namespace PoT.Diagnostics
 {
     /// <summary>
     /// <c>logs</c>: the two newest session logs (this run's and the one before; with Play stopped, the last two
-    /// runs), and Unity's own log with the previous run's copy (Player.log / Player-prev.log in a build,
-    /// Editor.log / Editor-prev.log in the Editor). Long logs are trimmed to their start and end.
+    /// runs), this run's problem ledger (<c>problems.txt</c>: every different warning/error with its count, which
+    /// no trim or flood limit can hide), and Unity's own log with the previous run's copy (Player.log /
+    /// Player-prev.log in a build, Editor.log / Editor-prev.log in the Editor). Long logs are trimmed to their start
+    /// and end.
     /// </summary>
     internal sealed class LogsReportSection : IReportSection
     {
         private const int SessionLogsIncluded = 2;
         private const string ZipFolder = "logs/";
+        internal const string ProblemsName = "problems.txt";
 
         private readonly string _logsFolder;
 
@@ -31,6 +34,8 @@ namespace PoT.Diagnostics
                 included.Add(name);
             }
             section.Add("Session logs", included.Count > 0 ? string.Join(", ", included) : "none");
+            section.Add("Session log limits", SessionLog.DescribeLimits());
+            section.AddText(ZipFolder + ProblemsName, SessionLog.DescribeProblems());
 
             string unityLog = Application.consoleLogPath;
             if (string.IsNullOrEmpty(unityLog))

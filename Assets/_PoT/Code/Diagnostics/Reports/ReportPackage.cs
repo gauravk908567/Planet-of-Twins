@@ -113,8 +113,11 @@ namespace PoT.Diagnostics
                 {
                     case ReportFileEntry.Source.TextFile:
                         if (!File.Exists(file.SourcePath)) { file.Note = "missing"; return; }
-                        string text = ReportFileReader.ReadText(file.SourcePath, TextFileLimit, TextHeadBytes,
-                                                                out long size, out bool trimmed);
+                        long size = 0;
+                        bool trimmed = false;
+                        // This run's session log may be trimming (rewriting its end): read it between writes.
+                        string text = SessionLog.ReadStable(file.SourcePath, () => ReportFileReader.ReadText(
+                            file.SourcePath, TextFileLimit, TextHeadBytes, out size, out trimmed));
                         file.SourceBytes = size;
                         if (trimmed) file.Note = "trimmed: the start and the end of a long log are kept";
                         bytes = Utf8.GetBytes(_redactor.Redact(text));
@@ -220,7 +223,8 @@ namespace PoT.Diagnostics
 
         private static StringBuilder Indent(StringBuilder json, int depth) => json.Append(' ', depth * 2);
 
-        private static string Quote(string value)
+        /// <summary>A JSON string literal (quotes + escapes). Also used by the uploader's request body.</summary>
+        internal static string Quote(string value)
         {
             if (value == null) return "\"\"";
             var quoted = new StringBuilder(value.Length + 2);
