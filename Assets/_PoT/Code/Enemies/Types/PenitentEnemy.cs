@@ -26,7 +26,6 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
     private bool _crushResolved;
     private int _crushMashCount;
     private bool _ttkPaused;
-    private bool _isFrozen;
 
     // ── Public accessors for GOAP brain ───────────────────────
     public bool IsCrushing => _crushing;
@@ -77,11 +76,8 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
         _crushResolved = false;
         _crushMashCount = 0;
         _ttkPaused = false;
-        _isFrozen = false;
     }
 
-    public override void OnEffectStarted() { base.OnEffectStarted(); _isFrozen = true; }
-    public override void OnEffectEnded() { base.OnEffectEnded(); _isFrozen = false; }
 
     public override void ApplyData(EnemyData data)
     {
@@ -96,7 +92,7 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
     // ── Update — proximity grab trigger only ───────────────────
     private void Update()
     {
-        if (_isFrozen) return;
+        if (IsFrozen) return;
         if (_windingUp || _crushing || _inCooldown || Target == null) return;
 
         var targetPlayer = Target.GetComponent<Player>();
@@ -121,7 +117,7 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
                 transform.rotation = Quaternion.LookRotation(dir);
         }
 
-        while (_isFrozen) yield return null;
+        while (IsFrozen) yield return null;
         yield return new WaitForSeconds(_penitentData?.grabWindUpDuration ?? 1.25f);
         _windingUp = false;
 
@@ -149,7 +145,7 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
     {
         while (_crushing)
         {
-            while (_isFrozen || _ttkPaused) { yield return null; continue; }
+            while (IsFrozen || _ttkPaused) { yield return null; continue; }
 
             float interval = _inRage
                 ? (_penitentData?.rageTickInterval ?? 0.15f)
@@ -304,7 +300,7 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
         Movement.SetSpeed(originalSpeed * (_penitentData?.reflectionSpeedMultiplier ?? 1.4f));
         if (_renderer != null) MaterialTint.SetColor(_renderer.material, ReflectionColor);
 
-        while (_isFrozen) yield return null;
+        while (IsFrozen) yield return null;
         yield return new WaitForSeconds(_penitentData?.reflectionDuration ?? 2.2f);
 
         _reflectionActive = false;
@@ -327,7 +323,7 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
         // the roster + flagged for rework — re-express as an Enraged mood transition (paired stop below) during
         // that rework so the Manpu Enraged aura holds for the reflection window.
 
-        while (_isFrozen) yield return null;
+        while (IsFrozen) yield return null;
         yield return new WaitForSeconds(rageDuration);
 
         _inRage = false;

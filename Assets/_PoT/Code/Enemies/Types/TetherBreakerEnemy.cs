@@ -21,7 +21,6 @@ public class TetherBreakerEnemy : Enemy, IStruggleHold
     private Player _leftPlayer;
     private Player _rightPlayer;
 
-    private bool _isFrozen;
     private bool _chainOnCooldown;
     private bool _throwing;
     private bool _sprinting;
@@ -83,14 +82,11 @@ public class TetherBreakerEnemy : Enemy, IStruggleHold
         }
     }
 
-    public override void OnEffectStarted() { base.OnEffectStarted(); _isFrozen = true; }
-    public override void OnEffectEnded() { base.OnEffectEnded(); _isFrozen = false; }
-
     // IStruggleHold: one melee press from the caught twin's own player (BUG-144; was a raw keyboard-E read that pads
     // couldn't use and any keyboard could trigger). No mashing while this enemy is frozen, as before.
     public void OnStruggle()
     {
-        if (_isFrozen) return;
+        if (IsFrozen) return;
         _activeChain?.NotifyMash();
     }
 
@@ -107,7 +103,7 @@ public class TetherBreakerEnemy : Enemy, IStruggleHold
         _throwing = true;
         _chainOnCooldown = true;
 
-        while (_isFrozen) yield return null;
+        while (IsFrozen) yield return null;
 
         Movement.Stop();
         Vector3 dir = (Target.position - transform.position);
@@ -174,7 +170,7 @@ public class TetherBreakerEnemy : Enemy, IStruggleHold
 
         while (_sprinting && _activeChain != null)
         {
-            while (_isFrozen) { yield return null; continue; }
+            while (IsFrozen) { yield return null; continue; }
             Movement.MoveTowards(transform.position + sprintDir * 5f);
 
             if (player != null && !player.Health.IsDead)
@@ -235,7 +231,7 @@ public class TetherBreakerEnemy : Enemy, IStruggleHold
 
     private IEnumerator ChainMissCooldown()
     {
-        while (_isFrozen) yield return null;
+        while (IsFrozen) yield return null;
 
         // Pull-back window: stand still and reel the fallen chain back in (the chain GO drives the
         // grounded + retract visual over the same chainPullDuration, so they stay in sync).

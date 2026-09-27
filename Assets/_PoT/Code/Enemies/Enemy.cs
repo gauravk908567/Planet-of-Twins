@@ -26,9 +26,34 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private bool _isFeared = false;
     private float _baseSpeed = -1f;
 
-    // Brain pause flag — replaces StateMachine.Pause/Resume
-    // PoTGOAPBrainBase reads this in OnPreTickBrain
-    public bool IsBrainPaused { get; private set; } = false;
+    // ── Brain pause owners (BUG-142) ──────────────────────────
+    // The brain (and NavMesh movement) is paused while ANY owner holds a pause, the same model as TimeScaleService's
+    // owners (R10). Each system pauses and resumes only its OWN hold, so one ending never cuts another short: a stun
+    // runs its full duration through a QTE, and a stun that ends mid-QTE doesn't unfreeze the enemy.
+    // Owners: this enemy's own states (the reasons below), a world freeze (the soul cast's time effect, or the QTE
+    // freeze service passing itself) and another enemy's possession return (that enemy). PoTGOAPBrainBase reads it.
+    private sealed class PauseReason
+    {
+        private readonly string _name;
+        public PauseReason(string name) => _name = name;
+        public override string ToString() => _name;
+    }
+    private static readonly PauseReason StunPause = new PauseReason("Stun");
+    private static readonly PauseReason FearPause = new PauseReason("Fear");
+    private static readonly PauseReason TrapPause = new PauseReason("Trap grab");
+    private static readonly PauseReason SpawnRevealPause = new PauseReason("Spawn reveal");
+    private static readonly PauseReason PossessionReturnPause = new PauseReason("Possession return");
+    private static readonly PauseReason TimeEffectPause = new PauseReason("Time freeze (soul cast)");
+
+    private readonly HashSet<object> _pauseOwners = new HashSet<object>();
+    private readonly HashSet<object> _freezeOwners = new HashSet<object>();   // the world-freeze subset
+    private List<Enemy> _pausedCombatants;   // enemies THIS enemy's possession return holds paused
+
+    public bool IsBrainPaused => _pauseOwners.Count > 0;
+
+    /// <summary>True while a world freeze holds this enemy (the soul cast's time effect or a QTE), as opposed to its
+    /// own states (stun, fear…). Type-specific coroutines (chain drag, crush) wait on this.</summary>
+    public bool IsFrozen => _freezeOwners.Count > 0;
 
     protected Renderer _renderer;
     protected Color _originalColor;
@@ -217,47 +242,66 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         if (defaultData != null) ApplyData(defaultData);
     }
 
+    // Movement is no longer registered with the time-factor registry on its own: its freeze follows this enemy's pause
+    // owners, so a soul cast ending can't restart a stunned enemy's movement (BUG-142).
     private void OnEnable()
     {
-        if (_timeFactorRegistry != null)
-        {
-            _timeFactorRegistry.Register(this);
-            _timeFactorRegistry.Register(Movement);
-        }
+        _timeFactorRegistry?.Register(this);
     }
 
     private void OnDisable()
     {
         _timeFactorRegistry?.Unregister(this);
-        _timeFactorRegistry?.Unregister(Movement);
+        ReleasePausedCombatants();   // a possession return cut short must not leave other enemies paused forever
         ReleasePooledPrefabs();   // last live user gone → GameplayPool trims that prefab's pool
     }
 
-    // ── Brain pause (replaces StateMachine.Pause/Resume) ───────
-    public void PauseBrain()
+    // ── Brain pause (owner-held, BUG-142) ──────────────────────
+    /// <summary>Pause the brain + movement on behalf of <paramref name="owner"/>. Idempotent per owner.</summary>
+    public void PauseBrain(object owner)
     {
-        IsBrainPaused = true;
-        Movement.OnFreeze();
+        if (owner == null || !_pauseOwners.Add(owner)) return;
+        Movement.OnFreeze();   // every new hold stops the agent, as before
     }
 
-    public void ResumeBrain()
+    /// <summary>Release <paramref name="owner"/>'s hold. The brain resumes only when no owner holds it.</summary>
+    public void ResumeBrain(object owner)
     {
-        IsBrainPaused = false;
-        Movement.OnUnfreeze();
+        if (owner == null || !_pauseOwners.Remove(owner)) return;
+        if (_pauseOwners.Count == 0) Movement.OnUnfreeze();
     }
 
-    // ── ITimeAffected ──────────────────────────────────────────
-    public virtual void OnEffectStarted() => PauseBrain();
-    public virtual void OnEffectEnded() => ResumeBrain();
+    /// <summary>A world freeze (a QTE) holds this enemy on behalf of <paramref name="owner"/>; see <see cref="IsFrozen"/>.</summary>
+    public void Freeze(object owner)
+    {
+        if (owner == null) return;
+        _freezeOwners.Add(owner);
+        PauseBrain(owner);
+    }
+
+    public void Unfreeze(object owner)
+    {
+        if (owner == null) return;
+        _freezeOwners.Remove(owner);
+        ResumeBrain(owner);
+    }
+
+    /// <summary>Debug: who holds this enemy's brain paused right now (GameDebuggerV2's Selected section).</summary>
+    public void CopyPauseOwners(List<string> into)
+    {
+        into.Clear();
+        foreach (var owner in _pauseOwners)
+            into.Add(owner is Object unityObject ? $"{unityObject.GetType().Name} ({unityObject.name})" : owner.ToString());
+    }
+
+    // ── ITimeAffected (the soul cast's time effect) ────────────
+    public virtual void OnEffectStarted() => Freeze(TimeEffectPause);
+    public virtual void OnEffectEnded() => Unfreeze(TimeEffectPause);
 
     // ── Death ──────────────────────────────────────────────────
     protected virtual void HandleDeath()
     {
-        if (_timeFactorRegistry != null)
-        {
-            _timeFactorRegistry.Unregister(this);
-            _timeFactorRegistry.Unregister(Movement);
-        }
+        _timeFactorRegistry?.Unregister(this);
 
         if (_pool != null && SourcePrefab != null)
             _pool.Return(SourcePrefab, gameObject);
@@ -288,10 +332,10 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private IEnumerator SpawnRevealRoutine()
     {
         SetSpawnRenderersVisible(false);
-        PauseBrain();
+        PauseBrain(SpawnRevealPause);
         yield return new WaitForSeconds(_spawnRevealDelay);   // scaled — a gameplay anticipation beat (R10)
         SetSpawnRenderersVisible(true);
-        ResumeBrain();
+        ResumeBrain(SpawnRevealPause);   // a freeze that arrived meanwhile keeps holding (BUG-142)
     }
 
     private void SetSpawnRenderersVisible(bool visible)
@@ -308,7 +352,9 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         _isStunned = false;
         _isGrabbed = false;
         _isFeared = false;
-        IsBrainPaused = false;
+        ReleasePausedCombatants();   // before the owner lists clear: other enemies this one was holding
+        _pauseOwners.Clear();        // every hold ends with this life; a world freeze re-joins on the next issue
+        _freezeOwners.Clear();
         // NOTE: health is deliberately NOT reset here — ResetForPool runs INSIDE the OnDeath event
         // (HandleDeath → pool Return), and resetting health/LastDamageType mid-event made every kill
         // read as Environmental to the LATER OnDeath subscribers (EnemyDeathNotifier: no accord
@@ -406,13 +452,15 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private IEnumerator StunRoutine(float duration)
     {
         _isStunned = true;
-        PauseBrain();
+        PauseBrain(StunPause);
         if (_renderer != null) MaterialTint.SetColor(_renderer.material, StunColor);
 
+        // Scaled time, so the stun keeps counting through a QTE (which doesn't slow time): the enemy finishes its
+        // full stun, and a QTE ending meanwhile can't cut it short (BUG-142).
         yield return new WaitForSeconds(duration);
 
         _isStunned = false;
-        ResumeBrain();
+        ResumeBrain(StunPause);
         if (_renderer != null)
             MaterialTint.SetColor(_renderer.material, _isPossessed ? new Color(0.5f, 0f, 1f) : _originalColor);
 
@@ -423,14 +471,14 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     public void GrabByTrap(float killDelay)
     {
         _isGrabbed = true;
-        PauseBrain();
+        PauseBrain(TrapPause);
         StartCoroutine(TrapKillRoutine(killDelay));
     }
 
     public void ReleaseFromTrap()
     {
         _isGrabbed = false;
-        ResumeBrain();
+        ResumeBrain(TrapPause);
     }
 
     private IEnumerator TrapKillRoutine(float delay)
@@ -448,15 +496,26 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
 
     private IEnumerator ReturnAnimationRoutine(float duration)
     {
-        var combatants = FindDirectCombatants();
-        foreach (var c in combatants) c.PauseBrain();
+        // The enemies fighting this one hold still too; THIS enemy is their pause owner, so two overlapping returns
+        // can't release each other's holds. OnDisable / ResetForPool release them if this routine is cut short.
+        ReleasePausedCombatants();
+        _pausedCombatants = FindDirectCombatants();
+        foreach (var c in _pausedCombatants) c.PauseBrain(this);
 
-        PauseBrain();
+        PauseBrain(PossessionReturnPause);
         yield return new WaitForSeconds(duration);
-        ResumeBrain();
+        ResumeBrain(PossessionReturnPause);
 
-        foreach (var c in combatants) c.ResumeBrain();
+        ReleasePausedCombatants();
         OnPossessionEnded();
+    }
+
+    private void ReleasePausedCombatants()
+    {
+        if (_pausedCombatants == null) return;
+        foreach (var c in _pausedCombatants)
+            if (c != null) c.ResumeBrain(this);
+        _pausedCombatants = null;
     }
 
     private List<Enemy> FindDirectCombatants()
@@ -493,7 +552,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private IEnumerator FearRoutine(Vector3 fleeFrom, float duration)
     {
         _isFeared = true;
-        PauseBrain();
+        PauseBrain(FearPause);
  // fear flee reads as Panicked (erratic). Manpu shows the Panicked aura; the flee BEHAVIOUR is the
         // forced routine here (brain paused), so the mood modifiers can't fight it. Paired stop below (stomp-safe).
         GetComponent<EnemyMoodSystem>()?.TransitionTo(EnemyMood.Panicked, 0f, EnemyMood.Normal);
@@ -509,7 +568,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         }
 
         _isFeared = false;
-        ResumeBrain();
+        ResumeBrain(FearPause);
  // leave Panicked only if still Panicked (stomp-safe; overlapping fears clear at the last one's end).
         var fearMood = GetComponent<EnemyMoodSystem>();
         if (fearMood != null && fearMood.CurrentMood == EnemyMood.Panicked)
@@ -539,6 +598,5 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     private void OnDestroy()
     {
         _timeFactorRegistry?.Unregister(this);
-        _timeFactorRegistry?.Unregister(Movement);
     }
 }

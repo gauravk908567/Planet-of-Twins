@@ -72,6 +72,7 @@ public class GameDebuggerV2 : MonoBehaviour
     private EnemyDeathNotifier _deathNotifier;
     private FxManager _fx;
     private TimeFactorBootstrapper _timeFactor;   // non-singleton Persistent component (allowed sweep)
+    private EnemyFreezeService _freezeService;    // the QTE freeze (same kind of sweep) — Selected-section bench
 
     // ── Panel state ───────────────────────────────────────────────────────────
     private bool _visible;
@@ -110,6 +111,7 @@ public class GameDebuggerV2 : MonoBehaviour
     private ProfilerRecorder _perfGcAlloc;
     private readonly List<string> _perfNames = new List<string>();
     private readonly List<ProfilerRecorder> _perfRecorders = new List<ProfilerRecorder>();
+    private readonly List<string> _pauseOwnerNames = new List<string>();   // Selected section: brain pause owners
 
     private void Awake()
     {
@@ -136,6 +138,10 @@ public class GameDebuggerV2 : MonoBehaviour
         _deathNotifier = EnemyDeathNotifier.Instance;
         _fx            = FxManager.Instance;
         _timeFactor    = FindAnyObjectByType<TimeFactorBootstrapper>();
+        // The QTE's OWN freeze service (Persistent has two; QTEManager wires the one on its GameObject), so the bench
+        // freezes exactly like a real QTE. Any service is the fallback.
+        _freezeService = QTEManager.Instance != null ? QTEManager.Instance.GetComponent<EnemyFreezeService>() : null;
+        if (_freezeService == null) _freezeService = FindAnyObjectByType<EnemyFreezeService>();
 
         if (_pool == null)
             Debug.LogError("[GameDebuggerV2] EnemyPool.Instance unresolved — is Persistent loaded? " +
@@ -298,6 +304,19 @@ public class GameDebuggerV2 : MonoBehaviour
         if (GUILayout.Button("Twins→pad")) TeleportTwinsToPad();
         GUILayout.EndHorizontal();
 
+        // QTE-freeze bench (BUG-142/143): drives the REAL QTE freeze service, so a stun + QTE overlap is testable
+        // without a QTE scene. Stun 5s (Selected section) → tick → untick after ~3 s → it stays stunned ~2 s more.
+        if (_freezeService == null) GUILayout.Label("(QTE freeze: no EnemyFreezeService loaded)");
+        else
+        {
+            bool frozen = GUILayout.Toggle(_freezeService.IsFrozen, " QTE freeze (all enemies, like a real QTE)");
+            if (frozen != _freezeService.IsFrozen)
+            {
+                if (frozen) _freezeService.FreezeAll();
+                else _freezeService.UnfreezeAll();
+            }
+        }
+
         GUILayout.BeginHorizontal();
         // God mode — observe grabs/binds/drains without melee interrupting (PlayerHealthComponent.SetInvincible).
         bool god = GUILayout.Toggle(_godMode, " God mode (twins take no damage)");
@@ -408,12 +427,18 @@ public class GameDebuggerV2 : MonoBehaviour
         GUILayout.Space(4);
         GUILayout.Label($"── Selected: {_selected.name} ──");
 
+        // Who holds the brain paused (BUG-142 owners): e.g. "Stun, EnemyFreezeService (…)". Empty = thinking.
+        enemy.CopyPauseOwners(_pauseOwnerNames);
+        GUILayout.Label(_pauseOwnerNames.Count == 0 ? "Brain: running"
+                                                    : "Brain paused by: " + string.Join(", ", _pauseOwnerNames));
+
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Damage 10"))
             enemy.Health.TakeDamage(new DamageData(10f, DamageType.Combat));
         if (GUILayout.Button("Kill"))
             enemy.Health.TakeDamage(new DamageData(99999f, DamageType.Combat));
         if (GUILayout.Button("Stun 2s")) enemy.ApplyStun(2f);
+        if (GUILayout.Button("Stun 5s")) enemy.ApplyStun(5f);
         if (GUILayout.Button("Possess 5s") && enemy is IPossessable p) p.ApplyPossession(5f, 1.5f);
         GUILayout.EndHorizontal();
 

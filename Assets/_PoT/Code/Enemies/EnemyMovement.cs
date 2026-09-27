@@ -1,12 +1,17 @@
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>
+/// NavMesh movement for an enemy. Its freeze is driven ONLY by the owning <see cref="Enemy"/>'s pause owners
+/// (<see cref="Enemy.PauseBrain"/>): it is deliberately not an ITimeAffected any more, so no second path (the
+/// time-factor registry) can restart a stunned enemy's movement (BUG-142).
+/// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
-public class EnemyMovement : MonoBehaviour, ITimeAffected
+public class EnemyMovement : MonoBehaviour
 {
     private NavMeshAgent _agent;
 
-    public NavMeshAgent Agent => _agent; // kept for EnemyAttackState.Enter — see note
+    public NavMeshAgent Agent => _agent; // kept for EnemyAttackState.Enter ï¿½ see note
 
     [SerializeField] private float moveSpeed = 3.5f;
 
@@ -37,10 +42,6 @@ public class EnemyMovement : MonoBehaviour, ITimeAffected
         _agent.isStopped = true;
         _agent.ResetPath();
     }
-
-    // ITimeAffected
-    public void OnEffectStarted() => OnFreeze();
-    public void OnEffectEnded() => OnUnfreeze();
 
     public void OnFreeze()
     {

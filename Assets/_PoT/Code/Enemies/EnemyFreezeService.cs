@@ -1,8 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Freezes all active Enemy components by calling OnEffectStarted/OnEffectEnded
-/// (the same interface stun and possession use). No persistent registry needed —
+/// Freezes all active enemies for a QTE. Each enemy is frozen with THIS service as its pause owner
+/// (<see cref="Enemy.Freeze"/>), so the QTE's hold is separate from a stun, fear or the soul cast's freeze: ending the
+/// QTE releases only the QTE's hold, and a stunned enemy finishes its stun (BUG-142). No persistent registry needed:
 /// FreezeAll/UnfreezeAll are called infrequently (QTE start/end only).
 ///
 /// Place on any scene GameObject. QTEController holds a MonoBehaviour ref
@@ -20,7 +21,7 @@ public class EnemyFreezeService : MonoBehaviour, IEnemyFreezeService
         foreach (var e in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
         {
             if (e == null) continue;
-            e.OnEffectStarted();
+            e.Freeze(this);
         }
 
         PoTLog.QTE?.Info("All enemies frozen for QTE.");
@@ -34,7 +35,7 @@ public class EnemyFreezeService : MonoBehaviour, IEnemyFreezeService
         foreach (var e in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
         {
             if (e == null) continue;
-            e.OnEffectEnded();
+            e.Unfreeze(this);
         }
 
         PoTLog.QTE?.Info("All enemies unfrozen.");
