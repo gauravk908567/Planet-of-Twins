@@ -244,13 +244,16 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
 
     // Movement is no longer registered with the time-factor registry on its own: its freeze follows this enemy's pause
     // owners, so a soul cast ending can't restart a stunned enemy's movement (BUG-142).
+    // EnemyRegistry (P8.7, R5): active = registered, so the registry always holds exactly the active enemies.
     private void OnEnable()
     {
+        if (EnemyRegistry.Instance != null) EnemyRegistry.Instance.Register(this);
         _timeFactorRegistry?.Register(this);
     }
 
     private void OnDisable()
     {
+        if (EnemyRegistry.Instance != null) EnemyRegistry.Instance.Unregister(this);
         _timeFactorRegistry?.Unregister(this);
         ReleasePausedCombatants();   // a possession return cut short must not leave other enemies paused forever
         ReleasePooledPrefabs();   // last live user gone → GameplayPool trims that prefab's pool
