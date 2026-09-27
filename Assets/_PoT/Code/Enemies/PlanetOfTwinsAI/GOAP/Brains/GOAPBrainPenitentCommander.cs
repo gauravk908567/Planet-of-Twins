@@ -13,8 +13,7 @@ using UnityEngine;
 ///   CommanderPosition — synced to all soldiers
 ///   TwinInDangerRange — true when twin within threat range
 ///
-/// Also wires soldier damage notification so DarkShield fires correctly.
-/// Call WireSoldierDamage() from EnemySpawner after RegisterSoldier().
+/// Soldier hits reach DarkShield through CommanderEnemy.RegisterSoldier (no wiring here).
 /// </summary>
 public class GOAPBrainPenitentCommander : PoTGOAPBrainBase
 {
@@ -57,18 +56,6 @@ public class GOAPBrainPenitentCommander : PoTGOAPBrainBase
         }
 
         LinkedBlackboard.Set(PoTNames.TwinInDangerRange, IsTwinInRange());
-    }
-
-    /// <summary>
-    /// Called by EnemySpawner after each soldier is registered.
-    /// Subscribes to soldier health so DarkShield fires on big hits.
-    /// </summary>
-    public void WireSoldierDamage(Enemy soldier)
-    {
-        if (soldier == null || _commander == null) return;
-        float maxHP = soldier.Health.MaxHealth;
-        soldier.Health.OnDamageTaken += (comp, amount, pos) =>
-            _commander.NotifyDamageTaken(amount, maxHP);
     }
 
     private bool IsTwinInRange()

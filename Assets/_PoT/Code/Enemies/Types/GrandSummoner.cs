@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -11,9 +10,10 @@ using UnityEngine;
 ///   Target gets +attack (×1.5) and +speed (×1.4) for 2.5s, tapering.
 ///   Projectile visual deferred to animation pass.
 ///
+/// Squad, formation and death cascade: <see cref="CommanderEnemy"/>.
 /// Brain: GOAPBrainGrandSummoner
 /// </summary>
-public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
+public class GrandSummoner : CommanderEnemy
 {
     [Header("Divine Shaft")]
     [SerializeField] private float _interval = 3.5f;
@@ -21,53 +21,13 @@ public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
     [SerializeField] private float _speedMult = 1.4f;
     [SerializeField] private float _damageMult = 1.5f;
 
-    [Header("Commander")]
-    [SerializeField] private float _commandRadius = 15f;
-    [SerializeField] private float _deathRageDuration = 4.5f;
-
-    private readonly List<Enemy> _soldiers = new();
     private float _lastShaft = 0f;
-    private bool _dead = false;
 
-    // ── ICommander ─────────────────────────────────────────────
-    public bool IsAlive => !_dead && !Health.IsDead;
-    public float CommandRadius => _commandRadius;
-
-    public Vector3 GetSlotWorldPosition(Vector3 localOffset)
-        => transform.position + transform.TransformDirection(localOffset);
-
-    public void RegisterSoldier(Enemy soldier)
+    // BUG-135 — a pooled commander comes back with its shaft timer at zero.
+    public override void ResetForReuse()
     {
-        if (soldier == null || _soldiers.Contains(soldier)) return;
-        _soldiers.Add(soldier);
-        soldier.Health.OnDeath += () => _soldiers.Remove(soldier);
-        soldier.GetComponent<GOAPGoalHoldFormation>()?.SetCommander(this);
-    }
-
-    public IReadOnlyList<Enemy> Soldiers => _soldiers;
-
-    // ── Init ───────────────────────────────────────────────────
-    public void InitialiseCommander(float commandRadius, float deathRageDuration)
-    {
-        _commandRadius = commandRadius;
-        _deathRageDuration = deathRageDuration;
-    }
-
-    protected override void Awake()
-    {
-        base.Awake();
-        Health.OnDeath += OnCommanderDied;
-    }
-
-    // BUG-135 — a pooled commander comes back alive with no squad. The pool deactivated it inside the death
-    // event, which cut DeathCascade short, so release any old soldiers still following it first.
-    public void ResetForReuse()
-    {
-        foreach (var s in _soldiers)
-            if (s != null) s.GetComponent<GOAPGoalHoldFormation>()?.ReleaseFrom(this);
-        _soldiers.Clear();
+        base.ResetForReuse();
         _lastShaft = 0f;
-        _dead = false;
     }
 
     // ── Divine Shaft ───────────────────────────────────────────
@@ -75,7 +35,7 @@ public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
     {
         if (Health.IsDead) return;
         if (Time.time - _lastShaft < _interval) return;
-        if (_soldiers.Count == 0) return;
+        if (Soldiers.Count == 0) return;
         FireDivineShaft();
     }
 
@@ -83,8 +43,10 @@ public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
     {
         Enemy target = null;
         float lowest = float.MaxValue;
-        foreach (var s in _soldiers)
+        var soldiers = Soldiers;
+        for (int i = 0; i < soldiers.Count; i++)
         {
+            var s = soldiers[i];
             if (s == null || s.Health.IsDead) continue;
             float norm = s.Health.CurrentHealth / s.Health.MaxHealth;
             if (norm < lowest) { lowest = norm; target = s; }
@@ -94,7 +56,7 @@ public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
         _lastShaft = Time.time;
         StartCoroutine(ApplyDivineShaft(target));
         PoTLog.AI?.Info($"STUB DivineShaft → {target.name}");
- // TODO: DivineShaft commander-buff VFX retired with EnemyVFXController; re-express the buff via the
+        // TODO: DivineShaft commander-buff VFX retired with EnemyVFXController; re-express the buff via the
         // Common on_AlliesBuff cue (as Witness does) when the commander archetypes are finished.
     }
 
@@ -103,7 +65,7 @@ public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
         float baseSpeed = target.Data?.moveSpeed ?? 3.5f;
         target.AttackController.SetDamageMultiplier(_damageMult);
         target.Movement.SetSpeed(baseSpeed * _speedMult);
- // TODO: buffed-target VFX retired with EnemyVFXController — wire the Common on_AlliesBuff cue here
+        // TODO: buffed-target VFX retired with EnemyVFXController — wire the Common on_AlliesBuff cue here
         // (Follow the target) when the commander archetypes are finished.
 
         float elapsed = 0f;
@@ -118,33 +80,5 @@ public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
         }
         target.AttackController.ClearDamageMultiplier();
         target.Movement.SetSpeed(baseSpeed);
-    }
-
-    // ── Death cascade ──────────────────────────────────────────
-    private void OnCommanderDied()
-    {
-        if (_dead) return;
-        _dead = true;
-        StartCoroutine(DeathCascade());
-        MoodEventBus.AllyDied(gameObject);
-    }
-
-    private IEnumerator DeathCascade()
-    {
-        foreach (var s in _soldiers)
-        {
-            if (s == null || s.Health.IsDead) continue;
- // Enraged mood transition drives the soldier's Manpu rage aura autonomously — the parallel
-            // EnemyVFXController.PlayRage is retired.
-            s.GetComponent<EnemyMoodSystem>()
-             ?.TransitionTo(EnemyMood.Enraged, _deathRageDuration, EnemyMood.Aggressive);
-        }
-        yield return new WaitForSeconds(_deathRageDuration);
-        foreach (var s in _soldiers)
-        {
-            if (s == null || s.Health.IsDead) continue;
-            s.GetComponent<GOAPGoalHoldFormation>()?.ClearCommander();
-        }
-        _soldiers.Clear();
     }
 }

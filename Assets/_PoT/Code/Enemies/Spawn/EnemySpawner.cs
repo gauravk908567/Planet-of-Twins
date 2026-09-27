@@ -473,13 +473,9 @@ public class EnemySpawner : MonoBehaviour
         commanderEnemy.SetPoolProvider(_pool, groupDef.commanderPrefab);
         if (groupDef.commanderData != null) commanderEnemy.ApplyData(groupDef.commanderData);
 
-        // Initialise commander values — each type has InitialiseCommander
-        if (commanderInstance.GetComponent<ChainCommander>() is ChainCommander cc)
-            cc.InitialiseCommander(groupDef.commandRadius, groupDef.commanderDeathRageDuration);
-        else if (commanderInstance.GetComponent<GrandSummoner>() is GrandSummoner gs)
-            gs.InitialiseCommander(groupDef.commandRadius, groupDef.commanderDeathRageDuration);
-        else if (commanderInstance.GetComponent<PenitentCommander>() is PenitentCommander pc)
-            pc.InitialiseCommander(groupDef.commandRadius, groupDef.commanderDeathRageDuration);
+        // Initialise commander values — every archetype shares CommanderEnemy
+        commanderInstance.GetComponent<CommanderEnemy>()
+            ?.InitialiseCommander(groupDef.commandRadius, groupDef.commanderDeathRageDuration);
 
         var cTracker = commanderInstance.GetComponent<ZoneEnemyTracker>();
         if (cTracker != null) { cTracker.ResetForPool(); cTracker.HomeZone = _activeZone; }
@@ -537,10 +533,6 @@ public class EnemySpawner : MonoBehaviour
             // Set slot offset on formation goal
             soldierInstance.GetComponent<GOAPGoalHoldFormation>()
                 ?.SetCommander(commander, slot.offset);
-
-            // Wire PenitentCommander damage notification
-            commanderInstance.GetComponent<GOAPBrainPenitentCommander>()
-                ?.WireSoldierDamage(soldierEnemy);
 
             _allActive.Add(soldierInstance);
             _instanceZoneMap[soldierInstance] = _activeZone;
