@@ -608,7 +608,9 @@ public class EnemySpawner : MonoBehaviour
     }
 
     // ── Summoner API ───────────────────────────────────────────
-    public GameObject SummonerSpawn(SideTypeEntry entry, Vector3 position)
+    /// <param name="homeZone">The summoner's own zone: the minion is tracked, sent home and despawned with it
+    ///   (was the spawner's _activeZone = wherever the twins last entered). Null = no zone.</param>
+    public GameObject SummonerSpawn(SideTypeEntry entry, Vector3 position, SpawnZone homeZone)
     {
         if (_pool == null || entry?.prefab == null) return null;
 
@@ -632,13 +634,13 @@ public class EnemySpawner : MonoBehaviour
                 ?.ApplyLevelScaling(entry.darkEnergyBase, entry.bondBreakThreshold);
 
         var tracker = instance.GetComponent<ZoneEnemyTracker>();
-        if (tracker != null) { tracker.ResetForPool(); tracker.HomeZone = _activeZone; }
+        if (tracker != null) { tracker.ResetForPool(); tracker.HomeZone = homeZone; }
 
         if (enemy is IRescueTarget rt) _rescueRegistry?.RegisterTrap(rt);
 
         _allActive.Add(instance);
         _activePrefabMap[instance] = entry.prefab;
-        _instanceZoneMap[instance] = _activeZone;
+        _instanceZoneMap[instance] = homeZone;
         deathNotifier?.Register(enemy.Health);
 
         Action death = () =>

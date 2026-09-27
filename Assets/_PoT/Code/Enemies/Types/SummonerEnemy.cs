@@ -29,14 +29,12 @@ public class SummonerEnemy : RangedEnemy, IEnemyReuseReset
     private int _maxMinions = 3;
     private int _activeMinionCount = 0;
     private SideTypeEntry _summonEntry;
-    private EnemySpawner _spawner;
+    private ZoneEnemyTracker _zoneTracker;   // on the prefab; its HomeZone is this summoner's zone, set per spawn
 
     protected override void Awake()
     {
         base.Awake();
-        _spawner = FindAnyObjectByType<EnemySpawner>();
-        if (_spawner == null)
-            Debug.LogWarning("[SummonerEnemy] No EnemySpawner found in scene.", this);
+        _zoneTracker = GetComponent<ZoneEnemyTracker>();
     }
 
     public override void ApplyData(EnemyData data)
@@ -105,14 +103,19 @@ public class SummonerEnemy : RangedEnemy, IEnemyReuseReset
         {
             Vector3 spawnPos = transform.position + transform.forward * 1.5f;
             GameObject minion;
-            if (_spawner != null)
+            var spawner = EnemySpawner.Instance;   // R4: the one EnemySpawner lives in Persistent
+            if (spawner != null)
             {
-                // Area path — zone tracking + rescue registration ride along.
-                minion = _spawner.SummonerSpawn(_summonEntry, spawnPos);
+                // Zone tracking + rescue registration ride along. The minion belongs to THIS summoner's zone, not
+                // whichever zone the twins entered last (null off-zone, e.g. a GDV2 bench spawn).
+                minion = spawner.SummonerSpawn(_summonEntry, spawnPos, _zoneTracker != null ? _zoneTracker.HomeZone : null);
             }
             else
             {
-                // No EnemySpawner in this scene (TestLab / direct-play) — canonical pooled spawn instead.
+                // Persistent always carries an EnemySpawner, so this is a broken boot: say so, and still summon
+                // through the pool (no zone tracking) rather than silently not summoning.
+                Debug.LogError("[SummonerEnemy] EnemySpawner.Instance is null (is Persistent loaded?) — " +
+                               "summoning through the pool without zone tracking.", this);
                 var pool = EnemyPool.Instance;
                 if (pool == null)
                 {
