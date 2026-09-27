@@ -246,8 +246,6 @@ public class TetherBreakerEnemy : Enemy, IStruggleHold
         _chainOnCooldown = false;
     }
 
-    public void NotifyChainMash() => _activeChain?.NotifyMash();
-
     public void SetRageColour(bool active)
     {
         if (_renderer != null)
