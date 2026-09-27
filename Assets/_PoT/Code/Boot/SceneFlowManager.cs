@@ -179,26 +179,15 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
 
         foreach (var loc in _loadedLocations.ToList())
         {
-            if (!shouldBeLoaded.Contains(loc) && !IsOccupied(loc) && !_unloadingInProgress.Contains(loc))
+            if (OccupancyModel.MayUnload(loc, shouldBeLoaded, _currentLocation.Values) && !_unloadingInProgress.Contains(loc))
                 StartCoroutine(UnloadLocationAsync(loc));
         }
 
         UpdateActiveScene();
     }
 
-    private HashSet<WorldLocationSO> BuildDesiredSet()
-    {
-        var desired = new HashSet<WorldLocationSO>();
-        foreach (var loc in _currentLocation.Values)
-        {
-            if (loc == null) continue;
-            desired.Add(loc);
-            if (loc.adjacentLocations == null) continue;
-            foreach (var adj in loc.adjacentLocations)
-                if (adj != null && adj.IsValid) desired.Add(adj);
-        }
-        return desired;
-    }
+    // The rules live in OccupancyModel (pure, tested by P8.1); this class runs the loads and unloads.
+    private HashSet<WorldLocationSO> BuildDesiredSet() => OccupancyModel.BuildDesiredSet(_currentLocation.Values);
 
     private IEnumerator LoadLocationAsync(WorldLocationSO location)
     {
@@ -239,9 +228,11 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
         yield return new WaitForSecondsRealtime(unloadDelay); // R10
 
         // Re-check: actor may have re-entered during the delay
-        if (IsOccupied(location)) { _unloadingInProgress.Remove(location); yield break; }
-        var desired = BuildDesiredSet();
-        if (desired.Contains(location)) { _unloadingInProgress.Remove(location); yield break; }
+        if (!OccupancyModel.MayUnload(location, BuildDesiredSet(), _currentLocation.Values))
+        {
+            _unloadingInProgress.Remove(location);
+            yield break;
+        }
 
         // Signal EnemySpawner / QTEManager to despawn/cancel before the scene vanishes
         using (PerfWillUnload.Auto())   // the subscribers' despawn cost; ends before the unload's yield
@@ -314,7 +305,7 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
     public bool IsLoaded(WorldLocationSO location) => _loadedLocations.Contains(location);
 
     public bool IsOccupied(WorldLocationSO location)
-        => _currentLocation.Values.Any(v => v == location);
+        => OccupancyModel.IsOccupied(location, _currentLocation.Values);
 
     public IReadOnlyCollection<WorldLocationSO> LoadedLocations => _loadedLocations;
 
