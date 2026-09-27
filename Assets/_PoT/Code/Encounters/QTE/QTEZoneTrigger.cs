@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Place a Trigger collider at the entrance of a puzzle area.
-/// Calls QTEController.BeginQTE() when the required players enter.
+/// Calls QTESceneAnchor.BeginQTE() (which hands the sequence to QTEManager) when the required players enter.
 ///
 /// FIX: explicitly excludes SoulPlayer so the soul flying through the zone
 /// does not trigger the QTE. Only grounded Player instances count.

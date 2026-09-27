@@ -37,7 +37,7 @@ public interface IInputProvider
     bool GetPauseDown();
     /// <summary>Press Tab — toggle the skill tree (SkillTreeUI).</summary>
     bool GetSkillTreeToggleDown();
-    /// <summary>Press F during a QTE mash phase (QTEManager / QTEController).</summary>
+    /// <summary>Press F during a QTE mash phase (QTEManager).</summary>
     bool GetQTEMashDown();
     /// <summary>Press anything — intro cutscene skip (IntroController).</summary>
     bool GetAnySkipDown();

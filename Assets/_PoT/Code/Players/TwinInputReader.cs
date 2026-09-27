@@ -286,7 +286,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     // Skill tree toggle — Tab (SkillTreeUI; ESC-close stays in PauseMenuController's chain)
     public bool GetSkillTreeToggleDown() => Down(_skillTree);
 
-    // QTE mash — F (QTEManager + world-space QTEController; ungated — a QTE is already scripted)
+    // QTE mash — F (QTEManager; ungated — a QTE is already scripted)
     public bool GetQTEMashDown() => !_gameplayFrozen && Down(_qteMash);
 
     // "Press ANY key / button" — intro skip / tutorial-prompt dismiss. The AnySkip action only carries the

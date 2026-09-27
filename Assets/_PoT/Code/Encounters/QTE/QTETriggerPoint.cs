@@ -8,7 +8,7 @@ using TMPro;
 ///   1. If locked player got killed, rescue couldn't proceed (movement stayed locked).
 ///   2. Player couldn't dodge incoming attacks while locked to trigger.
 /// The player is now visually "attached" (tracked as LockedPlayer) but free to move.
-/// QTEController handles the actual constraint of the sequence.
+/// QTEManager handles the actual constraint of the sequence.
 ///
 /// FIX: OnTriggerEnter/Exit ignore SoulPlayer (same fix as QTEZoneTrigger).
 /// </summary>
@@ -18,7 +18,7 @@ public class QTETriggerPoint : MonoBehaviour
     [SerializeField] private TMP_Text promptText;
     [SerializeField] private GameObject promptRoot;
 
-    [Header("Cancel hold duration (must match QTEController)")]
+    [Header("Cancel hold duration")]
     [SerializeField] private float cancelHoldDuration = 0.75f;
 
     public Player LockedPlayer { get; private set; } = null;
@@ -107,7 +107,7 @@ public class QTETriggerPoint : MonoBehaviour
         }
 
         // FIX: if the player who was locked in walks out, release them and
-        // fire the event so QTEController aborts. Without this, LockedPlayer
+        // fire the event so QTEManager aborts. Without this, LockedPlayer
         // stays set while the player is physically outside — QTE thinks they
         // are still committed, "Press F" never reappears, and the only exit
         // is hold-X despite the player already having left the area.

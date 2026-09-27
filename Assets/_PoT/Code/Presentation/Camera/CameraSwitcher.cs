@@ -10,7 +10,7 @@
 /// Timeline Signal when the tutorial starts and again when it ends.
 ///
 /// QTE suppression still works identically — SuppressAutoSwitch(true) hands
-/// camera control to QTEController entirely.
+/// camera control to QTEManager entirely.
 /// </summary>
 public class CameraSwitcher : MonoBehaviour
 {
