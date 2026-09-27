@@ -111,6 +111,15 @@ public class GameDebuggerV2 : MonoBehaviour
     private ProfilerRecorder _perfGcAlloc;
     private readonly List<string> _perfNames = new List<string>();
     private readonly List<ProfilerRecorder> _perfRecorders = new List<ProfilerRecorder>();
+    // Game-only reading: IMGUI's time and garbage land in the same frame totals as the game's, and this Editor's Mono
+    // can't count one thread's bytes (GC.GetAllocatedBytesForCurrentThread returns 0), so the panel can't subtract
+    // itself. It hides instead: CleanReadingFrames covers a whole recorder window, so every sample is panel-free.
+    private const int CleanReadingFrames = PerfWindowFrames + 2;
+    private int _cleanReadingEndFrame;                   // > 0 while the panel is hidden for a reading
+    private bool _hasCleanReading;
+    private float _cleanReadingTime;                     // UNSCALED — when the last reading finished ("N s ago")
+    private string _cleanFrameText, _cleanGcText;
+    private string _closedLabel, _windowTitle;           // cached: the closed label is drawn on every GUI event
     private readonly List<string> _pauseOwnerNames = new List<string>();   // Selected section: brain pause owners
 
     private void Awake()
@@ -159,6 +168,8 @@ public class GameDebuggerV2 : MonoBehaviour
 
     private void Update()
     {
+        if (_cleanReadingEndFrame > 0 && Time.frameCount >= _cleanReadingEndFrame) FinishCleanReading();
+
         // Raw Input is banned outside TwinInputReader for GAMEPLAY (it must respect the tutorial gate);
         // this dev-only panel toggle deliberately bypasses the gate (same class as the L/O/P/I/K trainer
         // keys) and is DevConfig.Trainer-gated + release-stripped, so it can never reach players.
@@ -222,10 +233,12 @@ public class GameDebuggerV2 : MonoBehaviour
     private void OnGUI()
     {
         if (!DevConfig.Trainer) return;
-        string combo = $"{_toggleModifier}+{_toggleKey}";
+        if (_cleanReadingEndFrame > 0) return;   // hidden while the Perf section takes a game-only reading
         if (!_visible)
         {
-            GUI.Label(new Rect(10, 10, 340, 22), $"[{combo}] GameDebugger v2");
+            // Cached: this label is drawn on every GUI event even with the panel closed, when perf readings are taken.
+            // (A toggle rebound in the Inspector mid-Play keeps the old text until the next Play.)
+            GUI.Label(new Rect(10, 10, 340, 22), _closedLabel ??= $"[{_toggleModifier}+{_toggleKey}] GameDebugger v2");
             return;
         }
 
@@ -237,7 +250,8 @@ public class GameDebuggerV2 : MonoBehaviour
         _winRect.height = Mathf.Min(_winSize.y, Screen.height - 10f);
         _winRect.x      = Mathf.Clamp(_winRect.x, 0f, Mathf.Max(0f, Screen.width  - _winRect.width));
         _winRect.y      = Mathf.Clamp(_winRect.y, 0f, Mathf.Max(0f, Screen.height - _winRect.height));
-        _winRect = GUI.Window(WindowId, _winRect, DrawWindow, $"GameDebugger v2 — TestLab bench  [{combo} hide]");
+        _winRect = GUI.Window(WindowId, _winRect, DrawWindow,
+            _windowTitle ??= $"GameDebugger v2 — TestLab bench  [{_toggleModifier}+{_toggleKey} hide]");
     }
 
     private void DrawWindow(int id)
@@ -863,8 +877,11 @@ public class GameDebuggerV2 : MonoBehaviour
 
     // Perf (P8.5): the main thread and GC allocation per frame, then one row per game marker (PerfMarkers): its time
     // per frame, worst frame, calls per frame and share of the 60 fps budget. Recorders run only while the section is
-    // open; a marker appears once its code has run. In the Editor the main thread includes editor work, so take real
-    // baselines in a development build too. The Profiler window shows the same markers in any scene.
+    // open; a marker appears once its code has run. The main thread + GC lines are a GAME-ONLY reading: the panel
+    // hides itself for ~0.5 s while they're recorded (opening the section takes one), because this panel's own IMGUI
+    // cost (≈ 150–190 KB/frame + ms) otherwise lands in both totals. The marker rows are live: no panel code runs
+    // inside a game marker. In the Editor the main thread includes editor work, so take real baselines in a
+    // development build too. The Profiler window shows the same markers in any scene.
     private void DrawPerfSection()
     {
         GUILayout.Space(6);
@@ -872,17 +889,27 @@ public class GameDebuggerV2 : MonoBehaviour
         if (open != _perfOpen)
         {
             _perfOpen = open;
-            if (!open) StopPerfRecorders();
+            if (!open)
+            {
+                StopPerfRecorders();
+                _hasCleanReading = false;   // reopening takes a fresh reading (a marker restart keeps the old one)
+            }
         }
         if (!_perfOpen) return;
         if (!_perfRunning || PerfMarkers.Count != _perfNames.Count) StartPerfRecorders();   // new markers since
+        if (!_hasCleanReading && _cleanReadingEndFrame == 0) BeginCleanReading();         // first open
 
-        double frameMs = RecorderAverage(_perfMainThread, out double frameWorst, out _) * NsToMs;
-        GUILayout.Label($"Main thread {frameMs:0.00} ms (worst {frameWorst * NsToMs:0.00}) of {FrameBudgetMs:0.0} ms" +
-                        $" = {frameMs / FrameBudgetMs:P0} of the frame budget");
-        if (_perfGcAlloc.Valid)
-            GUILayout.Label($"GC alloc {RecorderAverage(_perfGcAlloc, out double gcWorst, out _) / 1024.0:0.0} KB/frame" +
-                            $" (worst {gcWorst / 1024.0:0.0} KB)");
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(_hasCleanReading
+            ? $"Game only (this panel hidden while measuring, {Time.unscaledTime - _cleanReadingTime:0} s ago):"
+            : "Game only: measuring…");
+        if (GUILayout.Button("Measure again", GUILayout.Width(110))) BeginCleanReading();
+        GUILayout.EndHorizontal();
+        if (_hasCleanReading)
+        {
+            GUILayout.Label(_cleanFrameText);
+            if (_cleanGcText != null) GUILayout.Label(_cleanGcText);
+        }
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("marker", GUILayout.Width(220));
@@ -925,6 +952,26 @@ public class GameDebuggerV2 : MonoBehaviour
         _perfRecorders.Clear();
         _perfNames.Clear();
         _perfRunning = false;
+    }
+
+    // Hide the panel (OnGUI returns early) until a whole recorder window has passed without it.
+    private void BeginCleanReading() => _cleanReadingEndFrame = Time.frameCount + CleanReadingFrames;
+
+    // Update, CleanReadingFrames after BeginCleanReading: the recorders' last PerfWindowFrames samples are all frames
+    // in which the panel drew nothing, so their averages are the game's own cost. Then the panel shows again.
+    private void FinishCleanReading()
+    {
+        _cleanReadingEndFrame = 0;
+        if (!_perfRunning) return;
+        double frameMs = RecorderAverage(_perfMainThread, out double frameWorst, out _) * NsToMs;
+        _cleanFrameText = $"Main thread {frameMs:0.00} ms (worst {frameWorst * NsToMs:0.00}) of {FrameBudgetMs:0.0} ms" +
+                          $" = {frameMs / FrameBudgetMs:P0} of the frame budget";
+        _cleanGcText = _perfGcAlloc.Valid
+            ? $"GC alloc {RecorderAverage(_perfGcAlloc, out double gcWorst, out _) / 1024.0:0.0} KB/frame" +
+              $" (worst {gcWorst / 1024.0:0.0} KB)"
+            : null;
+        _cleanReadingTime = Time.unscaledTime;
+        _hasCleanReading = true;
     }
 
     // Average and worst sample value over the recorder's window (ns for markers, bytes for GC), plus calls per frame.
