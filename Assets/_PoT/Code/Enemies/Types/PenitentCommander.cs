@@ -23,8 +23,7 @@ public class PenitentCommander : CommanderEnemy
     private float _lastShield = -99f;
     private bool _shieldActive = false;
 
-    // BUG-135 — a pooled commander comes back unshielded, its shield ready. The pool deactivated it inside the
-    // death event, which cut ActivateDarkShield short.
+    // BUG-135 — a pooled commander comes back unshielded, its shield ready.
     public override void ResetForReuse()
     {
         base.ResetForReuse();
@@ -60,8 +59,20 @@ public class PenitentCommander : CommanderEnemy
             // TODO: s.Health.SetInvulnerable(true)
         }
 
-        yield return new WaitForSeconds(_shieldDuration);
+        yield return new WaitForSeconds(_shieldDuration);   // scaled — gameplay (R10)
+        EndDarkShield();
+    }
 
+    // BUG-136 — the pool return stops ActivateDarkShield mid-shield, so death ends it here, while the squad is
+    // still registered. (Stub today; once SetInvulnerable exists, a shield cut short would otherwise stay on.)
+    protected override void OnCommanderDeath()
+    {
+        if (_shieldActive) EndDarkShield();
+    }
+
+    private void EndDarkShield()
+    {
+        var soldiers = Soldiers;
         for (int i = 0; i < soldiers.Count; i++)
         {
             var s = soldiers[i];

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -45,14 +44,8 @@ public abstract class CommanderEnemy : Enemy, ICommander, IEnemyReuseReset
         _deathRageDuration = deathRageDuration;
     }
 
-    protected override void Awake()
-    {
-        base.Awake();
-        Health.OnDeath += OnCommanderDied;
-    }
-
-    // BUG-135 — a pooled commander comes back alive with no squad. The pool deactivated it inside the death
-    // event, which cut DeathCascade short, so release any old soldiers still following it first.
+    // BUG-135 — a pooled commander comes back alive with no squad. The death already released it (HandleDeath);
+    // this also covers a commander returned to the pool without dying.
     // An archetype resets its own ability state in an override that calls this.
     public virtual void ResetForReuse()
     {
@@ -62,6 +55,10 @@ public abstract class CommanderEnemy : Enemy, ICommander, IEnemyReuseReset
 
     /// <summary>A soldier of this squad took a hit (only reported while the commander is alive).</summary>
     protected virtual void OnSoldierDamaged(Enemy soldier, float amount) { }
+
+    /// <summary>The commander just died and is about to go back to the pool: end anything the archetype applied to
+    /// its soldiers (a buff, a shield). None of this commander's coroutines survive the pool return.</summary>
+    protected virtual void OnCommanderDeath() { }
 
     // Unhooks every soldier: the formation goal lets go (only if it still follows THIS commander, BUG-135) and the
     // soldier's handlers are removed.
@@ -87,26 +84,35 @@ public abstract class CommanderEnemy : Enemy, ICommander, IEnemyReuseReset
     }
 
     // ── Death cascade ──────────────────────────────────────────
-    private void OnCommanderDied()
+    // BUG-136 — the squad reacts BEFORE the pool return. Enemy.HandleDeath hands this object back to the pool
+    // (SetActive(false)), so anything started after it never ran: the old OnDeath handler's DeathCascade coroutine
+    // failed to start on the inactive object, and the soldiers never raged. Nothing here needs a timer: each
+    // soldier's EnemyMoodSystem counts the rage down itself (then decays to Aggressive), and GOAPGoalHoldFormation
+    // drops formation the moment IsAlive turns false, so releasing the squad right away only makes that final.
+    protected override void HandleDeath()
     {
-        if (_dead) return;
-        _dead = true;
-        StartCoroutine(DeathCascade());
-        MoodEventBus.AllyDied(gameObject);
+        if (!_dead)
+        {
+            _dead = true;
+            OnCommanderDeath();
+            EnrageSquad();
+            ReleaseSquad();
+            MoodEventBus.AllyDied(gameObject);
+        }
+        base.HandleDeath();
     }
 
-    private IEnumerator DeathCascade()
+    private void EnrageSquad()
     {
-        foreach (var s in _soldiers)
+        for (int i = 0; i < _soldiers.Count; i++)
         {
+            var s = _soldiers[i];
             if (s == null || s.Health.IsDead) continue;
             // Enraged mood transition drives the soldier's Manpu rage aura autonomously — the parallel
             // EnemyVFXController.PlayRage is retired.
             s.GetComponent<EnemyMoodSystem>()
              ?.TransitionTo(EnemyMood.Enraged, _deathRageDuration, EnemyMood.Aggressive);
         }
-        yield return new WaitForSeconds(_deathRageDuration);
-        ReleaseSquad();
     }
 
     // ── Squad member ───────────────────────────────────────────

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -23,11 +24,32 @@ public class GrandSummoner : CommanderEnemy
 
     private float _lastShaft = 0f;
 
+    // Soldiers under a Divine Shaft right now, with the speed each goes back to. Death ends them (BUG-136).
+    private readonly List<Enemy> _buffTargets = new();
+    private readonly List<float> _buffBaseSpeeds = new();
+
     // BUG-135 — a pooled commander comes back with its shaft timer at zero.
     public override void ResetForReuse()
     {
         base.ResetForReuse();
         _lastShaft = 0f;
+        _buffTargets.Clear();
+        _buffBaseSpeeds.Clear();
+    }
+
+    // BUG-136 — the pool return stops ApplyDivineShaft mid-taper, which left the soldier buffed for the rest of
+    // its life. End every running buff while this commander still can.
+    protected override void OnCommanderDeath()
+    {
+        for (int i = 0; i < _buffTargets.Count; i++)
+        {
+            var target = _buffTargets[i];
+            if (target == null || target.Health.IsDead) continue;   // a dead soldier's own pool reset clears it
+            target.AttackController.ClearDamageMultiplier();
+            target.Movement.SetSpeed(_buffBaseSpeeds[i]);
+        }
+        _buffTargets.Clear();
+        _buffBaseSpeeds.Clear();
     }
 
     // ── Divine Shaft ───────────────────────────────────────────
@@ -65,13 +87,15 @@ public class GrandSummoner : CommanderEnemy
         float baseSpeed = target.Data?.moveSpeed ?? 3.5f;
         target.AttackController.SetDamageMultiplier(_damageMult);
         target.Movement.SetSpeed(baseSpeed * _speedMult);
+        _buffTargets.Add(target);
+        _buffBaseSpeeds.Add(baseSpeed);
         // TODO: buffed-target VFX retired with EnemyVFXController — wire the Common on_AlliesBuff cue here
         // (Follow the target) when the commander archetypes are finished.
 
-        float elapsed = 0f;
+        float elapsed = 0f;   // scaled — the buff is gameplay (R10)
         while (elapsed < _buffDuration)
         {
-            if (target == null || target.Health.IsDead) yield break;
+            if (target == null || target.Health.IsDead) { EndBuffTracking(target); yield break; }
             elapsed += Time.deltaTime;
             float t = elapsed / _buffDuration;
             target.AttackController.SetDamageMultiplier(Mathf.Lerp(_damageMult, 1f, t));
@@ -80,5 +104,14 @@ public class GrandSummoner : CommanderEnemy
         }
         target.AttackController.ClearDamageMultiplier();
         target.Movement.SetSpeed(baseSpeed);
+        EndBuffTracking(target);
+    }
+
+    private void EndBuffTracking(Enemy target)
+    {
+        int index = _buffTargets.IndexOf(target);
+        if (index < 0) return;
+        _buffTargets.RemoveAt(index);
+        _buffBaseSpeeds.RemoveAt(index);
     }
 }
