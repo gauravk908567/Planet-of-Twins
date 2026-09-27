@@ -851,23 +851,14 @@ public class GameDebuggerV2 : MonoBehaviour
         return target == hostScene ? $"{loc.name} ✔" : $"{loc.name} (scene '{target}' ≠ host — border?)";
     }
 
-    // P8.7 stage A: the enemy registry's size and its shadow check against the whole-scene search. Mismatches must
-    // stay 0 through every kind of play before stage B switches a lookup to the registry.
+    // The enemy registry's live count (P8.7): it should match the enemies on screen. A count that keeps growing with
+    // nothing on screen = enemies leaking past OnDisable. (The stage-A shadow check that proved it is deleted.)
     private void DrawRegistryStatus()
     {
         var registry = EnemyRegistry.Instance;
-        GUILayout.BeginHorizontal();
-        if (registry == null)
-            GUILayout.Label("Enemy registry: NOT LOADED (Persistent?)");
-        else
-        {
-            GUILayout.Label($"Enemy registry: {registry.Count} active · shadow check: {registry.ShadowChecks} checks, " +
-                            (registry.ShadowMismatches == 0 ? "0 mismatches ✔" : $"{registry.ShadowMismatches} MISMATCHES ⚠ (see console)"));
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (GUILayout.Button("Check now", GUILayout.Width(90))) registry.RunShadowCheck();
-#endif
-        }
-        GUILayout.EndHorizontal();
+        GUILayout.Label(registry == null
+            ? "Enemy registry: NOT LOADED (Persistent?)"
+            : $"Enemy registry: {registry.Count} active");
     }
 
     // Perf (P8.5): the main thread and GC allocation per frame, then one row per game marker (PerfMarkers): its time

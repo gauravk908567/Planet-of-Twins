@@ -18,9 +18,8 @@ using UnityEngine.Pool;
 /// WIRING: its own GameObject in Persistent.unity, next to SpawnZoneRegistry. OnEnemyRegistered / OnEnemyUnregistered
 /// let a Persistent service react to arrivals (BUG-143: a QTE freeze catches enemies that spawn during it).
 ///
-/// SHADOW CHECK (P8.7 stage A; Editor + development builds only): every 0.25 s of real time it compares this set with
-/// <c>FindObjectsByType&lt;Enemy&gt;()</c> and warns once per enemy on any difference. Play sessions prove the two sets
-/// are equal BEFORE any lookup switches over (stage B). GameDebuggerV2 shows the running totals.
+/// PROVEN EQUAL: a dev-only shadow check compared this set with <c>FindObjectsByType&lt;Enemy&gt;()</c> every 0.25 s
+/// through P8.7 (0 mismatches in every session), then was deleted once every lookup had switched (2026-09-28).
 /// </summary>
 public class EnemyRegistry : MonoBehaviour
 {
@@ -34,10 +33,6 @@ public class EnemyRegistry : MonoBehaviour
     public event Action<Enemy> OnEnemyUnregistered;
 
     public int Count => _enemies.Count;
-
-    /// <summary>Shadow-check totals since this registry woke (always 0 in a release build).</summary>
-    public int ShadowChecks { get; private set; }
-    public int ShadowMismatches { get; private set; }
 
     private static bool _reportedMissing;
 
@@ -54,8 +49,6 @@ public class EnemyRegistry : MonoBehaviour
         // Teardown order is undefined: drop every subscriber rather than keep delegates to dead objects (BUG-130).
         OnEnemyRegistered = null;
         OnEnemyUnregistered = null;
-        if (ShadowChecks > 0)
-            PoTLog.Spawn?.Info($"Enemy registry shadow check: {ShadowChecks} checks, {ShadowMismatches} mismatches.");
     }
 
     public void Register(Enemy enemy)
@@ -102,47 +95,4 @@ public class EnemyRegistry : MonoBehaviour
         for (int i = _enemies.Count - 1; i >= 0; i--)
             if (_enemies[i] == null) _enemies.RemoveAt(i);
     }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-    // ── Shadow check (P8.7 stage A) ───────────────────────────────────────────
-    private const float ShadowCheckInterval = 0.25f;   // unscaled — keeps checking through pause and slow-mo (R10)
-    private float _nextShadowCheck;
-    private readonly HashSet<Enemy> _inScene = new HashSet<Enemy>();
-    private readonly HashSet<Enemy> _inRegistry = new HashSet<Enemy>();
-    private readonly HashSet<string> _reported = new HashSet<string>();   // warn once per enemy per kind
-
-    private void LateUpdate()
-    {
-        if (Time.unscaledTime < _nextShadowCheck) return;
-        _nextShadowCheck = Time.unscaledTime + ShadowCheckInterval;
-        RunShadowCheck();
-    }
-
-    /// <summary>Compare the registry with a whole-scene search right now (also GameDebuggerV2's "Check now").</summary>
-    public void RunShadowCheck()
-    {
-        PurgeDestroyed();
-        ShadowChecks++;
-
-        _inScene.Clear();
-        foreach (var e in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
-            if (e != null) _inScene.Add(e);
-        _inRegistry.Clear();
-        foreach (var e in _enemies) _inRegistry.Add(e);
-
-        foreach (var e in _inScene)
-            if (!_inRegistry.Contains(e)) ReportMismatch(e, "active in the scene but NOT in the registry");
-        foreach (var e in _inRegistry)
-            if (!_inScene.Contains(e)) ReportMismatch(e, "in the registry but NOT active in the scene");
-    }
-
-    private void ReportMismatch(Enemy enemy, string what)
-    {
-        ShadowMismatches++;
-        if (!_reported.Add(enemy.GetInstanceID() + what)) return;   // counted every time, warned once
-        Debug.LogWarning($"[EnemyRegistry] Shadow check: '{enemy.name}' (scene '{enemy.gameObject.scene.name}') is {what} " +
-                         $"(activeInHierarchy={enemy.gameObject.activeInHierarchy}, enabled={enemy.enabled}). " +
-                         "P8.7 must not switch any lookup to the registry until this never happens.", enemy);
-    }
-#endif
 }

@@ -36,7 +36,10 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
 
     // ── Aura ───────────────────────────────────────────────────
     private readonly Collider[] _auraBuffer = new Collider[16];
-    private Enemy[] _lastBuffed = new Enemy[0];
+    // The allies buffed last frame, and this frame's scratch list. Swapped every frame, never reallocated (P8.5: the aura
+    // runs every frame and used to build a new List + array + one closure per ally each time).
+    private System.Collections.Generic.List<Enemy> _lastBuffed = new System.Collections.Generic.List<Enemy>();
+    private System.Collections.Generic.List<Enemy> _buffedNow = new System.Collections.Generic.List<Enemy>();
     private CueHandle _auraHandle;   // HELD aura visual (Witness book) — on while ≥1 ally is in the field
 
     private static readonly Color RitualColour = new Color(0.5f, 0f, 1f);
@@ -58,7 +61,8 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
         IsThrowing = false;
         RitualBombDropped = false;
         FollowTarget = null;
-        _lastBuffed = System.Array.Empty<Enemy>();
+        _lastBuffed.Clear();
+        _buffedNow.Clear();
         _auraHandle = CueHandle.None;
     }
 
@@ -94,7 +98,8 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
         if (count > 0)
             FactionEnergySystem.Instance?.OnWitnessAuraActive();
 
-        var newBuffed = new System.Collections.Generic.List<Enemy>();
+        var newBuffed = _buffedNow;
+        newBuffed.Clear();
         for (int i = 0; i < count; i++)
         {
             var enemy = _auraBuffer[i].GetComponent<Enemy>()
@@ -127,7 +132,7 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
                 enemy.AttackController.SetAttackSlowdown(2f);
             }
 
-            bool wasAlreadyBuffed = System.Array.Exists(_lastBuffed, e => e == enemy);
+            bool wasAlreadyBuffed = _lastBuffed.Contains(enemy);
             if (!wasAlreadyBuffed)
             {
                 // Shared "ally buffed" cue (Common book) on the newly-buffed enemy — the sole buff visual now
@@ -136,7 +141,7 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
             }
         }
 
-        _lastBuffed = newBuffed.ToArray();
+        (_lastBuffed, _buffedNow) = (newBuffed, _lastBuffed);   // this frame's set becomes "last"; the old list is next frame's scratch
 
         // Held aura visual (Witness book): on while ≥1 ally is in the field, off when the field empties. Rides the
         // Witness. IsPlaying-guarded so a self-ending cue re-arms while allies remain (a looping cue never re-fires).
@@ -160,7 +165,7 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
         _auraHandle = CueHandle.None;
     }
 
-    private void ClearBuffs(Enemy[] enemies)
+    private void ClearBuffs(System.Collections.Generic.List<Enemy> enemies)
     {
         if (enemies == null) return;
         foreach (var e in enemies)

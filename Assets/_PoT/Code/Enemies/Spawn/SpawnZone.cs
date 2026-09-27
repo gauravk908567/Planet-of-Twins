@@ -80,6 +80,9 @@ public class SpawnZone : MonoBehaviour
         return nearest;
     }
 
+    // Lazy: a NavMeshPath can't be built in a MonoBehaviour field initializer. CalculatePath overwrites it each call.
+    private UnityEngine.AI.NavMeshPath _ritualPath;
+
     /// <summary>
     /// Find safest ritual site — furthest from all threat positions,
     /// reachable via NavMesh, not currently occupied.
@@ -103,7 +106,7 @@ public class SpawnZone : MonoBehaviour
 
             Vector3 sitePos = site.transform.position;
 
-            var path = new UnityEngine.AI.NavMeshPath();
+            var path = _ritualPath ??= new UnityEngine.AI.NavMeshPath();   // one reused path (P8.7 audit)
             if (!UnityEngine.AI.NavMesh.CalculatePath(
                 fromPosition, sitePos,
                 UnityEngine.AI.NavMesh.AllAreas, path)) continue;

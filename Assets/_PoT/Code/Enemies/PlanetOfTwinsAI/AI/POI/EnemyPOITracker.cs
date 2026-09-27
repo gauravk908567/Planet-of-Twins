@@ -54,13 +54,18 @@ public class EnemyPOITracker : MonoBehaviour, IEnemyReuseReset
         var zone = _zoneTracker?.HomeZone;
         if (zone != null) return zone;
 
-        // Fallback — find nearest SpawnZone in scene
-        // (for manually placed enemies not spawned by EnemySpawner)
-        var allZones = Object.FindObjectsByType<SpawnZone>(FindObjectsSortMode.None);
+        // Fallback: the nearest loaded SpawnZone, for an enemy with no home zone (a GDV2 bench spawn, a Witness-summoned
+        // ally). Read from SpawnZoneRegistry (R5), not a scene search: this runs every POI update for each such enemy
+        // (P8.7 audit). Same set: zones live only in area scenes, which load after Persistent's registry.
+        var registry = SpawnZoneRegistry.Instance;
+        if (registry == null) return null;
+        var zones = registry.RegisteredZones;
         SpawnZone nearest = null;
         float minDist = float.MaxValue;
-        foreach (var z in allZones)
+        for (int i = 0; i < zones.Count; i++)   // indexed: no enumerator garbage
         {
+            var z = zones[i];
+            if (z == null) continue;
             float d = Vector3.Distance(transform.position, z.transform.position);
             if (d < minDist) { minDist = d; nearest = z; }
         }

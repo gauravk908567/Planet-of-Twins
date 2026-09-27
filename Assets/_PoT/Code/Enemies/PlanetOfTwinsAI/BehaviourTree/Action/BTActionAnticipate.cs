@@ -146,7 +146,16 @@ public class BTActionAnticipate : PoTBTActionBase
             return distL < distR ? TwinAnticipator.Left : TwinAnticipator.Right;
         }
 
-        // Fallback — find in scene
-        return Object.FindAnyObjectByType<TwinAnticipator>();
+        // Both twins register a TwinAnticipator (Persistent), so none at all = a broken twin setup, not something to
+        // scene-search for on every OnEnter (P8.7 audit). Say it once; the action fails and the chase takes over.
+        if (!_reportedMissing)
+        {
+            _reportedMissing = true;
+            Debug.LogError("[BTActionAnticipate] No TwinAnticipator registered (Left and Right are both null): " +
+                           "enemies chase without anticipation. Each twin needs an enabled TwinAnticipator.", _enemy);
+        }
+        return null;
     }
+
+    private static bool _reportedMissing;
 }

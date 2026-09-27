@@ -60,6 +60,11 @@ public class SoulPulseSystem : MonoBehaviour
 
     // Track burn timers per enemy so stacking works correctly
     private readonly Dictionary<EnemyHealthComponent, float> _burnTimers = new();
+    // Burn-tick buffers, reused every tick (P8.7 audit: the loop runs all session and made 2 Lists + a WaitForSeconds
+    // every 0.1 s, even with nothing burning).
+    private readonly List<EnemyHealthComponent> _burnKeys = new();
+    private readonly List<EnemyHealthComponent> _burnEnded = new();
+    private static readonly WaitForSeconds BurnTickWait = new WaitForSeconds(0.1f);   // scaled: the burn pauses with the game
     private Coroutine _burnTickCoroutine;
 
     private void Awake()
@@ -188,17 +193,19 @@ public class SoulPulseSystem : MonoBehaviour
 
         while (true)
         {
-            yield return new WaitForSeconds(tickInterval);
+            yield return BurnTickWait;   // = tickInterval
+            if (_burnTimers.Count == 0) continue;   // nothing burning: no work
 
             // Snapshot keys to avoid modifying dictionary during enumeration
-            var keys = new List<EnemyHealthComponent>(_burnTimers.Keys);
-            var toRemove = new List<EnemyHealthComponent>();
+            _burnKeys.Clear();
+            _burnKeys.AddRange(_burnTimers.Keys);
+            _burnEnded.Clear();
 
-            foreach (var health in keys)
+            foreach (var health in _burnKeys)
             {
                 if (health == null || !health.gameObject.activeInHierarchy)
                 {
-                    toRemove.Add(health);
+                    _burnEnded.Add(health);
                     continue;
                 }
 
@@ -208,10 +215,10 @@ public class SoulPulseSystem : MonoBehaviour
                 // Decrement timer
                 _burnTimers[health] -= tickInterval;
                 if (_burnTimers[health] <= 0f)
-                    toRemove.Add(health);
+                    _burnEnded.Add(health);
             }
 
-            foreach (var key in toRemove)
+            foreach (var key in _burnEnded)
                 _burnTimers.Remove(key);
         }
     }
