@@ -4,7 +4,9 @@ using UnityEngine.AI;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Unity.AI.Navigation;
+using Unity.Profiling;
 using CommonCore;
+using PoT.Diagnostics;
 
 /// <summary>
 /// GameDebugger v2 (P12). The TestLab bench: spawn any enemy through the REAL pooled
@@ -97,6 +99,17 @@ public class GameDebuggerV2 : MonoBehaviour
     private Volume _grayscaleVolume;
     private ColorAdjustments _grayscaleCA;
     private float _grayscaleAmount;        // 0 = full colour, 1 = full grayscale (saturation 0 → -100)
+
+    // Perf section (P8.5, game.md §28): every PerfMarkers marker per frame, against the 60 fps budget.
+    private const float FrameBudgetMs = 1000f / 60f;   // Performance.md: "run anywhere at a smooth 60 fps"
+    private const int PerfWindowFrames = 30;             // average + worst over the last 30 frames (~0.5 s)
+    private const double NsToMs = 1e-6;
+    private bool _perfOpen;                              // collapsed = no recorders running
+    private bool _perfRunning;
+    private ProfilerRecorder _perfMainThread;
+    private ProfilerRecorder _perfGcAlloc;
+    private readonly List<string> _perfNames = new List<string>();
+    private readonly List<ProfilerRecorder> _perfRecorders = new List<ProfilerRecorder>();
 
     private void Awake()
     {
@@ -229,6 +242,7 @@ public class GameDebuggerV2 : MonoBehaviour
 
         // Everything else scrolls: the spawned-enemy list opens a per-enemy action menu on click.
         _scroll = GUILayout.BeginScrollView(_scroll);
+        DrawPerfSection();
         DrawSelectedSection();
         DrawPoiSection();
         DrawPerceptionSection();
@@ -738,6 +752,7 @@ public class GameDebuggerV2 : MonoBehaviour
 
     private void OnDestroy()
     {
+        StopPerfRecorders();
         if (_grayscaleVolume != null)
         {
             if (_grayscaleVolume.sharedProfile != null) Destroy(_grayscaleVolume.sharedProfile);
@@ -808,6 +823,92 @@ public class GameDebuggerV2 : MonoBehaviour
         if (loc == null) return "NO LOCATION (save can't resolve its area)";
         string target = loc.scene.Name;
         return target == hostScene ? $"{loc.name} ✔" : $"{loc.name} (scene '{target}' ≠ host — border?)";
+    }
+
+    // Perf (P8.5): the main thread and GC allocation per frame, then one row per game marker (PerfMarkers): its time
+    // per frame, worst frame, calls per frame and share of the 60 fps budget. Recorders run only while the section is
+    // open; a marker appears once its code has run. In the Editor the main thread includes editor work, so take real
+    // baselines in a development build too. The Profiler window shows the same markers in any scene.
+    private void DrawPerfSection()
+    {
+        GUILayout.Space(6);
+        bool open = GUILayout.Toggle(_perfOpen, " ── Perf (profiler markers vs the 60 fps budget) ──");
+        if (open != _perfOpen)
+        {
+            _perfOpen = open;
+            if (!open) StopPerfRecorders();
+        }
+        if (!_perfOpen) return;
+        if (!_perfRunning || PerfMarkers.Count != _perfNames.Count) StartPerfRecorders();   // new markers since
+
+        double frameMs = RecorderAverage(_perfMainThread, out double frameWorst, out _) * NsToMs;
+        GUILayout.Label($"Main thread {frameMs:0.00} ms (worst {frameWorst * NsToMs:0.00}) of {FrameBudgetMs:0.0} ms" +
+                        $" = {frameMs / FrameBudgetMs:P0} of the frame budget");
+        if (_perfGcAlloc.Valid)
+            GUILayout.Label($"GC alloc {RecorderAverage(_perfGcAlloc, out double gcWorst, out _) / 1024.0:0.0} KB/frame" +
+                            $" (worst {gcWorst / 1024.0:0.0} KB)");
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("marker", GUILayout.Width(220));
+        GUILayout.Label("ms/frame", GUILayout.Width(70));
+        GUILayout.Label("worst", GUILayout.Width(60));
+        GUILayout.Label("calls/frame", GUILayout.Width(80));
+        GUILayout.Label("of budget", GUILayout.Width(70));
+        GUILayout.EndHorizontal();
+        for (int i = 0; i < _perfRecorders.Count; i++)
+        {
+            double ms = RecorderAverage(_perfRecorders[i], out double worst, out double calls) * NsToMs;
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(_perfNames[i], GUILayout.Width(220));
+            GUILayout.Label(ms.ToString("0.000"), GUILayout.Width(70));
+            GUILayout.Label((worst * NsToMs).ToString("0.000"), GUILayout.Width(60));
+            GUILayout.Label(calls.ToString("0.##"), GUILayout.Width(80));
+            GUILayout.Label((ms / FrameBudgetMs).ToString("P1"), GUILayout.Width(70));
+            GUILayout.EndHorizontal();
+        }
+        if (_perfRecorders.Count == 0) GUILayout.Label("(no markers yet: they appear once their code has run)");
+    }
+
+    private void StartPerfRecorders()
+    {
+        StopPerfRecorders();
+        _perfMainThread = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "Main Thread", PerfWindowFrames);
+        _perfGcAlloc = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame", PerfWindowFrames);
+        PerfMarkers.CopyNames(_perfNames);
+        foreach (var name in _perfNames)
+            _perfRecorders.Add(ProfilerRecorder.StartNew(ProfilerCategory.Scripts, name, PerfWindowFrames));
+        _perfRunning = true;
+    }
+
+    private void StopPerfRecorders()
+    {
+        if (_perfMainThread.Valid) _perfMainThread.Dispose();
+        if (_perfGcAlloc.Valid) _perfGcAlloc.Dispose();
+        foreach (var recorder in _perfRecorders)
+            if (recorder.Valid) recorder.Dispose();
+        _perfRecorders.Clear();
+        _perfNames.Clear();
+        _perfRunning = false;
+    }
+
+    // Average and worst sample value over the recorder's window (ns for markers, bytes for GC), plus calls per frame.
+    private static double RecorderAverage(ProfilerRecorder recorder, out double worst, out double callsPerFrame)
+    {
+        worst = 0;
+        callsPerFrame = 0;
+        if (!recorder.Valid || recorder.Count == 0) return 0;
+        int frames = recorder.Count;
+        double sum = 0;
+        long calls = 0;
+        for (int i = 0; i < frames; i++)
+        {
+            var sample = recorder.GetSample(i);
+            sum += sample.Value;
+            calls += sample.Count;
+            if (sample.Value > worst) worst = sample.Value;
+        }
+        callsPerFrame = (double)calls / frames;
+        return sum / frames;
     }
 
     private void DrawMetaSection()

@@ -1,5 +1,7 @@
 ﻿using CommonCore;
 using HybridGOAP;
+using PoT.Diagnostics;
+using Unity.Profiling;
 using UnityEngine;
 
 /// <summary>
@@ -13,6 +15,10 @@ using UnityEngine;
 /// </summary>
 public abstract class PoTGOAPBrainBase : GOAPBrainBase
 {
+    // Profiler marker (P8.5, game.md §28): one brain tick. Every game brain ticks here, so the profiler's call
+    // count per frame = the number of enemies thinking that frame.
+    private static readonly ProfilerMarker PerfBrainTick = PerfMarkers.Create("PoT.Enemy.BrainTick");
+
     protected Enemy LinkedEnemy { get; private set; }
 
     protected override void ConfigureBlackboard()
@@ -100,6 +106,8 @@ public abstract class PoTGOAPBrainBase : GOAPBrainBase
     {
         if (LinkedEnemy != null && LinkedEnemy.IsBrainPaused)
             return; // skip entire GOAP tick while stunned/feared/grabbed
+
+        using var perf = PerfBrainTick.Auto();
 
         // ── Phase 6D — wired in Update, not OnPreTickBrain.
         // These run for every brain regardless of whether children call base.OnPreTickBrain.

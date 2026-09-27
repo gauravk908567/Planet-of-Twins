@@ -1,4 +1,6 @@
 ﻿using CommonCore;
+using PoT.Diagnostics;
+using Unity.Profiling;
 using UnityEngine;
 
 /// <summary>
@@ -15,6 +17,9 @@ using UnityEngine;
 public class PoTWorldStateWriter : MonoBehaviour
 {
     public static PoTWorldStateWriter Instance { get; private set; }
+
+    // Profiler marker (P8.5, game.md §28): the per-frame shared-blackboard sync.
+    private static readonly ProfilerMarker PerfUpdate = PerfMarkers.Create("PoT.AI.WorldStateWriter");
 
     [Header("Wire in Inspector or leave null to auto-find")]
     [SerializeField] private RescueEventController _rescueController;
@@ -39,6 +44,9 @@ public class PoTWorldStateWriter : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        // The sealed AI core marks its perception tick itself but can't reference PoT.Diagnostics; this bridge (the
+        // game's one contact point with the framework) lists it so GameDebuggerV2's Perf section shows it (P8.5).
+        PerfMarkers.Watch("CommonCore.Perception.Tick");
     }
 
     private void Start()
@@ -144,6 +152,7 @@ public class PoTWorldStateWriter : MonoBehaviour
     private void Update()
     {
         if (_shared == null) return;
+        using var perf = PerfUpdate.Auto();
 
         // Shared health
         if (_sharedHealthPool != null)

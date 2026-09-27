@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using PoT.Diagnostics;
 using Unity.Cinemachine;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.VFX;
 
@@ -17,6 +19,11 @@ using UnityEngine.VFX;
 public class FxManager : MonoBehaviour
 {
     public static FxManager Instance { get; private set; }
+
+    // Profiler markers (P8.5, game.md §28): the play entry points (Play / PlayBook / PlayParticle) and the per-frame
+    // upkeep of every live cue (follow, expiry, delayed book elements).
+    private static readonly ProfilerMarker PerfPlay = PerfMarkers.Create("PoT.Fx.Play");
+    private static readonly ProfilerMarker PerfUpdate = PerfMarkers.Create("PoT.Fx.Update");
 
     /// <summary>P19 seam 3 — hit-stop. The stop itself is a GAME service (HitStopService, a
     /// TimeScaleService owner) this package cannot reference; the game registers its handler at boot
@@ -215,6 +222,7 @@ public class FxManager : MonoBehaviour
     /// punch / shake / depth) rides on a cue element's <c>CameraCue</c> block → <see cref="CameraCueDriver"/>.</summary>
     public CueHandle Play(CueData cue, in CueContext ctx)
     {
+        using var perf = PerfPlay.Auto();
         if (cue == null) { Debug.LogError("[FxManager] Play called with a null cue.", this); return CueHandle.None; }
         switch (cue)
         {
@@ -228,9 +236,12 @@ public class FxManager : MonoBehaviour
     /// <summary>Play a single pooled <c>ParticleSystem</c> prefab directly (no Cue Book) — for a system that
     /// owns exactly one effect, e.g. the Manpu glyph burst. A looping prefab is held until <see cref="Stop"/>.</summary>
     public CueHandle PlayParticle(ParticleSystem prefab, in CueContext ctx)
-        => prefab != null
+    {
+        using var perf = PerfPlay.Auto();
+        return prefab != null
             ? SpawnParticle(prefab, FxAttachMode.FromPrefab, Vector3.zero, TimeMode.FromPrefab, 0f, ctx)
             : CueHandle.None;
+    }
 
     /// <summary>Play the effect named <paramref name="id"/> out of a Cue Book — the container is addressed by
  /// the string id, never "play the whole book". The effect's elements fire together, each
@@ -239,6 +250,7 @@ public class FxManager : MonoBehaviour
     /// per-call-site verifier catches typos at author time).</summary>
     public CueHandle PlayBook(CueBookData book, string id, in CueContext ctx)
     {
+        using var perf = PerfPlay.Auto();
         if (book == null) { Debug.LogError("[FxManager] PlayBook called with a null book.", this); return CueHandle.None; }
         var elements = book.GetElements(id);
         if (elements == null)
@@ -718,6 +730,7 @@ public class FxManager : MonoBehaviour
     private void Update()
     {
         if (_registry.ActiveCount == 0) return;
+        using var perf = PerfUpdate.Auto();
 
         float sdt = Time.deltaTime;            // scaled
         float udt = Time.unscaledDeltaTime;    // unscaled (R10)

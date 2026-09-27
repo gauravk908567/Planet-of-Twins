@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using PoT.Diagnostics;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -25,6 +27,12 @@ using UnityEngine.SceneManagement;
 public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
 {
     public static SceneFlowManager Instance { get; private set; }
+
+    // Profiler markers (P8.5, game.md §28). Only the synchronous parts: a marker can't span a yield, and the
+    // async load/unload itself shows under Unity's own Loading markers.
+    private static readonly ProfilerMarker PerfRecalculate = PerfMarkers.Create("PoT.Streaming.Recalculate");
+    private static readonly ProfilerMarker PerfLoaded = PerfMarkers.Create("PoT.Streaming.Loaded");
+    private static readonly ProfilerMarker PerfWillUnload = PerfMarkers.Create("PoT.Streaming.WillUnload");
 
     [Header("Locations")]
     [Tooltip("Drag all WorldLocationSO assets here. Manager finds start location automatically.")]
@@ -159,6 +167,7 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
 
     private void RecalculateLoadedSet()
     {
+        using var perf = PerfRecalculate.Auto();
         var shouldBeLoaded = BuildDesiredSet();
 
         foreach (var loc in shouldBeLoaded)
@@ -213,8 +222,11 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
         _loadingInProgress.Remove(location);
 
         PoTLog.Streaming?.Info($"Loaded: {sceneName}");
-        OnLocationLoaded?.Invoke(location);
-        UpdateActiveScene(); // re-assert after the newly loaded scene is available
+        using (PerfLoaded.Auto())   // ends before this coroutine's end (no yield inside)
+        {
+            OnLocationLoaded?.Invoke(location);
+            UpdateActiveScene(); // re-assert after the newly loaded scene is available
+        }
     }
 
     private IEnumerator UnloadLocationAsync(WorldLocationSO location)
@@ -231,8 +243,11 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
         if (desired.Contains(location)) { _unloadingInProgress.Remove(location); yield break; }
 
         // Signal EnemySpawner / QTEManager to despawn/cancel before the scene vanishes
-        OnLocationWillUnload?.Invoke(location);
-        OnSceneWillUnload?.Invoke(location.scene.Name);   // IFxSceneEvents mirror (FxManager F1 reclaim)
+        using (PerfWillUnload.Auto())   // the subscribers' despawn cost; ends before the unload's yield
+        {
+            OnLocationWillUnload?.Invoke(location);
+            OnSceneWillUnload?.Invoke(location.scene.Name);   // IFxSceneEvents mirror (FxManager F1 reclaim)
+        }
 
         string sceneName = location.scene.Name;
         var scene = SceneManager.GetSceneByName(sceneName);

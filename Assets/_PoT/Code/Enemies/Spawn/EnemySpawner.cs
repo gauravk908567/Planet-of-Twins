@@ -2,12 +2,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using PoT.Diagnostics;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class EnemySpawner : MonoBehaviour
 {
     // allZones removed — SpawnZones now self-register via SpawnZoneRegistry (multi-scene safe).
+
+    // Profiler markers (P8.5, game.md §28): one spawn-loop tick, and every spawn whatever its path.
+    private static readonly ProfilerMarker PerfTick = PerfMarkers.Create("PoT.Spawner.Tick");
+    private static readonly ProfilerMarker PerfSpawn = PerfMarkers.Create("PoT.Spawner.SpawnEnemy");
 
     [Header("References")]
     [SerializeField] private MonoBehaviour poolProviderObject;
@@ -240,7 +246,7 @@ public class EnemySpawner : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(_activeConfig?.spawnInterval ?? 3f);
-            TrySpawnOnSide(side);
+            using (PerfTick.Auto()) TrySpawnOnSide(side);   // the marker's scope ends before the next yield
         }
     }
 
@@ -270,6 +276,7 @@ public class EnemySpawner : MonoBehaviour
     // ── Core spawn ─────────────────────────────────────────────
     public void SpawnEnemy(SideTypeEntry entry, SpawnSide side, bool fromSummoner)
     {
+        using var perf = PerfSpawn.Auto();
         if (_pool == null || entry?.prefab == null)
         {
             Debug.LogWarning($"[EnemySpawner] SpawnEnemy aborted on {side}: pool or entry.prefab is null.", this);

@@ -18,6 +18,10 @@ namespace CommonCore
 
         public float CurrentTime => Time.time;
 
+        // Profiler marker around the whole perception tick (the one diagnostics-only addition to the core, user OK
+        // 2026-09-27). Unity-only on purpose: the core references no game code.
+        static readonly Unity.Profiling.ProfilerMarker PerfTick = new Unity.Profiling.ProfilerMarker("CommonCore.Perception.Tick");
+
         Dictionary<ISensor, List<ListenerEntry>> ActiveSensors;
         Dictionary<ISensor, List<IPerceivable>> ActivePerceivables;
         Dictionary<IPerceptionListener, Dictionary<IPerceivable, DetectionData>> AllDetectionData;
@@ -35,6 +39,8 @@ namespace CommonCore
 
         protected void Update()
         {
+            using var perf = PerfTick.Auto();
+
             // Stage 1: Tick any active sensors
             foreach (var SensorKVP in ActiveSensors)
             {
