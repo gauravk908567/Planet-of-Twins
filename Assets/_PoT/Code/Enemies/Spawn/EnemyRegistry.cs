@@ -73,8 +73,10 @@ public class EnemyRegistry : MonoBehaviour
 
     /// <summary>
     /// Every active enemy, copied into a pooled list the caller owns until the returned handle is disposed.
-    /// Always use it as <c>using (EnemyRegistry.Snapshot(out var enemies)) { … }</c>. No registry = an empty list and
-    /// one loud error (Persistent isn't loaded), never a silent whole-scene search.
+    /// Always dispose it: <c>using (EnemyRegistry.Snapshot(out var enemies)) { … }</c>, or
+    /// <c>using var snapshot = EnemyRegistry.Snapshot(out var enemies);</c> when the loop runs to the end of the method.
+    /// Never keep the list past that scope. No registry = an empty list and one loud error (Persistent isn't loaded),
+    /// never a silent whole-scene search.
     /// </summary>
     public static PooledObject<List<Enemy>> Snapshot(out List<Enemy> enemies)
     {

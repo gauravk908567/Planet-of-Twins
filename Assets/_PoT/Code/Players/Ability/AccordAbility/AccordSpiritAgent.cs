@@ -213,10 +213,10 @@ public class AccordSpiritAgent : MonoBehaviour, ISpawnPoolable
 
     private Transform FindNearestUnclaimed(Vector3 from)
     {
-        Enemy[] all = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         float best = float.MaxValue;
         Transform result = null;
 
+        using var snapshot = EnemyRegistry.Snapshot(out var all);
         foreach (Enemy e in all)
         {
             if (e == null || !e.gameObject.activeInHierarchy) continue;

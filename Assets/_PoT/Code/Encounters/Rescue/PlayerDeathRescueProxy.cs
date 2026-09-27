@@ -215,12 +215,12 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
     // ── Enemy slowdown ─────────────────────────────────────────
     private void ApplySlowdownToTargetingEnemies()
     {
-        var allEnemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        foreach (var enemy in allEnemies)
-        {
-            if (enemy.Target == transform)
-                enemy.AttackController.SetAttackSlowdown(attackSlowdownMultiplier);
-        }
+        using (EnemyRegistry.Snapshot(out var allEnemies))
+            foreach (var enemy in allEnemies)
+            {
+                if (enemy.Target == transform)
+                    enemy.AttackController.SetAttackSlowdown(attackSlowdownMultiplier);
+            }
     }
 
     /// <summary>
@@ -230,19 +230,19 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
     /// </summary>
     private void ClearTargetOnEnemies()
     {
-        var allEnemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        foreach (var enemy in allEnemies)
-        {
-            if (enemy.Target == transform)
-                enemy.ClearTarget();
-        }
+        using (EnemyRegistry.Snapshot(out var allEnemies))
+            foreach (var enemy in allEnemies)
+            {
+                if (enemy.Target == transform)
+                    enemy.ClearTarget();
+            }
     }
 
     private void ClearSlowdownFromTargetingEnemies()
     {
-        var allEnemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        foreach (var enemy in allEnemies)
-            enemy.AttackController.ClearAttackSlowdown();
+        using (EnemyRegistry.Snapshot(out var allEnemies))
+            foreach (var enemy in allEnemies)
+                enemy.AttackController.ClearAttackSlowdown();
     }
 
     public void OnStruggle() { }

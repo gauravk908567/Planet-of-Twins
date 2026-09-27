@@ -121,7 +121,8 @@ public class BTActionAttackEnemy : PoTBTActionBase
             ? null
             : _enemy.GetComponent<ClanSoldier>();
 
-        foreach (var candidate in Object.FindObjectsByType<Enemy>(FindObjectsSortMode.None))
+        using var snapshot = EnemyRegistry.Snapshot(out var candidates);
+        foreach (var candidate in candidates)
         {
             if (candidate == _enemy) continue;
             if (candidate.Health.IsDead) continue;

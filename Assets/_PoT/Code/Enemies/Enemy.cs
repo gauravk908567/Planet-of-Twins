@@ -526,11 +526,11 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
 
     private List<Enemy> FindDirectCombatants()
     {
-        var result = new List<Enemy>();
-        var all = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        foreach (var e in all)
-            if (e != this && e.Target == transform)
-                result.Add(e);
+        var result = new List<Enemy>();   // kept across the routine's yield, so it's not a pooled list
+        using (EnemyRegistry.Snapshot(out var all))
+            foreach (var e in all)
+                if (e != this && e.Target == transform)
+                    result.Add(e);
         return result;
     }
 

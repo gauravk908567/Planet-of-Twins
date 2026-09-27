@@ -120,10 +120,10 @@ public class RadiantSeekerOrb : MonoBehaviour, ISpawnPoolable
 
     private Transform FindNearestEnemy()
     {
-        Enemy[] all = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         float best = float.MaxValue;
         Transform result = null;
 
+        using var snapshot = EnemyRegistry.Snapshot(out var all);
         foreach (Enemy e in all)
         {
             if (e == null || !e.gameObject.activeInHierarchy) continue;

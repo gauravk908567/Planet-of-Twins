@@ -391,9 +391,9 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
 
     public Enemy FindFollowTarget()
     {
-        var enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         Enemy best = null;
         float bestDist = float.MaxValue;
+        using var snapshot = EnemyRegistry.Snapshot(out var enemies);
         foreach (var e in enemies)
         {
             if (e == this || e is WitnessEnemy || e.Health.IsDead) continue;

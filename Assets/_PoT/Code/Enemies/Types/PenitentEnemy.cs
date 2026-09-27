@@ -265,13 +265,15 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
         else
         {
             float reflected = amount * (_penitentData?.reflectionFraction ?? 0.6f);
-            var enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-            foreach (var e in enemies)
-            {
-                if (e == this) continue;
-                if (Vector3.Distance(transform.position, e.transform.position) < 4f)
-                    e.Health?.TakeDamage(new DamageData(reflected, DamageType.Ability));
-            }
+            // A snapshot: a hit here can kill an enemy or bounce off another reflecting Penitent (which takes its
+            // own snapshot), and neither can disturb this loop.
+            using (EnemyRegistry.Snapshot(out var enemies))
+                foreach (var e in enemies)
+                {
+                    if (e == this) continue;
+                    if (Vector3.Distance(transform.position, e.transform.position) < 4f)
+                        e.Health?.TakeDamage(new DamageData(reflected, DamageType.Ability));
+                }
         }
     }
 

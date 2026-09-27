@@ -179,13 +179,15 @@ public class WorldSpaceRescueUI : MonoBehaviour
 
     private void RefreshChainSubscriptions()
     {
-        foreach (var tb in FindObjectsByType<TetherBreakerEnemy>(FindObjectsSortMode.None))
-        {
-            tb.OnChainGrabbed -= HandleChainGrabbed;
-            tb.OnChainReleased -= HandleChainReleased;
-            tb.OnChainGrabbed += HandleChainGrabbed;
-            tb.OnChainReleased += HandleChainReleased;
-        }
+        using (EnemyRegistry.Snapshot(out var enemies))
+            foreach (var e in enemies)
+            {
+                if (!(e is TetherBreakerEnemy tb)) continue;
+                tb.OnChainGrabbed -= HandleChainGrabbed;
+                tb.OnChainReleased -= HandleChainReleased;
+                tb.OnChainGrabbed += HandleChainGrabbed;
+                tb.OnChainReleased += HandleChainReleased;
+            }
     }
 
     private void HandleChainGrabbed(Player grabbed)
