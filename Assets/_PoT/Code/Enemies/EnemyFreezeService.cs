@@ -8,8 +8,8 @@ using UnityEngine;
 /// world joins the freeze through the registry's arrival event (BUG-143), as <c>TimeFactorManager.Register</c> does for
 /// the soul cast, and <see cref="UnfreezeAll"/> releases it with the rest.
 ///
-/// Place on any scene GameObject. QTEController holds a MonoBehaviour ref
-/// that it casts to IEnemyFreezeService.
+/// Exactly ONE instance, on QTEManager's GameObject in Persistent: QTEManager holds a MonoBehaviour ref that it casts
+/// to IEnemyFreezeService. (A second copy on GameSystem was removed 2026-09-28: two services meant two IsFrozen flags.)
 /// </summary>
 public class EnemyFreezeService : MonoBehaviour, IEnemyFreezeService
 {

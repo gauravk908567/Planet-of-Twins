@@ -49234,7 +49234,6 @@ GameObject:
   - component: {fileID: 1203473036}
   - component: {fileID: 1203473038}
   - component: {fileID: 1203473039}
-  - component: {fileID: 1203473040}
   m_Layer: 0
   m_Name: GameSystem
   m_TagString: Untagged
@@ -49436,18 +49435,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850adae34b1eba443bfa603da2a57dc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LanguageManager
---- !u!114 &1203473040
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1203473025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca85833fbac2d30449be9dea0528eeb8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyFreezeService
 --- !u!1001 &1206841186
 PrefabInstance:
   m_ObjectHideFlags: 0
