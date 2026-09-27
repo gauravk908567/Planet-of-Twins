@@ -75,7 +75,7 @@ public class TutorialContext : MonoBehaviour, WorldFlagRegistry.IWorldFlagObject
         CurrentStage = stage;
         if (stage == TutorialStage.Complete) MarkCompleteFlag();
         OnStageChanged?.Invoke(stage);
-        Debug.Log($"[TutorialContext] Stage → {stage}");
+        PoTLog.Tutorial?.Info($"Stage → {stage}");
     }
 
     /// <summary>WorldFlagRegistry restore hook. A respawn can hand back an OLDER flag set (a checkpoint saved before the

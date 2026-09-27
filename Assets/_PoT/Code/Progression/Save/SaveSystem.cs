@@ -44,7 +44,7 @@ public static class SaveSystem
             File.WriteAllText(tmp, JsonUtility.ToJson(data, true));
             if (File.Exists(dest)) File.Replace(tmp, dest, null);   // atomic same-volume swap
             else File.Move(tmp, dest);
-            Debug.Log($"[SaveSystem] Wrote slot {slot} → {dest}");
+            PoTLog.Save?.Info($"Wrote slot {slot} → {dest}");
         }
         catch (Exception e)
         {
@@ -88,7 +88,7 @@ public static class SaveSystem
     public static void Delete(int slot)
     {
         if (!HasSave(slot)) return;
-        try { File.Delete(PathFor(slot)); Debug.Log($"[SaveSystem] Deleted slot {slot}."); }
+        try { File.Delete(PathFor(slot)); PoTLog.Save?.Info($"Deleted slot {slot}."); }
         catch (Exception e) { Debug.LogError($"[SaveSystem] Delete slot {slot} failed: {e.Message}"); }
     }
 

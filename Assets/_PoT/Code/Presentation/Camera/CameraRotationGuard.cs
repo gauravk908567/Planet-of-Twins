@@ -34,6 +34,6 @@ public class CameraRotationGuard : MonoBehaviour
         if (_authored == null) return;
         for (int i = 0; i < cameras.Length && i < _authored.Length; i++)
             if (cameras[i] != null) cameras[i].localRotation = _authored[i];
-        Debug.Log("[CameraRotationGuard] Restored authored camera rotations (flip correction behind fade).");
+        PoTLog.Fx?.Info("Restored authored camera rotations (flip correction behind fade).");
     }
 }

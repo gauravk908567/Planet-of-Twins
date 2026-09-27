@@ -109,7 +109,7 @@ public class PlayerHealthComponent : MonoBehaviour,
             if (_debugRegen)
             {
                 _regenLogTimer = 0f;
-                Debug.Log($"[HealthRegen] '{name}' regen STARTED — HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} " +
+                PoTLog.Combat?.Info($"'{name}' regen STARTED — HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} " +
                           $"(displayHP={DisplayHealth:F1}, distMod={_distanceModifier:F2})", this);
             }
         }
@@ -118,7 +118,7 @@ public class PlayerHealthComponent : MonoBehaviour,
             _isRegenActive = false;
             OnRegenStopped?.Invoke();
             if (_debugRegen)
-                Debug.Log($"[HealthRegen] '{name}' regen STOPPED — HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} " +
+                PoTLog.Combat?.Info($"'{name}' regen STOPPED — HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} " +
                           $"(displayHP={DisplayHealth:F1}, distMod={_distanceModifier:F2})", this);
         }
 
@@ -137,7 +137,7 @@ public class PlayerHealthComponent : MonoBehaviour,
                 if (_regenLogTimer >= 0.5f)
                 {
                     _regenLogTimer = 0f;
-                    Debug.Log($"[HealthRegen] '{name}' healing → HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} " +
+                    PoTLog.Combat?.Info($"'{name}' healing → HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} " +
                               $"(+{regenAmount / Mathf.Max(Time.deltaTime, 0.0001f):F1}/s, " +
                               $"displayHP={DisplayHealth:F1}, distMod={_distanceModifier:F2})", this);
                 }
@@ -152,7 +152,7 @@ public class PlayerHealthComponent : MonoBehaviour,
             if (_regenBlockLogTimer >= 1f)
             {
                 _regenBlockLogTimer = 0f;
-                Debug.Log($"[HealthRegen] '{name}' NOT regenerating at HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} — " +
+                PoTLog.Combat?.Info($"'{name}' NOT regenerating at HP={_currentCombatHealth:F1}/{maxCombatHealth:F0} — " +
                           $"{_regenHandler.GetBlockReason(_currentCombatHealth, maxCombatHealth)} " +
                           $"(displayHP={DisplayHealth:F1}, distMod={_distanceModifier:F2}, overMaxDrain={_overMaxDistanceDrain:F2})", this);
             }
@@ -174,7 +174,7 @@ public class PlayerHealthComponent : MonoBehaviour,
             _regenHandler.OnCombatDamageTaken();
 
         if (_debugRegen)
-            Debug.Log($"[HealthRegen] '{name}' took {multipliedAmount:F1} {damageData.Type} dmg → " +
+            PoTLog.Combat?.Info($"'{name}' took {multipliedAmount:F1} {damageData.Type} dmg → " +
                       $"HP={_currentCombatHealth:F1}/{maxCombatHealth:F0}" +
                       (damageData.Type == DamageType.Combat
                           ? " — COMBAT: regen delay timer RESET"
@@ -188,7 +188,7 @@ public class PlayerHealthComponent : MonoBehaviour,
             _deathFired = true;
             _isDead = true;
             if (_debugRegen)
-                Debug.Log($"[HealthRegen] '{name}' DIED (HP=0) — regen HALTED until ResetToAlive()", this);
+                PoTLog.Combat?.Info($"'{name}' DIED (HP=0) — regen HALTED until ResetToAlive()", this);
             OnDeath?.Invoke();
         }
     }
@@ -229,7 +229,7 @@ public class PlayerHealthComponent : MonoBehaviour,
         _isDead = false;
         _deathFired = false;
         if (_debugRegen)
-            Debug.Log($"[HealthRegen] '{name}' ResetToAlive — isDead cleared, regen RE-ENABLED " +
+            PoTLog.Combat?.Info($"'{name}' ResetToAlive — isDead cleared, regen RE-ENABLED " +
                       "(begins after the post-hit delay)", this);
     }
 
@@ -237,7 +237,7 @@ public class PlayerHealthComponent : MonoBehaviour,
     {
         _currentCombatHealth = Mathf.Min(maxCombatHealth, _currentCombatHealth + amount);
         if (_debugRegen)
-            Debug.Log($"[HealthRegen] '{name}' Heal(+{amount:F1}) → HP={_currentCombatHealth:F1}/{maxCombatHealth:F0}", this);
+            PoTLog.Combat?.Info($"'{name}' Heal(+{amount:F1}) → HP={_currentCombatHealth:F1}/{maxCombatHealth:F0}", this);
         BroadcastDisplayHealth();
     }
 
@@ -256,7 +256,7 @@ public class PlayerHealthComponent : MonoBehaviour,
         _distanceModifier = 1f;
         _regenHandler.Reset();
         if (_debugRegen)
-            Debug.Log($"[HealthRegen] '{name}' RestoreToFull — HP=max, drain/mod reset, regen handler Reset() " +
+            PoTLog.Combat?.Info($"'{name}' RestoreToFull — HP=max, drain/mod reset, regen handler Reset() " +
                       "(no regen until first hit again)", this);
         BroadcastDisplayHealth();
     }

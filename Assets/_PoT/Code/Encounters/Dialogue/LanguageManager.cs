@@ -103,6 +103,6 @@ public class LanguageManager : MonoBehaviour
     private void OnLocaleChanged(Locale locale)
     {
         OnLanguageChanged?.Invoke(locale);
-        Debug.Log($"[LanguageManager] Language changed to {locale.LocaleName}");
+        PoTLog.UI?.Info($"Language changed to {locale.LocaleName}");
     }
 }

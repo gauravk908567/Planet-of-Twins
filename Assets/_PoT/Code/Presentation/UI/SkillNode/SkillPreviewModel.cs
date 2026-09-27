@@ -320,7 +320,7 @@ public class SkillPreviewModal : MonoBehaviour
 
         if (!_purchaser.TryPurchaseNode(_currentData))
         {
-            Debug.Log("[SkillPreviewModal] Purchase failed — not enough points.");
+            PoTLog.UI?.Info("Skill purchase failed — not enough points.");
             return;
         }
 

@@ -64,7 +64,7 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
     // ── Called when this player's HP hits zero ─────────────────
     public void Activate(Enemy killingEnemy)
     {
-        Debug.Log($"[DeathProxy] Activate called on {gameObject.name}, " +
+        PoTLog.Twins?.Info($"Death proxy activated on {gameObject.name}, " +
                   $"_isActive={_isActive}, " +
                   $"killedBy={killingEnemy?.gameObject.name ?? "NULL"}, " +
                   $"HP={_player?.Health?.DisplayHealth}");
@@ -104,7 +104,7 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
     {
         if (!_isActive) return; // already resolved
 
-        Debug.Log($"[DeathProxy] Killing enemy died — free rescue for {gameObject.name}");
+        PoTLog.Twins?.Info($"Killing enemy died — free rescue for {gameObject.name}");
         UnsubscribeFromKiller();
         ReleasePlayer(_partialHealAmount); // heal and free
     }
@@ -122,13 +122,13 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
     public void PauseTTK()
     {
         _ttkPaused = true;
-        Debug.Log($"[DeathProxy] '{_player?.name}' TTK PAUSED at {_ttkRemaining:F2}s", this);
+        PoTLog.Twins?.Info($"'{_player?.name}' TTK PAUSED at {_ttkRemaining:F2}s", this);
     }
 
     public void ResumeTTK()
     {
         _ttkPaused = false;
-        Debug.Log($"[DeathProxy] '{_player?.name}' TTK RESUMED at {_ttkRemaining:F2}s", this);
+        PoTLog.Twins?.Info($"'{_player?.name}' TTK RESUMED at {_ttkRemaining:F2}s", this);
     }
 
     // ── Called on successful rescue ────────────────────────────
@@ -138,7 +138,7 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
         // distinguish "the heal never applied" from "the heal applied but the bar masked it".
         // If this line is the LAST one before a freeze, the crash is in the release/cue cascade.
         float hpBefore = _player != null ? _player.Health.CombatHealth : -1f;
-        Debug.Log($"[DeathProxy] ReleasePlayer '{_player?.name}' — _isActive={_isActive}, " +
+        PoTLog.Twins?.Info($"ReleasePlayer '{_player?.name}' — _isActive={_isActive}, " +
                   $"healAmount={healAmount}, HP(before)={hpBefore:F1}", this);
         if (!_isActive) return;
         _isActive = false;
@@ -151,7 +151,7 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
         _player.Health.ResetToAlive();
         // Regen investigation: HP AFTER heal + isDead cleared. Real regen should now resume after
         // the post-hit delay; watch for the [HealthRegen] lines on this same twin next.
-        Debug.Log($"[DeathProxy] ReleasePlayer '{_player?.name}' DONE — HP(after)={_player.Health.CombatHealth:F1}, " +
+        PoTLog.Twins?.Info($"ReleasePlayer '{_player?.name}' DONE — HP(after)={_player.Health.CombatHealth:F1}, " +
                   $"isDead={_player.Health.IsDead}", this);
         ClearSlowdownFromTargetingEnemies();
         StartCoroutine(InvincibilityFrames(2f));
@@ -183,7 +183,7 @@ public class PlayerDeathRescueProxy : MonoBehaviour, IRescueTarget, IDyingPlayer
         if (!_isActive) yield break;
 
         _isActive = false;
-        Debug.Log($"[DeathProxy] '{_player?.name}' TTK EXPIRED → rescue FAILED (player killed)", this);
+        PoTLog.Twins?.Info($"'{_player?.name}' TTK EXPIRED → rescue FAILED (player killed)", this);
         // FIX: unfreeze movement — was only unfrozen in ReleasePlayer (success path).
         // Without this, player stays permanently frozen after TTK expires.
         _player.Movement.SetFrozen(false);

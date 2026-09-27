@@ -37,7 +37,7 @@ public class ComboReadyRegistry : MonoBehaviour
     {
         if (_comboReady.Contains(enemy)) return;
         _comboReady.Add(enemy);
-        Debug.Log($"[ComboRegistry] {enemy.name} registered — {_comboReady.Count} ready");
+        PoTLog.AI?.Info($"{enemy.name} combo-ready, registered — {_comboReady.Count} ready");
         TryFormPact(enemy);
     }
 
@@ -63,7 +63,7 @@ public class ComboReadyRegistry : MonoBehaviour
             existingPact.Add(newEnemy);
             _pactLookup[newEnemy] = existingPact;
             NotifyPactMembers(existingPact);
-            Debug.Log($"[ComboRegistry] {newEnemy.name} joined existing pact " +
+            PoTLog.AI?.Info($"{newEnemy.name} joined existing pact " +
                       $"({existingPact.Count} members)");
             return;
         }
@@ -75,7 +75,7 @@ public class ComboReadyRegistry : MonoBehaviour
         _pactLookup[partner] = pact;
         NotifyPactMembers(pact);
 
-        Debug.Log($"[ComboRegistry] Pact formed: {newEnemy.name} + {partner.name}");
+        PoTLog.AI?.Info($"Pact formed: {newEnemy.name} + {partner.name}");
     }
 
     private EnemyDarkEnergy FindPactPartner(EnemyDarkEnergy requester)
@@ -129,12 +129,12 @@ public class ComboReadyRegistry : MonoBehaviour
                 m.GetComponent<EnemyProximityPower>()?.OnPactDissolved();
             }
             _pacts.Remove(pact);
-            Debug.Log($"[ComboRegistry] Pact dissolved — {enemy.name} died");
+            PoTLog.AI?.Info($"Pact dissolved — {enemy.name} died");
         }
         else
         {
             NotifyPactMembers(pact);
-            Debug.Log($"[ComboRegistry] {enemy.name} left pact — {pact.Count} remain");
+            PoTLog.AI?.Info($"{enemy.name} left pact — {pact.Count} remain");
         }
     }
 

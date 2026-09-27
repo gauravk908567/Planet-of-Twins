@@ -169,7 +169,7 @@ public class CouchDeviceManager : MonoBehaviour
         IsCouchActive = true;
 
         PoTLog.Crumb(PoTCrumb.Input, $"couch pairing: P1={Describe(p1Devices)}, P2={Describe(p2Devices)}");
-        Debug.Log($"[CouchDeviceManager] Couch ON — P1={Describe(p1Devices)}  P2={Describe(p2Devices)}");
+        PoTLog.Input?.Info($"Couch ON — P1={Describe(p1Devices)}  P2={Describe(p2Devices)}");
     }
 
     /// <summary>One device drives both twins: P1 reads all devices, P2 route cleared (falls back to P1), P2 reader off.</summary>
@@ -181,7 +181,7 @@ public class CouchDeviceManager : MonoBehaviour
         IsCouchActive = false;
 
         PoTLog.Crumb(PoTCrumb.Input, "solo: one device drives both twins");
-        Debug.Log("[CouchDeviceManager] Solo — one device drives both twins.");
+        PoTLog.Input?.Info("Solo — one device drives both twins.");
     }
 
     private static string Describe(InputDevice[] d) =>
@@ -205,7 +205,7 @@ public class CouchDeviceManager : MonoBehaviour
     private static void LogConnectedDevices()
     {
         var names = InputSystem.devices.Select(d => $"{d.displayName}·{d.GetType().Name}");
-        Debug.Log($"[CouchDeviceManager] Connected devices → {string.Join(",  ", names)}");
+        PoTLog.Input?.Info($"Connected devices → {string.Join(",  ", names)}");
     }
 
     // Dumps a device's full control paths — used to discover a generic Joystick's real button/stick control names
@@ -213,7 +213,7 @@ public class CouchDeviceManager : MonoBehaviour
     private static void DumpDeviceControls(InputDevice d)
     {
         var paths = d.allControls.Select(c => c.path);
-        Debug.Log($"[CouchDeviceManager] '{d.displayName}' controls → {string.Join("  |  ", paths)}");
+        PoTLog.Input?.Info($"'{d.displayName}' controls → {string.Join("  |  ", paths)}");
     }
 
 #if UNITY_EDITOR
@@ -234,7 +234,7 @@ public class CouchDeviceManager : MonoBehaviour
         foreach (var js in Joystick.all)
             foreach (var ctrl in js.allControls)
                 if (ctrl.parent == js && ctrl is UnityEngine.InputSystem.Controls.ButtonControl b && b.wasPressedThisFrame)
-                    Debug.Log($"[JoystickProbe] pressed → {b.name}");
+                    PoTLog.Input?.Info($"Joystick probe: pressed → {b.name}");
     }
 #endif
 }

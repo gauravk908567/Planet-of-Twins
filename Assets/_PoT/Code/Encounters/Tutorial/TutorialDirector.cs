@@ -39,7 +39,7 @@ public class TutorialDirector : MonoBehaviour
         // was never run (GameBootstrapper.LoadGamePath loaded the area directly), so we own the level GOs.
         if (SaveService.Instance != null && SaveService.Instance.IsResumingSave)
         {
-            Debug.Log("[TutorialDirector] Resuming a save — skipping the tutorial.");
+            PoTLog.Tutorial?.Info("Resuming a save — skipping the tutorial.");
             SkipTutorial(ownsLevelGos: true);
             return;
         }
@@ -48,7 +48,7 @@ public class TutorialDirector : MonoBehaviour
         // streamed out and back in. Same bypass as Continue, so it never replays (BUG-133).
         if (TutorialContext.Instance != null && TutorialContext.Instance.IsCompletedInSave)
         {
-            Debug.Log("[TutorialDirector] Tutorial already completed (world flag) — skipping the tutorial.");
+            PoTLog.Tutorial?.Info("Tutorial already completed (world flag) — skipping the tutorial.");
             SkipTutorial(ownsLevelGos: true);
             return;
         }
@@ -114,7 +114,7 @@ public class TutorialDirector : MonoBehaviour
             ActivateSkipRoots();       // …then turn the main level on.
         }
 
-        Debug.Log($"[TutorialDirector] skip — tutorial bypassed, stage=Complete, input opened, screen cleared" +
+        PoTLog.Tutorial?.Info($"skip — tutorial bypassed, stage=Complete, input opened, screen cleared" +
                   (ownsLevelGos ? ", timeline off, level activated (dev)." : " (F9 panic — level GOs left to timeline)."));
     }
 
@@ -161,7 +161,7 @@ public class TutorialDirector : MonoBehaviour
     public void StartTutorial()
     {
 
-        Debug.Log($"[TutorialDirector] StartTutorial called — _started={_started}");
+        PoTLog.Tutorial?.Info($"StartTutorial called — _started={_started}");
         if (_started) return;
         _started = true;
         StartCoroutine(RunSequence());

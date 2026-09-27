@@ -123,7 +123,7 @@ public class BTActionWander : PoTBTActionBase
                     _expandedRadius = (_enemy.Data?.wanderRadius ?? 5f) * RadiusExpandFactor;
                     _radiusExpanded = true;
                 }
-                Debug.Log($"[Wander] {_enemy.name} stuck (moved {displacement:F2}) — rerouting");
+                PoTLog.AI?.Info($"{_enemy.name} wander stuck (moved {displacement:F2}) — rerouting");
                 PickNewWanderTarget();
             }
 
@@ -198,7 +198,7 @@ public class BTActionWander : PoTBTActionBase
         {
             // All candidates failed — stay near origin
             _ambient.WanderTarget = origin;
-            Debug.Log($"[Wander] {_enemy.name} no valid point found — staying near origin");
+            PoTLog.AI?.Info($"{_enemy.name} wander: no valid point found — staying near origin");
         }
     }
 

@@ -32,7 +32,6 @@ public class BTActionJoinPile : PoTBTActionBase
 
     protected override bool OnTick_NodeLogic(float InDeltaTime)
     {
-        Debug.Log($"[BTActionJoinPile] running on {_enemy?.name}");
         if (_enemy == null)
             return SetStatusAndCalculateReturnValue(EBTNodeResult.Failed);
 

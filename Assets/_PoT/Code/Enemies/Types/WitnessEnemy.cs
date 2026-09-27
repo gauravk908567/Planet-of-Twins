@@ -177,7 +177,7 @@ public class WitnessEnemy : Enemy
         if (ally == null) return;
 
         SetFollowTarget(ally);
-        Debug.Log($"[Witness] Summoned {ally.name}");
+        PoTLog.AI?.Info($"Witness summoned {ally.name}");
     }
 
     public void SetFollowTarget(Enemy target)

@@ -41,14 +41,12 @@ public class AccordMeleeAbility
     {
         _cueBook ??= VfxLibraryProvider.Instance?.Player?.Attack;  // R4 — consolidated Attack book from PlayerVfxLibrary
         Collider[] hits = Physics.OverlapSphere(origin.position, _range, _enemyLayer);
-        Debug.Log($"[AccordMelee] OverlapSphere found {hits.Length} colliders — layer={_enemyLayer.value}");
         bool hitAnything = false;
 
         foreach (Collider hit in hits)
         {
             Vector3 dir = (hit.transform.position - origin.position).normalized;
             float dot = Vector3.Dot(origin.forward, dir);
-            Debug.Log($"[AccordMelee] Hit={hit.name} dot={dot:F2} arcThreshold={_arc:F2} pass={dot >= _arc}");
 
             if (dot < _arc) continue;
 
@@ -79,7 +77,7 @@ public class AccordMeleeAbility
             FxManager.Instance?.PlayBook(_cueBook, slashId, CueContext.Follow(origin));
         }
 
-        Debug.Log($"[AccordMelee] Execute from {origin.name} — hit {(hitAnything ? "enemies" : "nothing")} range={_range} arc={_arc:F2}");
+        PoTLog.Twins?.Info($"Accord melee from {origin.name} — hit {(hitAnything ? "enemies" : "nothing")} range={_range} arc={_arc:F2}");
     }
 
     private IEnumerator ApplyEffects(Enemy enemy)

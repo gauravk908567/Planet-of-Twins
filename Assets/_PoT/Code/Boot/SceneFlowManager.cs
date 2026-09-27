@@ -152,7 +152,7 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
     /// <summary>Phase 3 hook: soft-reset in place (implementation pending).</summary>
     public void RequestSoftReset(WorldLocationSO[] locationsToReset)
     {
-        Debug.Log("[SceneFlowManager] SoftReset requested (Phase 3 implementation pending).");
+        PoTLog.Streaming?.Info("SoftReset requested (Phase 3 implementation pending).");
     }
 
     // ── Core streaming ──────────────────────────────────────────────────────────
@@ -212,7 +212,7 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
         _loadedLocations.Add(location);
         _loadingInProgress.Remove(location);
 
-        Debug.Log($"[SceneFlowManager] Loaded: {sceneName}");
+        PoTLog.Streaming?.Info($"Loaded: {sceneName}");
         OnLocationLoaded?.Invoke(location);
         UpdateActiveScene(); // re-assert after the newly loaded scene is available
     }
@@ -245,7 +245,7 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
         _loadedLocations.Remove(location);
         _unloadingInProgress.Remove(location);
 
-        Debug.Log($"[SceneFlowManager] Unloaded: {sceneName}");
+        PoTLog.Streaming?.Info($"Unloaded: {sceneName}");
         OnLocationUnloaded?.Invoke(location);
     }
 

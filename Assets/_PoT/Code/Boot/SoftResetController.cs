@@ -132,7 +132,7 @@ public class SoftResetController : MonoBehaviour
 
         _resetting = false;
         PoTLog.Crumb(PoTCrumb.Save, "respawn: soft reset complete");
-        Debug.Log("[SoftResetController] Soft reset complete.");
+        PoTLog.Save?.Info("Soft reset complete.");
     }
 
     // ── State restoration ─────────────────────────────────────────────────────

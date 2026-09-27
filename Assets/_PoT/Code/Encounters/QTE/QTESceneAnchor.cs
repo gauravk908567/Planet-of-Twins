@@ -102,7 +102,7 @@ public class QTESceneAnchor : MonoBehaviour
         }
         if (IsCompleted)
         {
-            Debug.Log($"[QTESceneAnchor] '{name}' is already completed (its activatables are open, e.g. restored " +
+            PoTLog.QTE?.Info($"'{name}' is already completed (its activatables are open, e.g. restored " +
                       "from a save) — QTE not offered.", this);
             return;
         }

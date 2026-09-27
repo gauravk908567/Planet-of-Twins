@@ -97,7 +97,7 @@ public class SpawnZone : MonoBehaviour
 
         foreach (var site in ritualSites)
         {
-            Debug.Log($"[RitualSite] checking {site?.name} " +
+            PoTLog.AI?.Info($"Ritual site check: {site?.name} " +
               $"active={site?.IsActive} occupied={site?.IsOccupied}");
             if (site == null || !site.IsActive || site.IsOccupied) continue;
 
@@ -158,7 +158,7 @@ public class SpawnZone : MonoBehaviour
         if (((1 << other.gameObject.layer) & playerLayer) == 0) return;
 
         bool firstPlayer = _playersInZone.Add(other.gameObject) && _playersInZone.Count == 1;
-        Debug.Log($"[SpawnZone] Player '{other.name}' ENTERED zone '{name}' " +
+        PoTLog.Spawn?.Info($"Player '{other.name}' ENTERED zone '{name}' " +
                   $"(playersInZone={_playersInZone.Count}, firstEntry={firstPlayer}, " +
                   $"config={(areaConfig != null ? areaConfig.name : "NULL — this zone will not spawn!")}).", this);
 
@@ -171,7 +171,7 @@ public class SpawnZone : MonoBehaviour
         if (((1 << other.gameObject.layer) & playerLayer) == 0) return;
 
         bool lastPlayer = _playersInZone.Remove(other.gameObject) && _playersInZone.Count == 0;
-        Debug.Log($"[SpawnZone] Player '{other.name}' LEFT zone '{name}' " +
+        PoTLog.Spawn?.Info($"Player '{other.name}' LEFT zone '{name}' " +
                   $"(playersInZone={_playersInZone.Count}, lastExit={lastPlayer}).", this);
 
         if (lastPlayer)

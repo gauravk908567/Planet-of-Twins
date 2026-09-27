@@ -192,7 +192,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         if (_rescueActive != null && !_rescueActive.HasActiveRescueTarget)
         {
             PoTLog.Crumb(PoTCrumb.Power, $"Gate blocked for {_caster.name}: no twin in danger");
-            UnityEngine.Debug.Log("[TeleportAbility] Blocked — no twin in danger.");
+            PoTLog.Twins?.Info("Gate blocked — no twin in danger.");
             return false;
         }
 
@@ -202,7 +202,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         if (_rescueActive != null && _rescueActive.ActiveGrabbedPlayer == _caster)
         {
             PoTLog.Crumb(PoTCrumb.Power, $"Gate blocked for {_caster.name}: the grabbed twin can't cast");
-            UnityEngine.Debug.Log("[TeleportAbility] Blocked — the grabbed twin can't cast its own gate; the partner rescues.");
+            PoTLog.Twins?.Info("Gate blocked — the grabbed twin can't cast its own gate; the partner rescues.");
             return false;
         }
 
@@ -210,7 +210,7 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
         if (_soul != null && _soul.gameObject.activeSelf && isActive)
         {
             PoTLog.Crumb(PoTCrumb.Power, $"Gate blocked for {_caster.name}: soul already active");
-            UnityEngine.Debug.Log("[TeleportAbility] Blocked — soul already active.");
+            PoTLog.Twins?.Info("Gate blocked — soul already active.");
             return false;
         }
 
@@ -531,6 +531,6 @@ public class TeleportAbility : AbilityBase, IAbilityHUDSource
             yield return new WaitForSecondsRealtime(0.3f);
 
         onArrival?.Invoke();
-        UnityEngine.Debug.Log($"[TeleportAbility] Soul arrived — firing OnSoulArrived, subscribers={OnSoulArrived?.GetInvocationList()?.Length ?? 0}");
+        PoTLog.Twins?.Info($"Gate soul arrived — firing OnSoulArrived, subscribers={OnSoulArrived?.GetInvocationList()?.Length ?? 0}");
     }
 }

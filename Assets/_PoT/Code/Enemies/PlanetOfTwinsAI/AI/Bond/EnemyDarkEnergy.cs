@@ -128,7 +128,7 @@ public class EnemyDarkEnergy : MonoBehaviour
         _baseEnergy = baseEnergyForLevel;
         _bondBreakThreshold = thresholdForLevel;
         _currentEnergy = Mathf.Max(_currentEnergy, baseEnergyForLevel);
-        Debug.Log($"[DarkEnergy] {_enemy?.name} scaled → " +
+        PoTLog.AI?.Info($"{_enemy?.name} dark energy scaled → " +
                   $"base={baseEnergyForLevel:F2} threshold={thresholdForLevel:F2}");
     }
 
@@ -141,7 +141,7 @@ public class EnemyDarkEnergy : MonoBehaviour
         if (!_comboUnlocked && _currentEnergy >= _comboThreshold)
         {
             _comboUnlocked = true;
-            Debug.Log($"[DarkEnergy] {_enemy?.name} COMBO UNLOCKED at {_currentEnergy:F2}");
+            PoTLog.AI?.Info($"{_enemy?.name} COMBO UNLOCKED at {_currentEnergy:F2}");
 
             // Commanders excluded from pact formation
             if (!_excludeFromPact)
@@ -151,7 +151,7 @@ public class EnemyDarkEnergy : MonoBehaviour
         if (!_bondBroken && _currentEnergy >= _bondBreakThreshold)
         {
             _bondBroken = true;
-            Debug.Log($"[DarkEnergy] {_enemy?.name} BOND BROKEN at {_currentEnergy:F2}");
+            PoTLog.AI?.Info($"{_enemy?.name} BOND BROKEN at {_currentEnergy:F2}");
 
             // The "consumed by corruption" STATE aura (held, owned here — not a mood). The behavioural side stays
  // the Aggressive mood transition below (that is gameplay: energy-burst press)..
@@ -194,7 +194,7 @@ public class EnemyDarkEnergy : MonoBehaviour
         // Mood tie: a Confident pulse so the Manpu layer announces the power-up the same way moods do.
         GetComponent<EnemyMoodSystem>()?.TransitionTo(EnemyMood.Confident, 4f);
 
-        Debug.Log($"[DarkEnergy] {_enemy?.name} POI BUFF at {_currentEnergy:F2}");
+        PoTLog.AI?.Info($"{_enemy?.name} POI BUFF at {_currentEnergy:F2}");
     }
 
     private void ClearPoiBuff()

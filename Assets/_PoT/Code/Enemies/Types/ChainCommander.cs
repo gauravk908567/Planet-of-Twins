@@ -81,7 +81,7 @@ public class ChainCommander : Enemy, ICommander
             if (!p.IsGrabbed) continue;
             if (Vector3.Distance(transform.position, p.transform.position) > _strikeRange) continue;
             _lastStrike = Time.time;
-            Debug.Log($"[ChainCommander] STUB ChainStrike → {p.name} dmg={_strikeDamage}");
+            PoTLog.AI?.Info($"STUB ChainStrike → {p.name} dmg={_strikeDamage}");
  // TODO: ChainStrike commander-ability VFX retired with EnemyVFXController; re-express via a
             // Manpu reaction cue or an Enraged mood transition when the commander archetypes are finished.
             // TODO: p.Health.TakeDamage(new DamageData(_strikeDamage, DamageType.Physical));

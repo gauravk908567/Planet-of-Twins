@@ -212,9 +212,7 @@ public class AudioManager : MonoBehaviour
             }
         }
         if (victim == null) return null;
-#if UNITY_EDITOR
-        Debug.Log($"[AudioManager] Voice pool exhausted — stealing voice (priority {victim.priority}).");
-#endif
+        FxLog.Channel?.Info($"Voice pool exhausted — stealing voice (priority {victim.priority}).");
         ReclaimVoice(victimHandle);
         return _free.Count > 0 ? _free.Pop() : null;
     }

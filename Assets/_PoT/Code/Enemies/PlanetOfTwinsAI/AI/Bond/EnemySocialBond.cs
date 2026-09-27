@@ -67,7 +67,7 @@ public class EnemySocialBond : MonoBehaviour
         if (_bondPartner != null)
             _bondPartner.Health.OnDeath += OnPartnerDied;
 
-        UnityEngine.Debug.Log($"[Bond] {_enemy?.name} bonded to {partner?.name} ({type})");
+        PoTLog.AI?.Info($"{_enemy?.name} bonded to {partner?.name} ({type})");
     }
 
     public void ClearBond()
@@ -83,7 +83,7 @@ public class EnemySocialBond : MonoBehaviour
     {
         if (_enemy == null || _enemy.Health.IsDead) return;
         _partnerDead = true;
-        UnityEngine.Debug.Log($"[Bond] {_enemy?.name} partner died — BondBroken={_darkEnergy?.BondBroken}");
+        PoTLog.AI?.Info($"{_enemy?.name} partner died — BondBroken={_darkEnergy?.BondBroken}");
 
         MoodEventBus.AllyDied(_bondPartner?.gameObject);
 
@@ -96,7 +96,7 @@ public class EnemySocialBond : MonoBehaviour
                 float dist = Vector3.Distance(transform.position, _bondPartner.transform.position);
                 if (dist <= _deathBondRange)
                 {
-                    UnityEngine.Debug.Log($"[Bond] {_enemy?.name} dying with partner (energy below threshold)");
+                    PoTLog.AI?.Info($"{_enemy?.name} dying with partner (energy below threshold)");
                     StartCoroutine(DelayedDeath());
                     return;
                 }
@@ -109,7 +109,7 @@ public class EnemySocialBond : MonoBehaviour
         {
             // Survived because of dark energy — become more dangerous
             moodSystem?.TransitionTo(EnemyMood.Enraged, 0f, EnemyMood.Aggressive);
-            UnityEngine.Debug.Log($"[Bond] {_enemy?.name} SURVIVED partner death — bond broken, entering rage");
+            PoTLog.AI?.Info($"{_enemy?.name} SURVIVED partner death — bond broken, entering rage");
         }
         else
         {

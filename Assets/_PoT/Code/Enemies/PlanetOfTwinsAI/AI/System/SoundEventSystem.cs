@@ -45,7 +45,7 @@ public class SoundEventSystem : MonoBehaviour
     private void ProcessSound(Vector3 position, float radius, SoundType type,
                                float confidenceBoost)
     {
-        Debug.Log($"[Sound] {type} at {position} radius={radius}");
+        PoTLog.AI?.Info($"Sound {type} at {position} radius={radius}");
 
         // Gizmo debug
         _lastSoundPosition = position;

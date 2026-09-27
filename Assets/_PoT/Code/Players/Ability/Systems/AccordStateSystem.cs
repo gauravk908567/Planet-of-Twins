@@ -500,7 +500,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
 
         OnAccordActivated?.Invoke();
         PoTLog.Crumb(PoTCrumb.Power, "Accord on");
-        Debug.Log("[AccordStateSystem] Accord State ACTIVATED");
+        PoTLog.Twins?.Info("Accord State ACTIVATED");
     }
 
     public void ForceDeactivate() { if (_isActive) DeactivateAccord(); }
@@ -519,7 +519,7 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         // this system never touches SC state on deactivation.
         OnAccordDeactivated?.Invoke();
         PoTLog.Crumb(PoTCrumb.Power, "Accord off");
-        Debug.Log("[AccordStateSystem] Accord State DEACTIVATED");
+        PoTLog.Twins?.Info("Accord State DEACTIVATED");
     }
 
     // ── Shockwave ─────────────────────────────────────────────
@@ -618,5 +618,5 @@ public class AccordStateSystem : MonoBehaviour, IAccordModeProvider
         _unlockState == null || _unlockState.IsAccordStateUnlocked;
 
     private void OnUnlocked() =>
-        Debug.Log("[AccordStateSystem] Accord State unlocked via skill tree.");
+        PoTLog.Twins?.Info("Accord State unlocked via skill tree.");
 }

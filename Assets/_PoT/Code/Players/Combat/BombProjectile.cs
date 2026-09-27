@@ -267,7 +267,7 @@ public class BombProjectile : MonoBehaviour, ISpawnPoolable
             {
                 slowReceiver.ApplySlow(_effectData.slowMultiplier,
                                        _effectData.slowDuration, "bomb_slow");
-                Debug.Log($"[BombProjectile] Slow applied to {player.name} " +
+                PoTLog.Combat?.Info($"Bomb slow applied to {player.name} " +
                           $"mult={_effectData.slowMultiplier} dur={_effectData.slowDuration}");
             }
             else
@@ -284,7 +284,7 @@ public class BombProjectile : MonoBehaviour, ISpawnPoolable
                 AbilitySuppressionEffect.Apply(abilityCtrl, _effectData.suppressionDuration,
                                                suppressPrimaryOnly: !_effectData.suppressAllAbilities,
                                                runner: this);
-                Debug.Log($"[BombProjectile] Suppression applied to {player.name} " +
+                PoTLog.Combat?.Info($"Bomb suppression applied to {player.name} " +
                           $"duration={_effectData.suppressionDuration} " +
                           $"allAbilities={_effectData.suppressAllAbilities}");
             }

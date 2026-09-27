@@ -108,14 +108,14 @@ public class EnemyProximityPower : MonoBehaviour
                 _isThirdWheel = true;
                 GetComponent<EnemyAttackController>()
                     ?.SetDamageMultiplier(_thirdWheelBoostMultiplier);
-                Debug.Log($"[ProximityPower] {_enemy.name} joined pact as third wheel x{_thirdWheelBoostMultiplier}");
+                PoTLog.AI?.Info($"{_enemy.name} joined pact as third wheel x{_thirdWheelBoostMultiplier}");
             }
         }
 
         GetComponent<EnemyMoodSystem>()
             ?.TransitionTo(EnemyMood.Confident, 3f, EnemyMood.Normal);
 
-        Debug.Log($"[ProximityPower] {_enemy.name} pact updated — {pact.Count} members");
+        PoTLog.AI?.Info($"{_enemy.name} pact updated — {pact.Count} members");
     }
 
     public void OnPactDissolved()
@@ -132,7 +132,7 @@ public class EnemyProximityPower : MonoBehaviour
         GetComponent<EnemyMoodSystem>()
             ?.TransitionTo(EnemyMood.Frustrated, 3f, EnemyMood.Normal);
 
-        Debug.Log($"[ProximityPower] {_enemy.name} pact dissolved");
+        PoTLog.AI?.Info($"{_enemy.name} pact dissolved");
     }
 
     // ── Power selection ────────────────────────────────────
@@ -168,7 +168,7 @@ public class EnemyProximityPower : MonoBehaviour
         {
             _activePowerID = newPowerID ?? string.Empty;
             if (!string.IsNullOrEmpty(newPowerID))
-                Debug.Log($"[ProximityPower] {_enemy.name} power: '{newPowerID}'");
+                PoTLog.AI?.Info($"{_enemy.name} proximity power: '{newPowerID}'");
         }
     }
 

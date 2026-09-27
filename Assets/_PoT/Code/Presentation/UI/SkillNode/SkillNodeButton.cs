@@ -225,7 +225,7 @@ public class SkillNodeButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
         if (!_purchaser.TryPurchaseNode(_data))
         {
-            Debug.Log("[SkillNodeButton] Purchase failed — not enough points.");
+            PoTLog.UI?.Info("Skill purchase failed — not enough points.");
             return;
         }
 

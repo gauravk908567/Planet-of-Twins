@@ -153,7 +153,7 @@ public class AccordSpiritAgent : MonoBehaviour, ISpawnPoolable
             transform.position, _cleansePulseRadius, _enemyLayer);
         foreach (Collider hit in hits)
             hit.GetComponent<Enemy>()?.ClearTarget();
-        Debug.Log($"[AccordSpiritAgent] Phase 1 — cleansed {hits.Length} enemies");
+        PoTLog.Twins?.Info($"Accord spirit phase 1 — cleansed {hits.Length} enemies");
         yield return new WaitForSeconds(0.4f);
     }
 

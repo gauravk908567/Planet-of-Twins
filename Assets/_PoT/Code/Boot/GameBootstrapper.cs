@@ -128,7 +128,7 @@ public class GameBootstrapper : MonoBehaviour
             else if (introScene.IsValid)
             {
                 yield return LoadAdditive(introScene.Name);
-                Debug.Log("[GameBootstrapper] Front-end complete — handed off to the intro.");
+                PoTLog.Streaming?.Info("Front-end complete — handed off to the intro.");
             }
             else
             {
@@ -195,7 +195,7 @@ public class GameBootstrapper : MonoBehaviour
             SceneManager.SetActiveScene(area);
 
         OnBootstrapComplete?.Invoke();
-        Debug.Log($"[GameBootstrapper] Boot complete — Persistent + '{devStartArea.Name}' loaded.");
+        PoTLog.Streaming?.Info($"Boot complete — Persistent + '{devStartArea.Name}' loaded.");
     }
 
     /// <summary>Run the pre-game front-end (Main Menu → Character Select) and wait for it to finish. Fail-open:
@@ -303,7 +303,7 @@ public class GameBootstrapper : MonoBehaviour
         SaveService.Instance?.EndLoadSuppressBeats();
 
         OnBootstrapComplete?.Invoke();
-        Debug.Log($"[GameBootstrapper] Continue complete — area '{areaName}', progress applied.");
+        PoTLog.Streaming?.Info($"Continue complete — area '{areaName}', progress applied.");
     }
 
     private void SetTwinsMovementLocked(bool locked)
@@ -329,7 +329,7 @@ public class GameBootstrapper : MonoBehaviour
         PlaceTwin(roster.TwinA,  spawnPoints.leftStart  != null ? spawnPoints.leftStart.position  : Vector3.zero);
         PlaceTwin(roster.TwinB, spawnPoints.rightStart != null ? spawnPoints.rightStart.position : Vector3.zero);
         SetTwinsMovementLocked(false);
-        Debug.Log($"[GameBootstrapper] Twins placed — L={spawnPoints.leftStart?.position} R={spawnPoints.rightStart?.position}");
+        PoTLog.Streaming?.Info($"Twins placed — L={spawnPoints.leftStart?.position} R={spawnPoints.rightStart?.position}");
     }
 
     private static void PlaceTwin(Player twin, Vector3 pos)

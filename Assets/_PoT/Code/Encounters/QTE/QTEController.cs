@@ -187,7 +187,7 @@ public class QTEController : MonoBehaviour
         if (countdownText != null)
             countdownText.gameObject.SetActive(isTimedApproach);
 
-        Debug.Log($"[QTEController] QTE started. Mode={(isTimedApproach ? "Timed" : "Infinite")}");
+        PoTLog.QTE?.Info($"QTE started. Mode={(isTimedApproach ? "Timed" : "Infinite")}");
     }
 
     private void HandlePlayerLockedIn(QTETriggerPoint tp, Player player)
@@ -225,7 +225,7 @@ public class QTEController : MonoBehaviour
         if (countdownText != null) countdownText.gameObject.SetActive(false);
 
         SetPanelVisible(true);
-        Debug.Log("[QTEController] Mash phase started.");
+        PoTLog.QTE?.Info("Mash phase started.");
     }
 
     private void SucceedQTE()
@@ -239,7 +239,7 @@ public class QTEController : MonoBehaviour
             a?.Activate();
 
         StartCoroutine(UnfreezeAfterDelay(1.5f));
-        Debug.Log("[QTEController] QTE succeeded.");
+        PoTLog.QTE?.Info("QTE succeeded.");
     }
 
     private void FailQTE()
@@ -252,7 +252,7 @@ public class QTEController : MonoBehaviour
         ReturnCamera();
         _freezeService?.UnfreezeAll();
         StartCoroutine(ResetAfterFail());
-        Debug.Log("[QTEController] QTE failed — enemies resumed.");
+        PoTLog.QTE?.Info("QTE failed — enemies resumed.");
     }
 
     private IEnumerator UnfreezeAfterDelay(float delay)

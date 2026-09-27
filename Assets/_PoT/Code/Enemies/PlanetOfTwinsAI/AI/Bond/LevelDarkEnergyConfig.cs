@@ -55,6 +55,6 @@ public class LevelDarkEnergyConfig : ScriptableObject
             if (scale != null)
                 e.ApplyLevelScaling(scale.baseEnergy, scale.bondThreshold);
         }
-        Debug.Log($"[LevelDarkEnergyConfig] Applied {levelName} to {enemies.Length} enemies");
+        PoTLog.AI?.Info($"Applied dark-energy config {levelName} to {enemies.Length} enemies");
     }
 }

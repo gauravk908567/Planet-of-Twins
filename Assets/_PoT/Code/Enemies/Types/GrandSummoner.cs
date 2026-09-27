@@ -82,7 +82,7 @@ public class GrandSummoner : Enemy, ICommander
 
         _lastShaft = Time.time;
         StartCoroutine(ApplyDivineShaft(target));
-        Debug.Log($"[GrandSummoner] STUB DivineShaft → {target.name}");
+        PoTLog.AI?.Info($"STUB DivineShaft → {target.name}");
  // TODO: DivineShaft commander-buff VFX retired with EnemyVFXController; re-express the buff via the
         // Common on_AlliesBuff cue (as Witness does) when the commander archetypes are finished.
     }

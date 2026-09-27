@@ -112,7 +112,7 @@ public class FactionEnergySystem : MonoBehaviour
         _burstActive = true;
         _burstTimer = _burstDuration;
         MoodEventBus.EnergyBurst();
-        Debug.Log($"[FactionEnergy] BURST started — energy={_currentEnergy:F0}");
+        PoTLog.AI?.Info($"Faction energy BURST started — energy={_currentEnergy:F0}");
     }
 
     private void EndBurst()
@@ -120,7 +120,7 @@ public class FactionEnergySystem : MonoBehaviour
         _burstActive = false;
         _burstCooldownTimer = _burstCooldown;
         _currentEnergy = _burstDropTarget;
-        Debug.Log($"[FactionEnergy] Burst ended — energy dropped to {_currentEnergy:F0}");
+        PoTLog.AI?.Info($"Faction energy burst ended — energy dropped to {_currentEnergy:F0}");
     }
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()

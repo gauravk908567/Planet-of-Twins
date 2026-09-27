@@ -312,7 +312,7 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
 
         StartTrailVFX();                 // per-twin slow-mo trail (charge cues already stopped in CancelCharge)
         OnActiveChanged?.Invoke(true);   // E1 — Manpu mood glyphs switch to hold-mode
-        Debug.Log("[SetsunaSystem] Setsuna ACTIVATED — world slowed");
+        PoTLog.Combat?.Info("Setsuna ACTIVATED — world slowed");
     }
 
     // ── Rewind ────────────────────────────────────────────────
@@ -389,7 +389,7 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
         _accordPowerStatePanel?.SetActive(false);
         _state = State.Idle;
 
-        Debug.Log("[SetsunaSystem] Setsuna REWIND complete");
+        PoTLog.Combat?.Info("Setsuna REWIND complete");
     }
 
     // ── Helpers ───────────────────────────────────────────────

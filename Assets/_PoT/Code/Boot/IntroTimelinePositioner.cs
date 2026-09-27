@@ -99,7 +99,7 @@ public class IntroTimelinePositioner : MonoBehaviour
             UnfreezePlayer(right);
         }
 
-        Debug.Log("[IntroTimelinePositioner] Twins repositioned to gameplay start.");
+        PoTLog.Streaming?.Info("Twins repositioned to gameplay start.");
     }
 
     private static void Teleport(Player p, Transform target)

@@ -62,83 +62,83 @@ public class BTActionComboAttack : PoTBTActionBase
         {
             // ── TetherBreaker ──────────────────────────────
             case ComboPowerIDs.TB_PinHold:
-                Debug.Log($"[Combo] {_enemy?.name} TB_PinHold — chain thrown, holding pin, not dragging");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} TB_PinHold — chain thrown, holding pin, not dragging");                break;
 
             case ComboPowerIDs.TB_DragToAlly:
-                Debug.Log($"[Combo] {_enemy?.name} TB_DragToAlly — dragging twin toward ally position");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} TB_DragToAlly — dragging twin toward ally position");                break;
 
             case ComboPowerIDs.TB_Standard:
-                Debug.Log($"[Combo] {_enemy?.name} TB_Standard — normal chain, ally coordinates");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} TB_Standard — normal chain, ally coordinates");                break;
 
             // ── BasicMelee ─────────────────────────────────
             case ComboPowerIDs.Melee_ChargeOnPin:
-                Debug.Log($"[Combo] {_enemy?.name} Melee_ChargeOnPin — charging pinned twin, fast attacks");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Melee_ChargeOnPin — charging pinned twin, fast attacks");                break;
 
             case ComboPowerIDs.Melee_PrePosition:
-                Debug.Log($"[Combo] {_enemy?.name} Melee_PrePosition — moving to drag destination");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Melee_PrePosition — moving to drag destination");                break;
 
             case ComboPowerIDs.Melee_CornerAssist:
-                Debug.Log($"[Combo] {_enemy?.name} Melee_CornerAssist — cornering twin for chain");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Melee_CornerAssist — cornering twin for chain");                break;
 
             // ── Severed ────────────────────────────────────
             case ComboPowerIDs.Sev_EarlyRage:
-                Debug.Log($"[Combo] {_enemy?.name} Sev_EarlyRage — grief rage on combo activation");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Sev_EarlyRage — grief rage on combo activation");                break;
 
             case ComboPowerIDs.Sev_FlankAttack:
-                Debug.Log($"[Combo] {_enemy?.name} Sev_FlankAttack — attacking from opposite side");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Sev_FlankAttack — attacking from opposite side");                break;
 
             // ── GroupGrab ──────────────────────────────────
             case ComboPowerIDs.GG_GrabAndHold:
-                Debug.Log($"[Combo] {_enemy?.name} GG_GrabAndHold — grabbing twin, partner piles at max priority");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} GG_GrabAndHold — grabbing twin, partner piles at max priority");                break;
 
             case ComboPowerIDs.GG_GrabAndDistract:
-                Debug.Log($"[Combo] {_enemy?.name} GG_GrabAndDistract — grabbing one twin, partner attacks other");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} GG_GrabAndDistract — grabbing one twin, partner attacks other");                break;
 
             // ── Siphon ─────────────────────────────────────
             case ComboPowerIDs.Siph_EarlyGhost:
-                Debug.Log($"[Combo] {_enemy?.name} Siph_EarlyGhost — spawning ghost on combo not rescue");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Siph_EarlyGhost — spawning ghost on combo not rescue");                break;
 
             case ComboPowerIDs.Siph_ExtendedBomb:
-                Debug.Log($"[Combo] {_enemy?.name} Siph_ExtendedBomb — bomb trigger range extended");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Siph_ExtendedBomb — bomb trigger range extended");                break;
 
             // ── Ranged ─────────────────────────────────────
             case ComboPowerIDs.Range_SuppressiveFire:
-                Debug.Log($"[Combo] {_enemy?.name} Range_SuppressiveFire — pinning twin with arrows, ally closes in");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Range_SuppressiveFire — pinning twin with arrows, ally closes in");                break;
 
             case ComboPowerIDs.Range_ExecutionShot:
-                Debug.Log($"[Combo] {_enemy?.name} Range_ExecutionShot — high damage shot on grabbed twin");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Range_ExecutionShot — high damage shot on grabbed twin");                break;
 
             case ComboPowerIDs.Range_Standard:
-                Debug.Log($"[Combo] {_enemy?.name} Range_Standard — normal ranged with combo awareness");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Range_Standard — normal ranged with combo awareness");                break;
 
             // ── Witness ────────────────────────────────────
             case ComboPowerIDs.Wit_IntenseBuff:
-                Debug.Log($"[Combo] {_enemy?.name} Wit_IntenseBuff — double buff strength active");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Wit_IntenseBuff — double buff strength active");                break;
 
             case ComboPowerIDs.Wit_Standard:
-                Debug.Log($"[Combo] {_enemy?.name} Wit_Standard — normal shadow and buff");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Wit_Standard — normal shadow and buff");                break;
 
             // ── Summoner ───────────────────────────────────
             case ComboPowerIDs.Sum_EmergencySummon:
-                Debug.Log($"[Combo] {_enemy?.name} Sum_EmergencySummon — summoning immediately");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Sum_EmergencySummon — summoning immediately");                break;
 
             case ComboPowerIDs.Sum_Standard:
-                Debug.Log($"[Combo] {_enemy?.name} Sum_Standard — normal summon timing");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Sum_Standard — normal summon timing");                break;
 
             // ── Penitent ───────────────────────────────────
             case ComboPowerIDs.Pen_ReflectAmplify:
-                Debug.Log($"[Combo] {_enemy?.name} Pen_ReflectAmplify — reflection damage boosted");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Pen_ReflectAmplify — reflection damage boosted");                break;
 
             case ComboPowerIDs.Pen_Standard:
-                Debug.Log($"[Combo] {_enemy?.name} Pen_Standard — normal approach with reflection");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} Pen_Standard — normal approach with reflection");                break;
 
             // ── Generic ────────────────────────────────────
             case ComboPowerIDs.ThirdWheelBoost:
-                Debug.Log($"[Combo] {_enemy?.name} ThirdWheelBoost — boosted attack as third pact member");                break;
+                PoTLog.AI?.Info($"{_enemy?.name} ThirdWheelBoost — boosted attack as third pact member");                break;
 
             default:
             case ComboPowerIDs.FallbackCombo:
-                Debug.Log($"[Combo] {_enemy?.name} FallbackCombo — generic enhanced attack");
+                PoTLog.AI?.Info($"{_enemy?.name} FallbackCombo — generic enhanced attack");
                 break;
         }
     }

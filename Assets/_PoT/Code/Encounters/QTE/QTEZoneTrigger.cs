@@ -41,7 +41,7 @@ public class QTEZoneTrigger : MonoBehaviour
         {
             _triggered = true;
             qteAnchor?.BeginQTE();
-            Debug.Log($"[QTEZoneTrigger] QTE triggered by players entering zone.");
+            PoTLog.QTE?.Info($"QTE triggered by players entering zone.");
         }
     }
 

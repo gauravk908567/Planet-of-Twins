@@ -71,7 +71,7 @@ public class GameOverController : MonoBehaviour
     private void TriggerGameOver()
     {
         PoTLog.Crumb(PoTCrumb.Flow, "game over");
-        Debug.Log($"[GameOverController] TriggerGameOver � timeScale={Time.timeScale}");
+        PoTLog.Twins?.Info($"TriggerGameOver � timeScale={Time.timeScale}");
 
         RefreshCheckpointButton();
         gameOverPanel?.SetActive(true);

@@ -57,9 +57,8 @@ public class GateActivatable : MonoBehaviour, IActivatable, WorldFlagRegistry.IW
     {
         if (IsActivated) return;
         IsActivated = true;
-        Debug.Log($"[GateActivatable] Activate called � animator={gateAnimator?.name ?? "NULL"}, param='{openParameter}', IsOpen={gateAnimator?.GetBool(openParameter)}");
         gateAnimator?.SetBool(openParameter, true);
-        Debug.Log($"[GateActivatable] {name} opened.");
+        PoTLog.World?.Info($"Gate {name} opened.");
 
         // Persist this one-shot world event so a save/respawn re-opens the gate without the QTE (§11.1).
         if (!string.IsNullOrEmpty(_key))
@@ -88,7 +87,7 @@ public class GateActivatable : MonoBehaviour, IActivatable, WorldFlagRegistry.IW
     {
         if (isPermanent)
         {
-            Debug.Log($"[GateActivatable] {name} is permanent � Deactivate ignored.");
+            PoTLog.World?.Info($"Gate {name} is permanent � Deactivate ignored.");
             return;
         }
         IsActivated = false;

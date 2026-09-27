@@ -23,7 +23,7 @@ public class EnemyFreezeService : MonoBehaviour, IEnemyFreezeService
             e.OnEffectStarted();
         }
 
-        Debug.Log("[EnemyFreezeService] All enemies frozen for QTE.");
+        PoTLog.QTE?.Info("All enemies frozen for QTE.");
     }
 
     public void UnfreezeAll()
@@ -37,6 +37,6 @@ public class EnemyFreezeService : MonoBehaviour, IEnemyFreezeService
             e.OnEffectEnded();
         }
 
-        Debug.Log("[EnemyFreezeService] All enemies unfrozen.");
+        PoTLog.QTE?.Info("All enemies unfrozen.");
     }
 }

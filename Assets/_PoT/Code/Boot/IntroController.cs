@@ -165,7 +165,7 @@ public class IntroController : MonoBehaviour
             PlaceTwinsAtAreaSpawn();
 
         _loadsComplete = true;
-        Debug.Log("[IntroController] Background loads complete.");
+        PoTLog.Streaming?.Info("Intro background loads complete.");
     }
 
     // Waits until EVERY name in requiredTerrainNames resolves to an active GameObject with an
@@ -186,7 +186,7 @@ public class IntroController : MonoBehaviour
             }
             if (allReady)
             {
-                Debug.Log("[IntroController] Ground-ready gate passed — " +
+                PoTLog.Streaming?.Info("Intro ground-ready gate passed — " +
                           string.Join(", ", requiredTerrainNames));
                 LockTwinMovement(false);
                 yield break;
@@ -237,7 +237,7 @@ public class IntroController : MonoBehaviour
         PlaceTwin(roster.TwinA,  spawnPoints.leftStart  != null ? spawnPoints.leftStart.position  : Vector3.zero);
         PlaceTwin(roster.TwinB, spawnPoints.rightStart != null ? spawnPoints.rightStart.position : Vector3.zero);
         LockTwinMovement(false);
-        Debug.Log($"[IntroController] Twins placed (fallback) — L={spawnPoints.leftStart?.position} R={spawnPoints.rightStart?.position}");
+        PoTLog.Streaming?.Info($"Twins placed (fallback) — L={spawnPoints.leftStart?.position} R={spawnPoints.rightStart?.position}");
     }
 
     private static void PlaceTwin(Player twin, Vector3 pos)

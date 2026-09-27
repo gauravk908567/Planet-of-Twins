@@ -175,7 +175,7 @@ public class SkillTreeManager : MonoBehaviour,
         if (_accordData != null && _accordData.currentNodeIndex > 0 && !IsAccordStateUnlocked)
         { IsAccordStateUnlocked = true; OnAccordStateUnlocked?.Invoke(); }
 
-        Debug.Log($"[SkillTreeManager] RebuildUnlockFlags — " +
+        PoTLog.UI?.Info($"RebuildUnlockFlags — " +
                   $"AccordSpirits={IsAccordSpiritsUnlocked} Coalesce={IsCoalesceUnlocked} " +
                   $"SoulConv={IsSoulConvergenceUnlocked} Empower={IsEmpowerUnlocked} " +
                   $"Accord={IsAccordStateUnlocked}");
@@ -206,7 +206,7 @@ public class SkillTreeManager : MonoBehaviour,
         InitRuntime();
         _points = _startingPoints;
         OnPointsChanged?.Invoke(_points);
-        Debug.Log("[SkillTreeManager] All upgrades reset.");
+        PoTLog.UI?.Info("All upgrades reset.");
     }
 
     [ContextMenu("DEBUG — Add 20 Points")]

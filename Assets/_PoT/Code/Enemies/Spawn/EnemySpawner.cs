@@ -217,7 +217,7 @@ public class EnemySpawner : MonoBehaviour
         StartCoroutine(SpawnLoop(SpawnSide.Left));
         StartCoroutine(SpawnLoop(SpawnSide.Right));
 
-        Debug.Log($"[EnemySpawner] Zone '{zone.name}' ACTIVATED — spawn loops started. " +
+        PoTLog.Spawn?.Info($"Zone '{zone.name}' ACTIVATED — spawn loops started. " +
                   $"interval={_activeConfig.spawnInterval}s, leftPoints={_activeLeftPoints?.Length ?? 0}, " +
                   $"rightPoints={_activeRightPoints?.Length ?? 0}.", zone);
 
@@ -247,22 +247,22 @@ public class EnemySpawner : MonoBehaviour
     private void TrySpawnOnSide(SpawnSide side)
     {
         if (_activeConfig == null)
-        { if (_debugSpawns) Debug.Log($"[SpawnDebug] {side}: no active config — skip."); return; }
+        { if (_debugSpawns) PoTLog.Spawn?.Info($"{side}: no active config — skip."); return; }
 
         var cfg = _activeConfig.GetSideConfig(side);
         if (cfg == null)
-        { if (_debugSpawns) Debug.Log($"[SpawnDebug] {side}: no side config on '{_activeConfig.name}' — skip."); return; }
+        { if (_debugSpawns) PoTLog.Spawn?.Info($"{side}: no side config on '{_activeConfig.name}' — skip."); return; }
 
         int active = side == SpawnSide.Left ? _activeLeft : _activeRight;
         if (active >= cfg.maxTotalActive)
-        { if (_debugSpawns) Debug.Log($"[SpawnDebug] {side}: at maxTotalActive ({active}/{cfg.maxTotalActive}) — waiting for a kill."); return; }
+        { if (_debugSpawns) PoTLog.Spawn?.Info($"{side}: at maxTotalActive ({active}/{cfg.maxTotalActive}) — waiting for a kill."); return; }
         if (active >= cfg.RespawnThreshold)
-        { if (_debugSpawns) Debug.Log($"[SpawnDebug] {side}: at RespawnThreshold ({active}/{cfg.RespawnThreshold}) — skip."); return; }
+        { if (_debugSpawns) PoTLog.Spawn?.Info($"{side}: at RespawnThreshold ({active}/{cfg.RespawnThreshold}) — skip."); return; }
 
         var counts = side == SpawnSide.Left ? _activeCountsLeft : _activeCountsRight;
         var entry = cfg.GetRandomEntry(counts);
         if (entry == null)
-        { if (_debugSpawns) Debug.Log($"[SpawnDebug] {side}: GetRandomEntry returned null (empty or exhausted type table) — skip."); return; }
+        { if (_debugSpawns) PoTLog.Spawn?.Info($"{side}: GetRandomEntry returned null (empty or exhausted type table) — skip."); return; }
 
         SpawnEnemy(entry, side, fromSummoner: false);
     }
@@ -334,7 +334,7 @@ public class EnemySpawner : MonoBehaviour
         }
 
         if (_debugSpawns)
-            Debug.Log($"[EnemySpawner] SPAWNED '{entry.prefab.name}' on {side} at {pos} in zone " +
+            PoTLog.Spawn?.Info($"SPAWNED '{entry.prefab.name}' on {side} at {pos} in zone " +
                       $"'{(_activeZone != null ? _activeZone.name : "?")}' " +
                       $"(activeLeft={_activeLeft}, activeRight={_activeRight}).", instance);
     }
@@ -394,7 +394,7 @@ public class EnemySpawner : MonoBehaviour
         _spawnDeathHandlers[instance] = death;
         partnerEnemy.Health.OnDeath += death;
 
-        Debug.Log($"[Spawner] Pair: {primaryEnemy.name} ↔ {partnerEnemy.name} ({partnerEntry.bondType})");
+        PoTLog.Spawn?.Info($"Pair: {primaryEnemy.name} ↔ {partnerEnemy.name} ({partnerEntry.bondType})");
     }
 
     private void WireBond(Enemy a, Enemy b, EnemySocialBond.BondType bondType)
@@ -420,7 +420,7 @@ public class EnemySpawner : MonoBehaviour
                 other.InitialisePair(severed);
                 pendingThis.Remove(prefab);
                 pendingOther.Remove(prefab);
-                Debug.Log("[Spawner] Severed pair wired.");
+                PoTLog.Spawn?.Info("Severed pair wired.");
             }
         }
     }
@@ -557,7 +557,7 @@ public class EnemySpawner : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
         }
 
-        Debug.Log($"[Spawner] Commander group spawned: {groupDef.name}");
+        PoTLog.Spawn?.Info($"Commander group spawned: {groupDef.name}");
     }
 
     private IEnumerator GroupRespawnDelay(CommanderGroupDefinition groupDef)
@@ -682,7 +682,7 @@ public class EnemySpawner : MonoBehaviour
         _activeZone = null;
         _activeConfig = null;
 
-        Debug.Log("[EnemySpawner] DespawnAll complete.");
+        PoTLog.Spawn?.Info("DespawnAll complete.");
     }
 
     public void DespawnZone(SpawnZone zone)
@@ -711,7 +711,7 @@ public class EnemySpawner : MonoBehaviour
             _instanceZoneMap.Remove(instance);
             _spawnDeathHandlers.Remove(instance);
         }
-        Debug.Log($"[EnemySpawner] DespawnZone: returned {toReturn.Count} enemies from '{zone.name}'.");
+        PoTLog.Spawn?.Info($"DespawnZone: returned {toReturn.Count} enemies from '{zone.name}'.");
     }
 
     // ── Helpers ────────────────────────────────────────────────

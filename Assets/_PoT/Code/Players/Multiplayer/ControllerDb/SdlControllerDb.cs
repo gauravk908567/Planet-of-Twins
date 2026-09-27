@@ -79,7 +79,7 @@ public static class SdlControllerDb
             chosenPriority[key] = prio;
         }
 
-        Debug.Log($"[SdlControllerDb] Loaded {_byVidPid.Count} controller mappings (by VID/PID).");
+        PoTLog.Input?.Info($"Loaded {_byVidPid.Count} controller mappings (by VID/PID).");
     }
 
     // SDL indices are platform-specific — prefer the row for the platform we actually run on.

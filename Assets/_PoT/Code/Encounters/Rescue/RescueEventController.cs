@@ -406,12 +406,12 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             var firstProxy = _activeTarget as PlayerDeathRescueProxy;
             if (firstProxy != null && firstProxy.IsActive)
             {
-                Debug.Log("[RescueEventController] Both players actively trapped — instant fail.");
+                PoTLog.Twins?.Info("Both players actively trapped — instant fail.");
                 TransitionTo(RescueState.Failed);
                 return;
             }
             // Stale reference — first rescue completed, clear and continue
-            Debug.Log("[RescueEventController] Stale _activeTarget cleared, starting new rescue.");
+            PoTLog.Twins?.Info("Stale _activeTarget cleared, starting new rescue.");
             _activeTarget = null;
         }
         _activeTarget = target;
@@ -437,7 +437,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
         PoTLog.Crumb(PoTCrumb.Rescue, $"{grabbedPlayer?.name} grabbed by '{(target as MonoBehaviour)?.name}'");
 
         if (_debugRescue)
-            Debug.Log($"[Rescue] BEGAN — '{grabbedPlayer?.name}' grabbed by " +
+            PoTLog.Twins?.Info($"Rescue BEGAN — '{grabbedPlayer?.name}' grabbed by " +
                       $"'{(target as MonoBehaviour)?.name}' " +
                       $"(mashWindow={_activeTarget?.MashWindowDuration:F1}s, " +
                       $"healOnRescue={_activeTarget?.PartialHealAmount:F0})");
@@ -506,7 +506,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             _activeTarget.GrabbedPlayerTransform.position);
 
         if (_debugRescue)
-            Debug.Log($"[Rescue] Soul arrived — dist={dist:F1} (trigger radius={rescueProximityRadius}) → " +
+            PoTLog.Twins?.Info($"Soul arrived — dist={dist:F1} (trigger radius={rescueProximityRadius}) → " +
                       $"{(dist <= rescueProximityRadius ? "TRIGGERED" : "still out of range")}");
 
         if (dist <= rescueProximityRadius)
@@ -653,7 +653,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
             _mashProgress = Mathf.Clamp01(_mashProgress + fillPerPress);
             OnMashProgressUpdated?.Invoke(_mashProgress);
             if (_debugRescue)
-                Debug.Log($"[Rescue] mash press → progress={_mashProgress:P0} (time left={_mashTimeRemaining:F1}s)");
+                PoTLog.Twins?.Info($"Rescue mash press → progress={_mashProgress:P0} (time left={_mashTimeRemaining:F1}s)");
         }
 
         if (_mashProgress >= 1f)
@@ -684,7 +684,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
     {
         PoTLog.Crumb(PoTCrumb.Rescue, $"{_state} → {next} (player={_activeTarget?.GrabbedPlayer?.name ?? "none"})");
         if (_debugRescue)
-            Debug.Log($"[Rescue] {_state} → {next}  " +
+            PoTLog.Twins?.Info($"Rescue {_state} → {next}  " +
                       $"(target={(_activeTarget as MonoBehaviour)?.name ?? "none"}, " +
                       $"player={_activeTarget?.GrabbedPlayer?.name ?? "none"}, " +
                       $"mash={_mashProgress:P0})");
@@ -756,7 +756,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                 IRescueTarget resolvedTarget = _activeTarget;
 
                 if (_debugRescue)
-                    Debug.Log($"[Rescue] SUCCESS — releasing '{rescued?.name}' " +
+                    PoTLog.Twins?.Info($"Rescue SUCCESS — releasing '{rescued?.name}' " +
                               $"with heal={resolvedTarget?.PartialHealAmount:F0} → expect [DeathProxy]/[HealthRegen] next");
                 resolvedTarget?.ReleasePlayer(resolvedTarget.PartialHealAmount); // FIRST
                 _activeSoulAbility?.ResumeSoulTimer();
@@ -771,7 +771,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
                 break;
 
             case RescueState.Failed:
-                if (_debugRescue) Debug.Log("[Rescue] FAILED — rescue lost, twin killed");
+                if (_debugRescue) PoTLog.Twins?.Info("FAILED — rescue lost, twin killed");
                 OnRescueResolved?.Invoke();
                 // Dedicated failure signal → game-over (GameOverController subscribes it). Suppressed
                 // while the tutorial owns the rescue (BUG-103) so a failed tutorial rescue runs its own
@@ -785,7 +785,7 @@ public class RescueEventController : MonoBehaviour, IRescueActive, ITutorialResc
 
             case RescueState.SoulDied:
                 if (_debugRescue)
-                    Debug.Log("[Rescue] SoulDied — soul lost / too far; twin still trapped, awaiting retry");
+                    PoTLog.Twins?.Info("SoulDied — soul lost / too far; twin still trapped, awaiting retry");
                 // Do NOT fire OnRescueStateChanged here â
                 // TransitionTo already fires it after EnterState returns.
                 // Player still trapped â _activeTarget preserved for retry.

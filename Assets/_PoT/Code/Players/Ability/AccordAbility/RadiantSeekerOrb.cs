@@ -112,7 +112,7 @@ public class RadiantSeekerOrb : MonoBehaviour, ISpawnPoolable
                     new CueContext(hit.transform.position + Vector3.up * 0.5f));
         }
 
-        Debug.Log($"[RadiantSeekerOrb] Detonated — possessed {hits.Length} enemies");
+        PoTLog.Twins?.Info($"Radiant Seeker orb detonated — possessed {hits.Length} enemies");
 
         // Despawn immediately — cooldown already started at cast time (pooled cues survive this)
         GameplayPool.Despawn(gameObject);

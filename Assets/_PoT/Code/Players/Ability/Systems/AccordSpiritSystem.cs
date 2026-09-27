@@ -180,7 +180,7 @@ public class AccordSpiritSystem : MonoBehaviour, IAbilityHUDSource
         for (int i = 0; i < _spiritsPerSide; i++)
             SpawnSpirit(_rightTwin, claimedTargets);
 
-        Debug.Log($"[AccordSpiritSystem] Summoned {_spiritsPerSide * 2} spirits");
+        PoTLog.Twins?.Info($"Accord summoned {_spiritsPerSide * 2} spirits");
     }
 
     private void SpawnSpirit(Player twin, List<Transform> claimedTargets)

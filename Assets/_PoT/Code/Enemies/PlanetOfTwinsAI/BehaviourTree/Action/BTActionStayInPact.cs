@@ -18,7 +18,7 @@ public class BTActionStayInPact : PoTBTActionBase
         base.OnEnter();
         _proximityPower = _enemy?.GetComponent<EnemyProximityPower>();
         _enemy?.Movement.SetSpeed(_enemy.Data?.moveSpeed ?? 3.5f);
-        Debug.Log($"[StayInPact] {_enemy?.name} regrouping with pact");
+        PoTLog.AI?.Info($"{_enemy?.name} regrouping with pact");
     }
 
     protected override bool OnTick_NodeLogic(float InDeltaTime)

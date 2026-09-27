@@ -44,7 +44,7 @@ public class BTActionThrowBomb : PoTBTActionBase
             _enemy.transform.rotation = Quaternion.LookRotation(dir);
 
         _witness.ThrowBomb(target.transform);
-        Debug.Log($"[ThrowBomb] {_enemy.name} throwing bomb at {target.name}");
+        PoTLog.AI?.Info($"{_enemy.name} throwing bomb at {target.name}");
 
         return SetStatusAndCalculateReturnValue(EBTNodeResult.InProgress);
     }

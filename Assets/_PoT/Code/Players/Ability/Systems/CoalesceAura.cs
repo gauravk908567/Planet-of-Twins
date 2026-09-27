@@ -104,7 +104,7 @@ public class CoalesceAura : MonoBehaviour, ISpawnPoolable
         if (_hostHealth != null)
             _hostHealth.OnDeath += HandleHostDied;
 
-        Debug.Log($"[CoalesceAura] Initialised on {host?.name} radius={radius} dps={dps} linger={lingerDuration}");
+        PoTLog.Combat?.Info($"Coalesce aura initialised on {host?.name} radius={radius} dps={dps} linger={lingerDuration}");
     }
 
     private void HandleHostDied()

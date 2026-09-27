@@ -143,7 +143,7 @@ public class TwinAbilitySetup : MonoBehaviour
         if (_lyraOriginalQ != null)
             leftTwin.GetComponent<AbilityController>()?.SetPrimaryAbility(_lyraOriginalQ);
 
-        Debug.Log("[TwinAbilitySetup] Original Q abilities restored after Accord State.");
+        PoTLog.Twins?.Info("Original Q abilities restored after Accord State.");
     }
 
     private TeleportAbility BuildTeleportAbility(Player caster, Player target, SoulPlayer soul)

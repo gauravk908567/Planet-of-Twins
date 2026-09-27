@@ -51,7 +51,7 @@ public class SceneLoadTrigger : MonoBehaviour
         var actor = other.GetComponentInParent<Player>();
         if (actor == null || actor is SoulPlayer) return; // SoulPlayer tracked separately
         SceneFlowManager.Instance?.NotifyTwinEntered(targetLocation, actor);
-        Debug.Log($"[SceneLoadTrigger] {actor.name} entered '{targetLocation?.scene.Name}'" +
+        PoTLog.Streaming?.Info($"{actor.name} entered '{targetLocation?.scene.Name}'" +
                   (comesFrom != null ? $" from '{comesFrom.name}'" : "") + ".");
     }
 

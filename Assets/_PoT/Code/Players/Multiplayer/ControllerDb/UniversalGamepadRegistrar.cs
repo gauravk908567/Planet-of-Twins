@@ -99,7 +99,7 @@ public static class UniversalGamepadRegistrar
                     .WithInterface("HID")
                     .WithCapability("vendorId", vid)
                     .WithCapability("productId", pid));
-            Debug.Log($"[UniversalGamepad] Registered a Gamepad layout for VID {vid:X4} PID {pid:X4} " +
+            PoTLog.Input?.Info($"Registered a Gamepad layout for VID {vid:X4} PID {pid:X4} " +
                       $"('{device.displayName}') via SDL_GameControllerDB — matching pads are now Gamepads.");
         }
         catch (System.Exception e)

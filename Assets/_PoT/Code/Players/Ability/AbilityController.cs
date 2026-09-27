@@ -109,7 +109,7 @@ public class AbilityController : MonoBehaviour, IAbilityLock
             float dist = Vector3.Distance(transform.position, _barrierTransform.position);
             if (dist > _minCastDistanceFromBarrier)
             {
-                Debug.Log($"[AbilityController] {gameObject.name}: too far from barrier " +
+                PoTLog.Combat?.Info($"{gameObject.name}: too far from barrier " +
                     $"({dist:F1} > {_minCastDistanceFromBarrier})");
                 return;
             }

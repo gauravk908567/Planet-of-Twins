@@ -344,12 +344,12 @@ public class SkeletonTrap : MonoBehaviour, IRescueTarget, IDamageable, IStunnabl
             bool isSoulDamage = damageData.Source?.GetComponent<SoulPlayer>() != null;
             if (!isSoulDamage)
             {
-                Debug.Log($"[SkeletonTrap] Ignoring non-soul damage while dragging");
+                PoTLog.World?.Info($"Skeleton trap ignoring non-soul damage while dragging");
                 return;
             }
             // Soul hit trap while it's dragging player — reduce TTK
             _timeToKillRemaining -= damageData.Amount * 0.1f; // 10% TTK reduction per hit
-            Debug.Log($"[SkeletonTrap] Soul hit trap while dragging — TTK reduced to {_timeToKillRemaining:F1}");
+            PoTLog.World?.Info($"Soul hit the skeleton trap while dragging — TTK reduced to {_timeToKillRemaining:F1}");
             return;
         }
 
@@ -359,7 +359,7 @@ public class SkeletonTrap : MonoBehaviour, IRescueTarget, IDamageable, IStunnabl
         {
             if (_damageTaken >= requiredDamage)
             {
-                Debug.Log("[SkeletonTrap] Suppressed before grab — dormant");
+                PoTLog.World?.Info("Skeleton trap suppressed before grab — dormant");
                 TransitionTo(TrapState.Dormant);
             }
         }

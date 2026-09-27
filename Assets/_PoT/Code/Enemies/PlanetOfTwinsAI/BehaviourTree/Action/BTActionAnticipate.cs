@@ -42,7 +42,7 @@ public class BTActionAnticipate : PoTBTActionBase
         if (_mode != AnticipateMode.None)
         {
             _enemy.Movement.SetSpeed(_enemy.Data?.moveSpeed ?? 3.5f);
-            Debug.Log($"[Anticipate] {_enemy.name} mode={_mode} target={_targetPoint}");
+            PoTLog.AI?.Info($"{_enemy.name} anticipate mode={_mode} target={_targetPoint}");
         }
     }
 

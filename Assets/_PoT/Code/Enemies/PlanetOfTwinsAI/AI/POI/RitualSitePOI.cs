@@ -34,7 +34,7 @@ public class RitualSitePOI : POIBase
     {
         IsOccupied = true;
         Occupant = occupant;
-        Debug.Log($"[RitualSite] {name} occupied by {occupant?.name}");
+        PoTLog.AI?.Info($"Ritual site {name} occupied by {occupant?.name}");
 
         // Site activation cue — held; World-anchored at the (static) site. Guard against double-play.
         var fx = FxManager.Instance;
@@ -48,7 +48,7 @@ public class RitualSitePOI : POIBase
         if (Occupant != occupant) return; // ← only vacate if same occupant
         IsOccupied = false;
         Occupant = null;
-        Debug.Log($"[RitualSite] {name} vacated");
+        PoTLog.AI?.Info($"Ritual site {name} vacated");
         StopOccupyCue();
     }
 

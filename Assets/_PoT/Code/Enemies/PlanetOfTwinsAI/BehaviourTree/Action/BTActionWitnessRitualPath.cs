@@ -32,7 +32,7 @@ public class BTActionWitnessRitualPath : PoTBTActionBase
 
         if (_poiTracker == null || !_poiTracker.HasRitualSites)
         {
-            Debug.Log($"[WitnessRitualPath] {_enemy?.name} no ritual sites in zone");
+            PoTLog.AI?.Info($"{_enemy?.name} no ritual sites in zone");
             return;
         }
 
@@ -44,7 +44,7 @@ public class BTActionWitnessRitualPath : PoTBTActionBase
 
         if (_targetSite == null)
         {
-            Debug.Log($"[WitnessRitualPath] {_enemy?.name} no safe ritual site found");
+            PoTLog.AI?.Info($"{_enemy?.name} no safe ritual site found");
             return;
         }
 
@@ -54,7 +54,7 @@ public class BTActionWitnessRitualPath : PoTBTActionBase
         _destination = _targetSite.transform.position;
 
         _enemy?.Movement.SetSpeed((_enemy.Data?.moveSpeed ?? 3.5f) * SprintMultiplier);
-        Debug.Log($"[WitnessRitualPath] {_enemy?.name} → {_targetSite.name}");
+        PoTLog.AI?.Info($"{_enemy?.name} → ritual site {_targetSite.name}");
     }
 
     protected override bool OnTick_NodeLogic(float InDeltaTime)
@@ -69,7 +69,7 @@ public class BTActionWitnessRitualPath : PoTBTActionBase
         if (dist <= ArrivalDistance)
         {
             _enemy.Movement.Stop();
-            Debug.Log($"[WitnessRitualPath] {_enemy?.name} arrived — starting ritual");
+            PoTLog.AI?.Info($"{_enemy?.name} arrived — starting ritual");
 
             // Mark the site occupied (was never called — GetSafestRitualSite skips IsOccupied, so this both
             // stops two Witnesses sharing one site AND fires the site's On_Occupy cue). Released in OnExit.Vacate.

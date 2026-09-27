@@ -161,7 +161,7 @@ public class QTEManager : MonoBehaviour
         }
 
         PoTLog.Crumb(PoTCrumb.QTE, $"started '{ActiveDef?.eventId}'");
-        Debug.Log($"[QTEManager] QTE started: '{ActiveDef?.eventId}' " +
+        PoTLog.QTE?.Info($"QTE started: '{ActiveDef?.eventId}' " +
                   $"mode={(ActiveDef?.isTimedApproach ?? false ? "Timed" : "Infinite")}");
     }
 
@@ -268,7 +268,7 @@ public class QTEManager : MonoBehaviour
         ApplyInstruction();
         if (_countdownLabel != null) _countdownLabel.gameObject.SetActive(false);
 
-        Debug.Log("[QTEManager] Mash phase started.");
+        PoTLog.QTE?.Info("Mash phase started.");
     }
 
     private void SucceedQTE()
@@ -285,7 +285,7 @@ public class QTEManager : MonoBehaviour
         StartCoroutine(UnfreezeAfterDelay(1.5f));
         OnQTESucceeded?.Invoke(eventId);
         PoTLog.Crumb(PoTCrumb.QTE, $"succeeded '{eventId}'");
-        Debug.Log($"[QTEManager] QTE succeeded: '{eventId}'");
+        PoTLog.QTE?.Info($"QTE succeeded: '{eventId}'");
 
         StartCoroutine(ResetToInactive());
     }
@@ -305,7 +305,7 @@ public class QTEManager : MonoBehaviour
 
         OnQTEFailed?.Invoke(eventId);
         PoTLog.Crumb(PoTCrumb.QTE, $"failed '{eventId}'");
-        Debug.Log($"[QTEManager] QTE failed: '{eventId}'");
+        PoTLog.QTE?.Info($"QTE failed: '{eventId}'");
 
         StartCoroutine(ResetAfterFail());
     }

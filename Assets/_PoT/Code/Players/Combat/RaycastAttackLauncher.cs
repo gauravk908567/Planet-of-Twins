@@ -43,7 +43,7 @@ public class RaycastAttackLauncher : MonoBehaviour, IProjectileLauncher
             // Mirror EnemyAttackController — trigger rescue proxy if killing blow
             if (playerHealth != null && playerHealth.IsDead)
             {
-                Debug.Log($"[RaycastAttackLauncher] Killing blow on {hit.collider.name}");
+                PoTLog.Combat?.Info($"Raycast attack killing blow on {hit.collider.name}");
                 hit.collider.GetComponent<PlayerDeathRescueProxy>()?.Activate(_owner);
             }
         }

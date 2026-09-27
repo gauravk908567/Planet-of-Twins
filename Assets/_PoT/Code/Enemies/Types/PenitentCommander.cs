@@ -74,7 +74,7 @@ public class PenitentCommander : Enemy, ICommander
     {
         _shieldActive = true;
         _lastShield = Time.time;
-        Debug.Log($"[PenitentCommander] STUB DarkShield — {_shieldDuration}s");
+        PoTLog.AI?.Info($"STUB DarkShield — {_shieldDuration}s");
  // TODO: DarkShield commander corruption VFX retired with EnemyVFXController; re-express via the
         // dark-energy corruption-state cue (EnemyDarkEnergy owns it — a held STATE aura, not a mood) when the
         // commander archetypes are finished.
@@ -83,7 +83,7 @@ public class PenitentCommander : Enemy, ICommander
         {
             if (s == null || s.Health.IsDead) continue;
  // TODO: soldier shield corruption VFX retired — same corruption-state cue as above.
-            Debug.Log($"[PenitentCommander] STUB Shield → {s.name}");
+            PoTLog.AI?.Info($"STUB Shield → {s.name}");
             // TODO: s.Health.SetInvulnerable(true)
         }
 

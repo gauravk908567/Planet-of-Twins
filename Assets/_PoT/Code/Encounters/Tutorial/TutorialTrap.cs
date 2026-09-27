@@ -104,7 +104,7 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
     {
         _registry?.RegisterTrap(this);
         ResetState();
-        Debug.Log("[TutorialTrap] Enabled and registered.");
+        PoTLog.Tutorial?.Info("Tutorial trap enabled and registered.");
     }
 
     private void OnDisable()
@@ -153,7 +153,7 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
         _grabbed.SetGrabbed(true);
 
         OnPlayerGrabbed?.Invoke(_grabbed);
-        Debug.Log($"[TutorialTrap] Grabbed {player.name}. TTK={timeToKill}s");
+        PoTLog.Tutorial?.Info($"Tutorial trap grabbed {player.name}. TTK={timeToKill}s");
     }
 
     // ── IRescueTarget timer control ───────────────────────────────────────
@@ -173,7 +173,7 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
         _grabbed = null;
         OnPlayerReleased?.Invoke();
 
-        Debug.Log("[TutorialTrap] Player rescued successfully.");
+        PoTLog.Tutorial?.Info("Tutorial trap: player rescued.");
         // Disable after successful rescue — tutorial is done with this trap
         gameObject.SetActive(false);
     }
@@ -191,7 +191,7 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
         _grabbed = null;
 
         OnPlayerKilled?.Invoke();
-        Debug.Log("[TutorialTrap] TTK ran out.");
+        PoTLog.Tutorial?.Info("Tutorial trap TTK ran out.");
 
         if (isTutorial)
         {
@@ -213,7 +213,7 @@ public class TutorialTrap : MonoBehaviour, IRescueTarget
     {
         yield return new WaitForSecondsRealtime(resetDelay); // unscaled — pacing under rescue-tutorial slow
         ResetState();
-        Debug.Log("[TutorialTrap] Reset complete — ready to grab again.");
+        PoTLog.Tutorial?.Info("Tutorial trap reset complete — ready to grab again.");
     }
 
     private void ResetState()

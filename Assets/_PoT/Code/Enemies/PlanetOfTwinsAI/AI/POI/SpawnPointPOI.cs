@@ -91,7 +91,7 @@ public class SpawnPointPOI : POIBase
         // Visuals (portal off, recharge converge, husk shrink, material dim→bright) are owned by
         // SpawnPointVisualDriver — it listens to these events and reads RechargeProgress each frame.
         OnSpawnPointDestroyed?.Invoke(this);
-        Debug.Log($"[SpawnPoint] {name} destroyed — respawning in {remaining}s");
+        PoTLog.AI?.Info($"Spawn point {name} destroyed — respawning in {remaining}s");
 
         yield return new WaitForSeconds(remaining);
 
@@ -103,6 +103,6 @@ public class SpawnPointPOI : POIBase
         POIManager.Instance?.Register(this);
 
         OnSpawnPointRespawned?.Invoke(this);
-        Debug.Log($"[SpawnPoint] {name} respawned");
+        PoTLog.AI?.Info($"Spawn point {name} respawned");
     }
 }

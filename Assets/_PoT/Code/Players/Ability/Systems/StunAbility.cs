@@ -76,7 +76,7 @@ public class StunAbility : AbilityBase, IStunEvents
                 CueContext.Follow(_owner.transform, scale: rangeScale)) ?? CueHandle.None;
         }
 
-        Debug.Log($"[StunAbility] Window opened — duration={_currentDuration}s " +
+        PoTLog.Combat?.Info($"Stun window opened — duration={_currentDuration}s " +
                   $"cooldown={_currentCooldown}s maxTargets={_currentMaxTargets} range={_currentRange}");
 
         return true;
@@ -121,8 +121,6 @@ public class StunAbility : AbilityBase, IStunEvents
             _stunnedThisWindow.Add(stunnable);
             _targetsHit++;
 
-            int listenerCount = OnStunApplied == null ? 0 : OnStunApplied.GetInvocationList().Length;
-            Debug.Log($"[StunAbility] Firing OnStunApplied — listeners={listenerCount} enemy={col.gameObject.name}");
             OnStunApplied?.Invoke(col.gameObject);
 
             // Per-enemy held OnStun_Hit VFX (the "I'm stunned" stars — 2 looping particles WithPrevious) on the
@@ -135,7 +133,7 @@ public class StunAbility : AbilityBase, IStunEvents
                 if (!hitHandle.IsNone) _hitHandles[col.gameObject] = hitHandle;
             }
 
-            Debug.Log($"[StunAbility] Stunned {col.gameObject.name} ({_targetsHit}/{_currentMaxTargets})");
+            PoTLog.Combat?.Info($"Stunned {col.gameObject.name} ({_targetsHit}/{_currentMaxTargets})");
         }
     }
 
@@ -159,7 +157,7 @@ public class StunAbility : AbilityBase, IStunEvents
         _owner.HidePrimaryPreview();
         base.End();
 
-        Debug.Log($"[StunAbility] Window closed on {_owner.gameObject.name}");
+        PoTLog.Combat?.Info($"Stun window closed on {_owner.gameObject.name}");
     }
 
     // Called by DualCastSystem — delegates to AbilityBase which uses EffectiveCooldown

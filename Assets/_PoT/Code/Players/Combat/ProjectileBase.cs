@@ -57,7 +57,7 @@ public class ProjectileBase : MonoBehaviour, IProjectileData
         // Trigger rescue proxy if killing blow — mirrors EnemyAttackController
         if (playerHealth != null && playerHealth.IsDead)
         {
-            Debug.Log($"[ProjectileBase] Killing blow on {other.gameObject.name}");
+            PoTLog.Combat?.Info($"Projectile killing blow on {other.gameObject.name}");
             other.GetComponent<PlayerDeathRescueProxy>()?.Activate(_owner);
         }
 

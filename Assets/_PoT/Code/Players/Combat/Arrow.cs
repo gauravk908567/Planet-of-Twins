@@ -94,7 +94,7 @@ public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable
         // BUG-056 forensics: stuck arrows = this method started but the arrow never returned to the
         // pool, with no exception logged. The paired logs bracket the return — a "hit" without its
         // "returned" names the target AND the abort point on the next repro.
-        Debug.Log($"[Arrow] hit '{other.name}' (root={other.transform.root.name}, layer={LayerMask.LayerToName(other.gameObject.layer)}) at {transform.position}", this);
+        PoTLog.Combat?.Info($"Arrow hit '{other.name}' (root={other.transform.root.name}, layer={LayerMask.LayerToName(other.gameObject.layer)}) at {transform.position}", this);
 
         try
         {
@@ -111,7 +111,7 @@ public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable
         {
             // The arrow ALWAYS goes home — damage/cue trouble upstream must never strand it mid-air.
             GameplayPool.Despawn(gameObject);
-            Debug.Log($"[Arrow] returned to pool (active={gameObject.activeSelf})", this);
+            PoTLog.Combat?.Info($"Arrow returned to pool (active={gameObject.activeSelf})", this);
         }
     }
 }

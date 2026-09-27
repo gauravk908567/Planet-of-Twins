@@ -82,7 +82,7 @@ public class SoulPulseSystem : MonoBehaviour
         // Gate behind Gate Node 3 — pulse not available at lower upgrade levels
         if (_gateData != null && _gateData.currentNodeIndex < _requiredNodeIndex)
         {
-            Debug.Log($"[SoulPulse] Pulse locked — Gate node {_gateData.currentNodeIndex} < required {_requiredNodeIndex}");
+            PoTLog.Combat?.Info($"Soul Pulse locked — Gate node {_gateData.currentNodeIndex} < required {_requiredNodeIndex}");
             return;
         }
 
@@ -178,7 +178,7 @@ public class SoulPulseSystem : MonoBehaviour
             }
         }
 
-        Debug.Log($"[SoulPulse] Fired — enemies affected={enemiesHit} accord={accordActive}");
+        PoTLog.Combat?.Info($"Soul Pulse fired — enemies affected={enemiesHit} accord={accordActive}");
     }
 
     // ── Burn tick loop ────────────────────────────────────────

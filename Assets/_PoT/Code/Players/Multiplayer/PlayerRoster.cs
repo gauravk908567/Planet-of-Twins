@@ -90,7 +90,7 @@ public class PlayerRoster : MonoBehaviour
         {
             _bySlot[(int)PlayerSlot.One] = SessionSetup.P1GetsLyra ? twinA : twinB;
             _bySlot[(int)PlayerSlot.Two] = SessionSetup.P1GetsLyra ? twinB : twinA;
-            Debug.Log($"[PlayerRoster] Applied character-select ownership — slot One = " +
+            PoTLog.Input?.Info($"Applied character-select ownership — slot One = " +
                       $"{(SessionSetup.P1GetsLyra ? "Lyra (TwinA)" : "Kai (TwinB)")}.");
         }
     }

@@ -125,7 +125,7 @@ public class EnemyMoodSystem : MonoBehaviour
         _lerpTimer = 0f;
         _lerpDuration = _profile?.modifierLerpDuration ?? 0.3f;
 
-        Debug.Log($"[Mood] {_enemy?.name} → {newMood} (duration={duration:F1}s)");
+        PoTLog.AI?.Info($"{_enemy?.name} mood → {newMood} (duration={duration:F1}s)");
 
         // Manpu (and any other listener) reacts to the transition — R8. Replaces the old hardcoded
         // mood→ShowIkari switch; the Manpu director picks the glyph from the vocabulary (R2/R3).

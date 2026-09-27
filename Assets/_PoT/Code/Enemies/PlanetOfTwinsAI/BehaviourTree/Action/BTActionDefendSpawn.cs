@@ -25,7 +25,7 @@ public class BTActionDefendSpawn : PoTBTActionBase
             : _enemy.transform.position;
 
         _enemy?.Movement.SetSpeed((_enemy.Data?.moveSpeed ?? 3.5f) * 1.2f); // rush speed
-        Debug.Log($"[DefendSpawn] {_enemy?.name} rushing to {_defendTarget}");
+        PoTLog.AI?.Info($"{_enemy?.name} rushing to {_defendTarget}");
     }
 
     protected override bool OnTick_NodeLogic(float InDeltaTime)

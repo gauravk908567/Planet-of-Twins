@@ -74,7 +74,7 @@ public class PossessAbility : AbilityBase, IPossessEvents
                 CueContext.Follow(_owner.transform, scale: rangeScale)) ?? CueHandle.None;
         }
 
-        Debug.Log($"[PossessAbility] Window opened � duration={_currentDuration}s " +
+        PoTLog.Combat?.Info($"Possess window opened � duration={_currentDuration}s " +
                   $"cooldown={_currentCooldown}s maxTargets={_currentMaxTargets} range={_currentRange}");
 
         return true;
@@ -119,8 +119,6 @@ public class PossessAbility : AbilityBase, IPossessEvents
             _possessedThisWindow.Add(possessable);
             _targetsHit++;
 
-            int listenerCount = OnPossessApplied == null ? 0 : OnPossessApplied.GetInvocationList().Length;
-            Debug.Log($"[PossessAbility] Firing OnPossessApplied � listeners={listenerCount} enemy={col.gameObject.name}");
             OnPossessApplied?.Invoke(col.gameObject);
 
             // Per-enemy held Possess_Hit VFX on the possessed enemy; stopped in End().
@@ -132,7 +130,7 @@ public class PossessAbility : AbilityBase, IPossessEvents
                 if (!hitHandle.IsNone) _hitHandles[col.gameObject] = hitHandle;
             }
 
-            Debug.Log($"[PossessAbility] Possessed {col.gameObject.name} ({_targetsHit}/{_currentMaxTargets})");
+            PoTLog.Combat?.Info($"Possessed {col.gameObject.name} ({_targetsHit}/{_currentMaxTargets})");
         }
     }
 
@@ -155,7 +153,7 @@ public class PossessAbility : AbilityBase, IPossessEvents
         _owner.HidePrimaryPreview();
         base.End();
 
-        Debug.Log($"[PossessAbility] Window closed on {_owner.gameObject.name}");
+        PoTLog.Combat?.Info($"Possess window closed on {_owner.gameObject.name}");
     }
 
     // Called by DualCastSystem � delegates to AbilityBase which uses EffectiveCooldown

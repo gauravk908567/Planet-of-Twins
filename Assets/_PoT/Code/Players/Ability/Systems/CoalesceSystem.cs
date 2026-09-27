@@ -89,7 +89,7 @@ public class CoalesceSystem : MonoBehaviour, IAbilityHUDSource
         if (_stunEvents == null || _possessEvents == null)
         { Debug.LogError($"[{GetType().Name}] Still no events after retry — check TwinAbilitySetup"); yield break; }
 
-        Debug.Log($"[{GetType().Name}] Retry succeeded — subscribing to events");
+        PoTLog.Combat?.Info($"{GetType().Name}: retry succeeded — subscribing to events");
         if (_stunEvents != null) { _stunEvents.OnStunApplied += HandleApplied; _stunEvents.OnStunEnded += HandleEnded; }
         if (_possessEvents != null) { _possessEvents.OnPossessApplied += HandleApplied; _possessEvents.OnPossessEnded += HandleEnded; }
     }
@@ -110,8 +110,7 @@ public class CoalesceSystem : MonoBehaviour, IAbilityHUDSource
     // ── Handlers ──────────────────────────────────────────────────────────────
     void HandleApplied(GameObject enemy)
     {
-        Debug.Log($"[Coalesce] HandleApplied called — enemy={enemy?.name} isUnlocked={_unlockState?.IsCoalesceUnlocked} auraPrefab={(_auraPrefab == null ? "NULL" : "OK")}");
-        if (!(_unlockState?.IsCoalesceUnlocked ?? false)) { Debug.Log("[Coalesce] BLOCKED — Coalesce not unlocked in skill tree"); return; }
+        if (!(_unlockState?.IsCoalesceUnlocked ?? false)) { PoTLog.Combat?.Info("BLOCKED — Coalesce not unlocked in skill tree"); return; }
 
         if (_auraPrefab == null)
         {
@@ -146,7 +145,7 @@ public class CoalesceSystem : MonoBehaviour, IAbilityHUDSource
         }
         aura.Initialise(enemy, radius, dps, linger);
         _activeAuras[enemy] = aura;
-        Debug.Log($"[Coalesce] Aura spawned on {enemy.name}");
+        PoTLog.Combat?.Info($"Coalesce aura spawned on {enemy.name}");
     }
 
     void HandleEnded(GameObject enemy)

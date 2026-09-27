@@ -139,7 +139,7 @@ public class PoTPerceptionMemory : MonoBehaviour
     {
         // Reduce confidence — searched and found nothing
         _confidence = Mathf.Max(0f, _confidence - 0.3f);
-        Debug.Log($"[Perception] {_enemy.name} searched LastKnownPos — confidence now {_confidence:F2}");
+        PoTLog.AI?.Info($"{_enemy.name} searched LastKnownPos — confidence now {_confidence:F2}");
     }
 
     /// <summary>Called by SoundEventSystem when sound is heard.</summary>
@@ -153,7 +153,7 @@ public class PoTPerceptionMemory : MonoBehaviour
             _lastSeenTime = Time.time;
             _hasMemory = true;
             _searchState = EnemySearchState.Investigating;
-            Debug.Log($"[Perception] {_enemy.name} heard sound at {soundPosition} — confidence={_confidence:F2}");
+            PoTLog.AI?.Info($"{_enemy.name} heard sound at {soundPosition} — confidence={_confidence:F2}");
         }
     }
 
@@ -173,7 +173,7 @@ public class PoTPerceptionMemory : MonoBehaviour
     {
         _lastSeenTime = Time.time;
         MoodEventBus.Fire(EnemySocialEvent.TwinLost, null);
-        Debug.Log($"[Perception] {_enemy.name} lost twin — starting decay from {_confidence:F2}");
+        PoTLog.AI?.Info($"{_enemy.name} lost twin — starting decay from {_confidence:F2}");
     }
 
     // ── Helpers ────────────────────────────────────────────
