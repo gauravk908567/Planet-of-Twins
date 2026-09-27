@@ -389,22 +389,6 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
         return nearest;
     }
 
-    public Enemy FindFollowTarget()
-    {
-        Enemy best = null;
-        float bestDist = float.MaxValue;
-        using var snapshot = EnemyRegistry.Snapshot(out var enemies);
-        foreach (var e in enemies)
-        {
-            if (e == this || e is WitnessEnemy || e.Health.IsDead) continue;
-            float priority = e.Target != null
-                ? Vector3.Distance(transform.position, e.transform.position) * 0.5f
-                : Vector3.Distance(transform.position, e.transform.position);
-            if (priority < bestDist) { bestDist = priority; best = e; }
-        }
-        return best;
-    }
-
     private void OnDrawGizmosSelected()
     {
         if (_witnessData == null) return;

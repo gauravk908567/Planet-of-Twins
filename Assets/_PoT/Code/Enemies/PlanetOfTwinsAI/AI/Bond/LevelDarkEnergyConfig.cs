@@ -44,17 +44,4 @@ public class LevelDarkEnergyConfig : ScriptableObject
             if (s.clanType == clan) return s;
         return null;
     }
-
-    /// <summary>Apply this config to all enemies in scene.</summary>
-    public void ApplyToAllEnemies()
-    {
-        var enemies = Object.FindObjectsByType<EnemyDarkEnergy>(FindObjectsSortMode.None);
-        foreach (var e in enemies)
-        {
-            var scale = GetScaleForClan(e.ClanType);
-            if (scale != null)
-                e.ApplyLevelScaling(scale.baseEnergy, scale.bondThreshold);
-        }
-        PoTLog.AI?.Info($"Applied dark-energy config {levelName} to {enemies.Length} enemies");
-    }
 }
