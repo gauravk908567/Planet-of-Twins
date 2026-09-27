@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -34,12 +34,36 @@ public class PlayerRoster : MonoBehaviour
     // Ownership map: slot → twin. Seeded in Awake (M1 default), rewritten by character select (M2).
     private readonly Player[] _bySlot = new Player[2];
 
+    // Both twins, A then B, filled once Awake has validated the slots (empty while unwired).
+    private Player[] _twins = Array.Empty<Player>();
+    private static bool _reportedMissing;
+
     // ── Registry (selection-agnostic) ──────────────────────────
     public Player TwinA => twinA;
     public Player TwinB => twinB;
 
-    /// <summary>Both twins, in A→B order. Never null entries once Awake validated the slots.</summary>
-    public IEnumerable<Player> Twins { get { yield return twinA; yield return twinB; } }
+    /// <summary>
+    /// Both twins, A then B, for code with no roster reference (pooled enemies, BT actions). It replaces every
+    /// <c>FindObjectsByType&lt;Player&gt;()</c> + "skip the SoulPlayer" search (P8.7, game.md §28): same two twins, no
+    /// scene search, no garbage, and the soul is never in it. Read it as <c>foreach (var twin in PlayerRoster.Twins)</c>.
+    /// The twins never change during a session, so a loop may damage or down a twin safely. A span can't cross a
+    /// <c>yield</c>, so a coroutine reads it inside a helper method. No roster = empty + one loud error.
+    /// </summary>
+    public static ReadOnlySpan<Player> Twins
+    {
+        get
+        {
+            var roster = Instance;
+            if (roster != null) return roster._twins;
+            if (!_reportedMissing)
+            {
+                _reportedMissing = true;
+                Debug.LogError("[PlayerRoster] No PlayerRoster: twin lookups see NO twins. " +
+                               "It lives in Persistent.unity (is Persistent loaded?).");
+            }
+            return ReadOnlySpan<Player>.Empty;
+        }
+    }
 
     /// <summary>The other twin, or null if <paramref name="twin"/> is not a roster twin.</summary>
     public Player Other(Player twin)
@@ -79,6 +103,7 @@ public class PlayerRoster : MonoBehaviour
             enabled = false;
             return;
         }
+        _twins = new[] { twinA, twinB };
 
         // M1 default ownership — P1→TwinA (Lyra), P2→TwinB (Kai).
         _bySlot[(int)PlayerSlot.One] = twinA;

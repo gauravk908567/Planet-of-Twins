@@ -21,12 +21,14 @@ public class GOAPBrainPenitentCommander : PoTGOAPBrainBase
     [SerializeField] private float _twinThreatRange = 12f;
 
     private PenitentCommander _commander;
+    private ZoneEnemyTracker _zoneTracker;   // on the prefab; its HomeZone changes per spawn, the component doesn't
 
     protected override void OnConfigureBrain()
     {
         _commander = GetComponent<PenitentCommander>();
         if (_commander == null)
             Debug.LogError("[GOAPBrainPenitentCommander] No PenitentCommander component.", this);
+        _zoneTracker = GetComponent<ZoneEnemyTracker>();
     }
 
     protected override void OnConfigureBlackboard()
@@ -43,10 +45,12 @@ public class GOAPBrainPenitentCommander : PoTGOAPBrainBase
         LinkedBlackboard.Set(PoTNames.CommanderAlive, _commander.IsAlive);
         LinkedBlackboard.Set(PoTNames.CommanderPosition, transform.position);
 
-        foreach (var s in _commander.Soldiers)
+        var soldiers = _commander.Soldiers;
+        for (int i = 0; i < soldiers.Count; i++)   // indexed: a foreach over the interface allocates every tick
         {
+            var s = soldiers[i];
             if (s == null || s.Health.IsDead) continue;
-            var brain = s.GetComponent<PoTGOAPBrainBase>();
+            var brain = s.Brain;
             if (brain?.LinkedBlackboard == null) continue;
             brain.LinkedBlackboard.Set(PoTNames.CommanderAlive, _commander.IsAlive);
             brain.LinkedBlackboard.Set(PoTNames.CommanderPosition, transform.position);
@@ -69,12 +73,11 @@ public class GOAPBrainPenitentCommander : PoTGOAPBrainBase
 
     private bool IsTwinInRange()
     {
-        float zone = GetComponent<ZoneEnemyTracker>()
+        float zone = _zoneTracker
             ?.HomeZone?.areaConfig?.twinThreatRangeMultiplier ?? 1f;
         float range = _twinThreatRange * zone;
-        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        foreach (var p in PlayerRoster.Twins)
         {
-            if (p is SoulPlayer) continue;
             if (Vector3.Distance(transform.position, p.transform.position) <= range)
                 return true;
         }

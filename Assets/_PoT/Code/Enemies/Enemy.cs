@@ -84,6 +84,8 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
     public EnemyHealthComponent Health { get; private set; }
     public StatusEffectController StatusEffects { get; private set; }
     public EnemyStateUIController enemyStateUIController { get; private set; }
+    /// <summary>This enemy's GOAP brain (null on a prefab without one), so commanders don't GetComponent per soldier per tick.</summary>
+    public PoTGOAPBrainBase Brain { get; private set; }
 
     private float attackRange;
     [Tooltip("Muzzle/hand transform projectiles and ranged cues fire from. Optional — falls back to the root.")]
@@ -201,6 +203,7 @@ public class Enemy : MonoBehaviour, ITimeAffected, IStunnable, IPossessable, IGr
         Health = GetComponent<EnemyHealthComponent>();
         StatusEffects = GetComponent<StatusEffectController>();
         enemyStateUIController = GetComponentInChildren<EnemyStateUIController>();
+        Brain = GetComponent<PoTGOAPBrainBase>();
 
         _timeFactorRegistry = timeFactorRegistryObject as ITimeFactorRegistry;
         if (_timeFactorRegistry == null)

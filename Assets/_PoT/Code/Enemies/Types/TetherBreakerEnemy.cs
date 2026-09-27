@@ -50,9 +50,8 @@ public class TetherBreakerEnemy : Enemy, IStruggleHold
 
     private void FindTwinRefs()
     {
-        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        foreach (var p in PlayerRoster.Twins)
         {
-            if (p is SoulPlayer) continue;
             if (_leftPlayer == null) _leftPlayer = p;
             else if (_rightPlayer == null) { _rightPlayer = p; break; }
         }

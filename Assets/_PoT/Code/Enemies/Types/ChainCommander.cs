@@ -86,9 +86,8 @@ public class ChainCommander : Enemy, ICommander, IEnemyReuseReset
 
     private void TryChainStrike()
     {
-        foreach (var p in FindObjectsByType<Player>(FindObjectsSortMode.None))
+        foreach (var p in PlayerRoster.Twins)
         {
-            if (p is SoulPlayer) continue;
             if (!p.IsGrabbed) continue;
             if (Vector3.Distance(transform.position, p.transform.position) > _strikeRange) continue;
             _lastStrike = Time.time;

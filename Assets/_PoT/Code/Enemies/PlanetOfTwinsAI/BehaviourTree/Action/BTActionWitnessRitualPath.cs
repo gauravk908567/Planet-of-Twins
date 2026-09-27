@@ -100,13 +100,9 @@ public class BTActionWitnessRitualPath : PoTBTActionBase
 
     private Vector3[] GetTwinPositions()
     {
-        var players = Object.FindObjectsByType<Player>(FindObjectsSortMode.None);
         var positions = new System.Collections.Generic.List<Vector3>();
-        foreach (var p in players)
-        {
-            if (p is SoulPlayer) continue;
+        foreach (var p in PlayerRoster.Twins)
             positions.Add(p.transform.position);
-        }
         return positions.ToArray();
     }
 }

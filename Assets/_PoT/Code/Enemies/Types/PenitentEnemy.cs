@@ -346,12 +346,10 @@ public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
 
     private Player FindNearestTwin(Vector3 hitPos)
     {
-        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
         Player nearest = null;
         float best = float.MaxValue;
-        foreach (var p in players)
+        foreach (var p in PlayerRoster.Twins)
         {
-            if (p is SoulPlayer) continue;
             float d = Vector3.Distance(hitPos, p.transform.position);
             if (d < best) { best = d; nearest = p; }
         }

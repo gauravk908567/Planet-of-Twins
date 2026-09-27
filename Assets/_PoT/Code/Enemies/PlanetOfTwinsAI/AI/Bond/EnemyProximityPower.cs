@@ -212,12 +212,10 @@ public class EnemyProximityPower : MonoBehaviour, IEnemyReuseReset
     // ── Helpers ────────────────────────────────────────────
     private GameObject FindNearestTwin()
     {
-        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
         GameObject nearest = null;
         float minDist = float.MaxValue;
-        foreach (var p in players)
+        foreach (var p in PlayerRoster.Twins)
         {
-            if (p is SoulPlayer) continue;
             float d = Vector3.Distance(transform.position, p.transform.position);
             if (d < minDist) { minDist = d; nearest = p.gameObject; }
         }

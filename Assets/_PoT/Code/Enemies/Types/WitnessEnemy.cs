@@ -379,12 +379,10 @@ public class WitnessEnemy : Enemy, IEnemyReuseReset
     // ── Helpers ────────────────────────────────────────────────
     public Player GetNearestTwin()
     {
-        var players = FindObjectsByType<Player>(FindObjectsSortMode.None);
         Player nearest = null;
         float best = float.MaxValue;
-        foreach (var p in players)
+        foreach (var p in PlayerRoster.Twins)
         {
-            if (p is SoulPlayer) continue;
             float d = Vector3.Distance(transform.position, p.transform.position);
             if (d < best) { best = d; nearest = p; }
         }
