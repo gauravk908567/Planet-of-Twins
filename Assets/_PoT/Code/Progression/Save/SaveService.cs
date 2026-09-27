@@ -195,20 +195,29 @@ public class SaveService : MonoBehaviour
         stm.AddPoints(data.skillPoints);
 
         // Levels: ids → trees → snapshot. RebuildUnlockFlags fires inside RestoreSkillSnapshot.
+        stm.RestoreSkillSnapshot(SkillSnapshotFromEntries(stm.AllTrees, data.skillLevels));
+    }
+
+    /// <summary>A save's skill entries → a snapshot over <paramref name="trees"/>, matched by asset name (the save id,
+    /// written by <see cref="GameSaveData.FromCheckpoint"/>). An unknown id is skipped with a warning. Pure, so P8.1's
+    /// checkpoint round-trip test runs the same mapping the game does.</summary>
+    public static SkillTreeRuntimeState.Snapshot SkillSnapshotFromEntries(IReadOnlyList<AbilityUpgradeData> trees,
+                                                                         GameSaveData.SkillLevelEntry[] entries)
+    {
         var dict = new Dictionary<AbilityUpgradeData, int>();
-        if (data.skillLevels != null)
-            foreach (var e in data.skillLevels)
+        if (entries != null)
+            foreach (var e in entries)
             {
-                var tree = FindTree(stm, e.treeId);
+                var tree = FindTree(trees, e.treeId);
                 if (tree != null) dict[tree] = e.level;
                 else Debug.LogWarning($"[SaveService] Unknown skill tree id '{e.treeId}' in save — skipped.");
             }
-        stm.RestoreSkillSnapshot(new SkillTreeRuntimeState.Snapshot(dict));
+        return new SkillTreeRuntimeState.Snapshot(dict);
     }
 
-    private static AbilityUpgradeData FindTree(SkillTreeManager stm, string id)
+    private static AbilityUpgradeData FindTree(IReadOnlyList<AbilityUpgradeData> trees, string id)
     {
-        foreach (var t in stm.AllTrees) if (t != null && t.name == id) return t;
+        foreach (var t in trees) if (t != null && t.name == id) return t;
         return null;
     }
 
