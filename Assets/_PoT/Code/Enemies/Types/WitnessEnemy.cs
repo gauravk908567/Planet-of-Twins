@@ -6,7 +6,7 @@ using UnityEngine;
 /// Buff aura runs in Update — always active regardless of GOAP state.
 /// All behaviour decisions driven by GOAP+BT.
 /// </summary>
-public class WitnessEnemy : Enemy
+public class WitnessEnemy : Enemy, IEnemyReuseReset
 {
     // ── VFX cue (EnemyVfxLibrary, R4) — Witness has no basic melee/ranged (it throws bombs), but the aura
     //    and ritual beats play out of its own book; ThrowBomb/HandleDeath still resolve the same slot directly. ──
@@ -44,6 +44,22 @@ public class WitnessEnemy : Enemy
     protected override void Awake()
     {
         base.Awake();
+    }
+
+    // BUG-135 — a pooled Witness comes back idle. Killed mid-ritual/throw/retreat, the pool's deactivate cut those
+    // coroutines short and their flags stayed true (no more rituals or bombs). _lastBuffed must be emptied too:
+    // HandleDeath already cleared those buffs, and a stale list would later clear buffs on unrelated enemies.
+    // FollowTarget is re-set by ApplyData's summon; the aura was stopped in HandleDeath.
+    public void ResetForReuse()
+    {
+        IsRitualing = false;
+        BombOnCooldown = false;
+        IsRetreating = false;
+        IsThrowing = false;
+        RitualBombDropped = false;
+        FollowTarget = null;
+        _lastBuffed = System.Array.Empty<Enemy>();
+        _auraHandle = CueHandle.None;
     }
 
     public override void ApplyData(EnemyData data)

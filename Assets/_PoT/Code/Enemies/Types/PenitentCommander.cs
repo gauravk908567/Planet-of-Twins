@@ -15,7 +15,7 @@ using UnityEngine;
 ///
 /// Brain: GOAPBrainPenitentCommander
 /// </summary>
-public class PenitentCommander : Enemy, ICommander
+public class PenitentCommander : Enemy, ICommander, IEnemyReuseReset
 {
     [Header("Dark Shield")]
     [SerializeField] private float _damageThreshold = 0.25f;
@@ -59,6 +59,18 @@ public class PenitentCommander : Enemy, ICommander
     {
         base.Awake();
         Health.OnDeath += OnCommanderDied;
+    }
+
+    // BUG-135 — a pooled commander comes back alive, unshielded, with no squad. The pool deactivated it inside
+    // the death event, which cut DeathCascade / ActivateDarkShield short, so release any old soldiers first.
+    public void ResetForReuse()
+    {
+        foreach (var s in _soldiers)
+            if (s != null) s.GetComponent<GOAPGoalHoldFormation>()?.ReleaseFrom(this);
+        _soldiers.Clear();
+        _lastShield = -99f;
+        _shieldActive = false;
+        _dead = false;
     }
 
     // ── Dark Shield ────────────────────────────────────────────

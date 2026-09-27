@@ -17,7 +17,7 @@ using UnityEngine;
 /// Speed varies with confidence — feeds into BTActionChaseTarget.
 /// Search state written to Blackboard — GOAP goals read it.
 /// </summary>
-public class PoTPerceptionMemory : MonoBehaviour
+public class PoTPerceptionMemory : MonoBehaviour, IEnemyReuseReset
 {
     [Header("Confidence Decay")]
     [Tooltip("Seconds to decay from 1.0 to 0.0 after losing sight.")]
@@ -79,9 +79,23 @@ public class PoTPerceptionMemory : MonoBehaviour
     {
         _enemy = GetComponent<Enemy>();
         _brain = GetComponent<PoTGOAPBrainBase>();
+        ClearMemory();
+    }
+
+    // BUG-135 — a pooled enemy forgets the twins (silent: no "!" pulse for the reset itself).
+    public void ResetForReuse()
+    {
+        ClearMemory();
+        WriteToBlackboard();
+    }
+
+    private void ClearMemory()
+    {
         _confidence = 0f;
         _lastKnownPosition = CommonCore.Constants.InvalidVector3Position;
+        _lastSeenTime = 0f;
         _searchState = EnemySearchState.Idle;
+        _lastNotifiedState = EnemySearchState.Idle;
         _hasMemory = false;
     }
 

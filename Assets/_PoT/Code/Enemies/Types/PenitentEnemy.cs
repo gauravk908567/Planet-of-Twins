@@ -6,7 +6,7 @@ using UnityEngine;
 /// All crush/reflection/rage logic is self-contained in coroutines.
 /// GOAP+BT drives the approach. Update() triggers grab by proximity.
 /// </summary>
-public class PenitentEnemy : Enemy, IRescueTarget
+public class PenitentEnemy : Enemy, IRescueTarget, IEnemyReuseReset
 {
     [Header("Penitent")]
     [SerializeField] private PenitentEnemyData _penitentData;
@@ -61,6 +61,23 @@ public class PenitentEnemy : Enemy, IRescueTarget
     private void OnDestroy()
     {
         if (Health != null) Health.OnDamageTaken -= HandleDamageTaken;
+    }
+
+    // BUG-135 — a pooled Penitent comes back out of every phase. Its phases run in coroutines that the pool's
+    // deactivate cuts short, so a flag like _crushing could stay true forever. (Full rework pending — BUG-012.)
+    public void ResetForReuse()
+    {
+        _reflectionActive = false;
+        if (_thresholdTriggered != null) System.Array.Clear(_thresholdTriggered, 0, _thresholdTriggered.Length);
+        _windingUp = false;
+        _crushing = false;
+        _inCooldown = false;
+        _inRage = false;
+        _crushTarget = null;
+        _crushResolved = false;
+        _crushMashCount = 0;
+        _ttkPaused = false;
+        _isFrozen = false;
     }
 
     public override void OnEffectStarted() { base.OnEffectStarted(); _isFrozen = true; }

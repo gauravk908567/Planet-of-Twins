@@ -7,7 +7,7 @@
 ///
 /// ATTACH: To every enemy prefab.
 /// </summary>
-public class EnemyPOITracker : MonoBehaviour
+public class EnemyPOITracker : MonoBehaviour, IEnemyReuseReset
 {
     [SerializeField] private float _updateInterval = 1f;
 
@@ -26,6 +26,15 @@ public class EnemyPOITracker : MonoBehaviour
         _enemy = GetComponent<Enemy>();
         _darkEnergy = GetComponent<EnemyDarkEnergy>();
         _zoneTracker = GetComponent<ZoneEnemyTracker>();
+    }
+
+    // BUG-135 — drop the POIs cached from the previous life's zone (possibly an unloaded area).
+    public void ResetForReuse()
+    {
+        _timer = 0f;
+        NearestSpawnPoint = null;
+        NearestRitualSite = null;
+        NearBarrier = false;
     }
 
     private void Update()

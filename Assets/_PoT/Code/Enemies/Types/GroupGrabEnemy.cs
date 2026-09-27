@@ -7,7 +7,7 @@ using UnityEngine;
 /// All config centralised in GroupGrabEnemyData SO.
 /// Base EnemyData fields used for TTK, mash, heal values.
 /// </summary>
-public class GroupGrabEnemy : Enemy, IRescueTarget
+public class GroupGrabEnemy : Enemy, IRescueTarget, IEnemyReuseReset
 {
     // ── VFX cue (EnemyVfxLibrary, R4) ──
     public override CueBookData VfxBook => VfxLibraryProvider.Instance?.Enemy?.GroupGrab;
@@ -63,6 +63,20 @@ public class GroupGrabEnemy : Enemy, IRescueTarget
             _grabData = grabData;
         else
             Debug.LogWarning($"[GroupGrabEnemy] Expected GroupGrabEnemyData, got {data?.GetType().Name}", this);
+    }
+
+    // BUG-135 — a pooled warden comes back able to grab. Death releases the twin (HandleDeath), but that release
+    // starts GrabCooldownRoutine, which the pool's deactivate then cuts short, so _grabOnCooldown stayed true.
+    public void ResetForReuse()
+    {
+        _isResolved = false;
+        _grabOnCooldown = false;
+        _isGrabbing = false;
+        _ttkPaused = false;
+        _ttkRemaining = 0f;
+        _grabbedPlayer = null;
+        _strugglePauseCoroutine = null;
+        _soulConsumeHandle = CueHandle.None;
     }
 
     private void Update()

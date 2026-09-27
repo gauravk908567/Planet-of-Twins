@@ -14,7 +14,7 @@ using UnityEngine;
 ///
 /// ATTACH: To every enemy prefab alongside EnemyDarkEnergy.
 /// </summary>
-public class EnemyProximityPower : MonoBehaviour
+public class EnemyProximityPower : MonoBehaviour, IEnemyReuseReset
 {
     [SerializeField] private ProximityPowerProfile _profile;
     [SerializeField] private float _thirdWheelBoostMultiplier = 1.3f;
@@ -76,6 +76,17 @@ public class EnemyProximityPower : MonoBehaviour
     {
         var tracker = GetComponent<ZoneEnemyTracker>();
         if (tracker != null) _homeZone = tracker.HomeZone;
+    }
+
+    // BUG-135 — a pooled enemy comes back pactless. The registry already dropped it on disable (EnemyDarkEnergy),
+    // but only the REMAINING members are notified, so this side is cleared here. The third-wheel damage bonus
+    // was cleared by Enemy.ResetForPool. _homeZone is re-read in Update (Start never re-runs on reuse).
+    public void ResetForReuse()
+    {
+        _pactMembers = null;
+        _activePowerID = null;
+        _isThirdWheel = false;
+        _homeZone = null;
     }
 
     private void Update()

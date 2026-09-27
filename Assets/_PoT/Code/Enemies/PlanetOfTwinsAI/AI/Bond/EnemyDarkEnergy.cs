@@ -4,7 +4,7 @@ using UnityEngine;
 /// Per-enemy dark energy system.
 /// Registers with ComboReadyRegistry when ComboUnlocked threshold crossed.
 /// </summary>
-public class EnemyDarkEnergy : MonoBehaviour
+public class EnemyDarkEnergy : MonoBehaviour, IEnemyReuseReset
 {
     [Header("Config")]
     [SerializeField] private float _baseEnergy = 0.1f;
@@ -46,6 +46,10 @@ public class EnemyDarkEnergy : MonoBehaviour
     // until it exists the stat buff still applies, just without a visual (fail-safe).
     private const string PoiBuffCueId = "poi_buff";
 
+    // Prefab-authored values. ApplyLevelScaling overwrites the live ones per spawn; reuse restores these (BUG-135).
+    private float _authoredBaseEnergy;
+    private float _authoredBondBreakThreshold;
+
     private float _currentEnergy;
     private bool _bondBroken;
     private bool _comboUnlocked;
@@ -71,6 +75,8 @@ public class EnemyDarkEnergy : MonoBehaviour
     {
         _enemy = GetComponent<Enemy>();
         _tracker = GetComponent<ZoneEnemyTracker>();
+        _authoredBaseEnergy = _baseEnergy;
+        _authoredBondBreakThreshold = _bondBreakThreshold;
         _currentEnergy = _baseEnergy;
     }
 
@@ -79,6 +85,20 @@ public class EnemyDarkEnergy : MonoBehaviour
         StopCorruptionAura();
         ClearPoiBuff();
         DebugFreezeGain = false;   // bench flag must not survive pool reuse
+        // Death = immediate pool return = disable: leave the pact here, so "a pact breaks when a member dies"
+        // actually runs. Before BUG-135 only OnDestroy unregistered, so a dead pooled enemy stayed in its pact.
+        ComboReadyRegistry.Instance?.Unregister(this);
+    }
+
+    // BUG-135 — a pooled enemy comes back with authored base energy and no latches, so it can unlock again.
+    public void ResetForReuse()
+    {
+        _baseEnergy = _authoredBaseEnergy;
+        _bondBreakThreshold = _authoredBondBreakThreshold;
+        _currentEnergy = _baseEnergy;
+        _bondBroken = false;
+        _comboUnlocked = false;
+        WriteToBlackboard();
     }
 
     private void OnDestroy()

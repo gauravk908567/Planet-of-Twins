@@ -12,7 +12,7 @@ using UnityEngine;
 ///
 /// Brain: GOAPBrainChainCommander
 /// </summary>
-public class ChainCommander : Enemy, ICommander
+public class ChainCommander : Enemy, ICommander, IEnemyReuseReset
 {
     [Header("Chain Strike")]
     [SerializeField] private float _strikeRange = 6f;
@@ -55,6 +55,17 @@ public class ChainCommander : Enemy, ICommander
     {
         base.Awake();
         Health.OnDeath += OnCommanderDied;
+    }
+
+    // BUG-135 — a pooled commander comes back alive with no squad. The pool deactivated it inside the death
+    // event, which cut DeathCascade short, so release any old soldiers still following it first.
+    public void ResetForReuse()
+    {
+        foreach (var s in _soldiers)
+            if (s != null) s.GetComponent<GOAPGoalHoldFormation>()?.ReleaseFrom(this);
+        _soldiers.Clear();
+        _lastStrike = -99f;
+        _dead = false;
     }
 
     // ── ChainStrike ────────────────────────────────────────────

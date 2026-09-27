@@ -13,7 +13,7 @@ using UnityEngine;
 ///
 /// Brain: GOAPBrainGrandSummoner
 /// </summary>
-public class GrandSummoner : Enemy, ICommander
+public class GrandSummoner : Enemy, ICommander, IEnemyReuseReset
 {
     [Header("Divine Shaft")]
     [SerializeField] private float _interval = 3.5f;
@@ -57,6 +57,17 @@ public class GrandSummoner : Enemy, ICommander
     {
         base.Awake();
         Health.OnDeath += OnCommanderDied;
+    }
+
+    // BUG-135 — a pooled commander comes back alive with no squad. The pool deactivated it inside the death
+    // event, which cut DeathCascade short, so release any old soldiers still following it first.
+    public void ResetForReuse()
+    {
+        foreach (var s in _soldiers)
+            if (s != null) s.GetComponent<GOAPGoalHoldFormation>()?.ReleaseFrom(this);
+        _soldiers.Clear();
+        _lastShaft = 0f;
+        _dead = false;
     }
 
     // ── Divine Shaft ───────────────────────────────────────────

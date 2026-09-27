@@ -9,7 +9,7 @@ using UnityEngine;
 ///
 /// ATTACH: To every enemy prefab.
 /// </summary>
-public class EnemySocialBond : MonoBehaviour
+public class EnemySocialBond : MonoBehaviour, IEnemyReuseReset
 {
     public enum BondType
     {
@@ -32,7 +32,8 @@ public class EnemySocialBond : MonoBehaviour
     // ── Public ─────────────────────────────────────────────
     public Enemy BondPartner => _bondPartner;
     public bool PartnerDead => _partnerDead;
-    public bool HasPartner => _bondPartner != null && !_bondPartner.Health.IsDead;
+    // !_partnerDead: once the partner died, a later reuse of that pooled instance is NOT our partner (BUG-135).
+    public bool HasPartner => _bondPartner != null && !_partnerDead && !_bondPartner.Health.IsDead;
     public BondType Type => _bondType;
     public float ComboBondRange => _comboBondRange;
 
@@ -78,11 +79,18 @@ public class EnemySocialBond : MonoBehaviour
         _partnerDead = false;
     }
 
+    // BUG-135 — a pooled enemy comes back unbonded; the spawner wires a fresh partner after Get.
+    public void ResetForReuse() => ClearBond();
+
     // ── Death bond ─────────────────────────────────────────
     private void OnPartnerDied()
     {
         if (_enemy == null || _enemy.Health.IsDead) return;
         _partnerDead = true;
+        // Stop listening to the dead partner: its pooled instance will be reused as an unrelated enemy, and that
+        // enemy's death must not run our death bond (BUG-135). Safe mid-invoke (the delegate list is a snapshot).
+        if (_bondPartner != null)
+            _bondPartner.Health.OnDeath -= OnPartnerDied;
         PoTLog.AI?.Info($"{_enemy?.name} partner died — BondBroken={_darkEnergy?.BondBroken}");
 
         MoodEventBus.AllyDied(_bondPartner?.gameObject);

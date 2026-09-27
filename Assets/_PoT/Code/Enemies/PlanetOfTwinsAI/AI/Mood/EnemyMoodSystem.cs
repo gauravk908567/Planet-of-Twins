@@ -7,7 +7,7 @@ using UnityEngine;
 /// over modifierLerpDuration from the profile.
 /// Writes PoTNames.EnemyMoodState to Blackboard each frame.
 /// </summary>
-public class EnemyMoodSystem : MonoBehaviour
+public class EnemyMoodSystem : MonoBehaviour, IEnemyReuseReset
 {
     [SerializeField] private MoodTransitionProfile _profile;
 
@@ -34,7 +34,21 @@ public class EnemyMoodSystem : MonoBehaviour
     private void Awake()
     {
         _enemy = GetComponent<Enemy>();
+        ApplyDefaultMood();
+    }
+
+    // BUG-135 — a pooled enemy comes back in its profile's default mood (silent: the pool cleared the Manpu slot).
+    public void ResetForReuse()
+    {
+        ApplyDefaultMood();
+        WriteToBlackboard();
+    }
+
+    private void ApplyDefaultMood()
+    {
         _currentMood = _profile?.defaultMood ?? EnemyMood.Normal;
+        _moodTimer = 0f;
+        _decayMood = default;
         var entry = GetModifierEntry(_currentMood);
         _currentModifiers = entry;
         _targetModifiers = entry;

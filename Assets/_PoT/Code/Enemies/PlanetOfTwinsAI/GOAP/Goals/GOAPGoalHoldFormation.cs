@@ -5,10 +5,10 @@ using UnityEngine;
 /// <summary>
 /// Goal: Hold formation slot position relative to commander.
 /// Valid when: commander alive, no twin detected, not possessed.
-/// Priority: High (75) � yields to combat, maintains loose formation otherwise.
+/// Priority: High (75) � yields to combat, maintains loose formation otherwise.
 /// Works with any ICommander type via interface.
 /// </summary>
-public class GOAPGoalHoldFormation : GOAPGoalBase
+public class GOAPGoalHoldFormation : GOAPGoalBase, IEnemyReuseReset
 {
     private ICommander _commander;
     private Vector3 _slotOffset;
@@ -20,6 +20,20 @@ public class GOAPGoalHoldFormation : GOAPGoalBase
     }
 
     public void ClearCommander() => _commander = null;
+
+    /// <summary>Clears only if this soldier still follows <paramref name="commander"/> — a pooled commander
+    /// releasing its old squad must not unhook a soldier that has since joined another commander (BUG-135).</summary>
+    public void ReleaseFrom(ICommander commander)
+    {
+        if (_commander == commander) _commander = null;
+    }
+
+    // BUG-135 — a pooled soldier comes back without the previous life's commander.
+    public void ResetForReuse()
+    {
+        _commander = null;
+        _slotOffset = Vector3.zero;
+    }
 
     public Vector3 GetFormationPosition()
         => _commander == null ? Vector3.zero : _commander.GetSlotWorldPosition(_slotOffset);

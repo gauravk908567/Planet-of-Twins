@@ -100,6 +100,10 @@ public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
         // and was unkillable). At ISSUE time — never during the death event (see Enemy.ResetForPool).
         instance.GetComponent<EnemyHealthComponent>()?.ResetToFull();
 
+        // Every per-life component back to its as-spawned state, same ISSUE-time rule (BUG-135: mood,
+        // dark energy, memory, bonds were Awake-only, so a reused enemy came back Enraged / remembering the twins).
+        ResetPerLifeState(instance);
+
         // Inject scene refs into enemies that need them.
         // SiphonEnemy can't hold scene refs on the prefab asset � pool injects at spawn.
         var siphon = instance.GetComponent<SiphonEnemy>();
@@ -154,6 +158,20 @@ public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
     }
 
     private TimeFactorBootstrapper _timeFactor;   // cached on first SpawnReady
+
+    private static readonly List<IEnemyReuseReset> _reuseResetBuffer = new List<IEnemyReuseReset>();
+
+    private static void ResetPerLifeState(GameObject instance)
+    {
+        instance.GetComponentsInChildren(true, _reuseResetBuffer);
+        foreach (var component in _reuseResetBuffer)
+        {
+            // One throwing reset must never skip the rest (same rule as Return — BUG-056 class).
+            try { component.ResetForReuse(); }
+            catch (System.Exception ex) { Debug.LogException(ex, instance); }
+        }
+        _reuseResetBuffer.Clear();
+    }
 
     public void Return(GameObject prefab, GameObject instance)
     {

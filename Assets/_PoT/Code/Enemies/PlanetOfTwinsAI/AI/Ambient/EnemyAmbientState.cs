@@ -7,7 +7,7 @@
 /// ATTACH: To every enemy prefab.
 /// Separate from perception — this is behavioural state not perceptual.
 /// </summary>
-public class EnemyAmbientState : MonoBehaviour
+public class EnemyAmbientState : MonoBehaviour, IEnemyReuseReset
 {
     // ── Wander state — persists across BT resets ──────────
     public Vector3 WanderTarget { get; set; } = Vector3.zero;
@@ -16,7 +16,10 @@ public class EnemyAmbientState : MonoBehaviour
     public bool WanderInit { get; set; } = false;
     public float WanderDuration { get; set; } = 0f;
 
-    /// <summary>Reset all state — call when enemy is pooled/returned.</summary>
+    // BUG-135 — ResetState had no caller until the pool's issue-time reset.
+    public void ResetForReuse() => ResetState();
+
+    /// <summary>Reset all state — the pool calls it on reuse via <see cref="ResetForReuse"/>.</summary>
     public void ResetState()
     {
         WanderTarget = Vector3.zero;

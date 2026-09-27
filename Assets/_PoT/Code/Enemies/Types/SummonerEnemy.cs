@@ -12,7 +12,7 @@ using UnityEngine;
 ///
 /// Knockback: always blocked — displacing a summoner breaks spawn positioning.
 /// </summary>
-public class SummonerEnemy : RangedEnemy
+public class SummonerEnemy : RangedEnemy, IEnemyReuseReset
 {
     // ── VFX cue override (EnemyVfxLibrary, R4) — Summoner's own ranged attack ──
     public override CueBookData VfxBook => VfxLibraryProvider.Instance?.Enemy?.Summoner;
@@ -58,6 +58,17 @@ public class SummonerEnemy : RangedEnemy
     }
 
     public void OnMinionDied() => _activeMinionCount = Mathf.Max(0, _activeMinionCount - 1);
+
+    // BUG-135 — a pooled summoner comes back able to summon. Killed mid-summon, the pool's deactivate cut
+    // SummonRoutine short and IsSummoning stayed true, so it never summoned again. The held circle cue was
+    // stopped by the pool's StopAllOn at return.
+    public void ResetForReuse()
+    {
+        IsSummoning = false;
+        _nextSummonTime = 0f;
+        _activeMinionCount = 0;
+        _summonCueHandle = CueHandle.None;
+    }
 
     // ── IKnockbackReceiver override ────────────────────────────
     /// <summary>
