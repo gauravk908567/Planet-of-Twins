@@ -9,12 +9,6 @@ using UnityEngine;
 /// </summary>
 public class BarrierPOI : POIBase
 {
-    /// <summary>
-    /// Number of enemies within InfluenceRadius this frame.
-    /// Written every Update — read by PoTWorldStateWriter for NearBarrier sync.
-    /// </summary>
-    public int NearbyEnemyCount { get; private set; }
-
     protected override void Awake()
     {
         PoiType = POIType.Barrier;
@@ -23,8 +17,6 @@ public class BarrierPOI : POIBase
 
     private void Update()
     {
-        NearbyEnemyCount = 0;
-
         if (!IsActive) return;
 
         var colliders = Physics.OverlapSphere(transform.position, InfluenceRadius);
@@ -33,10 +25,7 @@ public class BarrierPOI : POIBase
             var de = col.GetComponent<EnemyDarkEnergy>()
                   ?? col.GetComponentInParent<EnemyDarkEnergy>();
             if (de != null)
-            {
                 de.OnNearBarrier();
-                NearbyEnemyCount++;
-            }
         }
     }
 }

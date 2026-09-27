@@ -86,7 +86,6 @@ public static class PoTNames
     public static readonly FastName IsCommitting = new("PoT.Bond.IsCommitting");
     public static readonly FastName IsRallying = new("PoT.Bond.IsRallying");
     public static readonly FastName ComboRallyPoint = new("PoT.Bond.RallyPoint");
-    public static readonly FastName NearBarrier = new("PoT.POI.NearBarrier");
     public static readonly FastName SpawnUnderAttackPOI = new("PoT.POI.SpawnUnderAttack");
     public static readonly FastName NearestSpawnDist = new("PoT.POI.NearestSpawnDist");
     public static readonly FastName RitualSiteAvailable = new("PoT.POI.RitualSiteAvailable");

@@ -28,9 +28,6 @@ public class PoTWorldStateWriter : MonoBehaviour
 
     private Blackboard<FastName> _shared;
 
-    // Cached barrier POIs — populated once at Start
-    private BarrierPOI[] _barrierPOIs;
-
     // Cached delegate — needed to unsubscribe correctly
     private System.Action<RescueState> _onRescueStateChanged;
 
@@ -58,8 +55,6 @@ public class PoTWorldStateWriter : MonoBehaviour
             return;
         }
 
-        _barrierPOIs = FindObjectsByType<BarrierPOI>(FindObjectsSortMode.None);
-
         InitialiseBlackboard();
         FindMissingReferences();
         SubscribeToEvents();
@@ -82,7 +77,6 @@ public class PoTWorldStateWriter : MonoBehaviour
         _shared.Set(PoTNames.TargetIsEngaged, false);
         _shared.Set(PoTNames.AllyGrabbed, false);
         _shared.Set(PoTNames.ActiveGhostCount, 0);
-        _shared.Set(PoTNames.NearBarrier, false);   // ← Phase 4
     }
 
     private void FindMissingReferences()
@@ -163,31 +157,8 @@ public class PoTWorldStateWriter : MonoBehaviour
             _shared.Set(PoTNames.SharedHealthNorm, norm);
         }
 
-        // NearBarrier — true if any active enemy is within any barrier's proximity radius
-        _shared.Set(PoTNames.NearBarrier, IsAnyEnemyNearBarrier());
-
         // BUG-082: poll the soul-deployed half of the freeze flag (writes only on change).
         UpdateRescueFreeze();
-    }
-
-    /// <summary>
-    /// Checks all cached BarrierPOIs each frame.
-    /// Returns true if at least one enemy is within the barrier's dark energy radius.
-    /// BarrierPOI.NearbyEnemyCount is maintained by BarrierPOI itself via trigger/overlap.
-    /// Falls back to manual distance check if NearbyEnemyCount is not exposed.
-    /// </summary>
-    private bool IsAnyEnemyNearBarrier()
-    {
-        if (_barrierPOIs == null || _barrierPOIs.Length == 0)
-            return false;
-
-        foreach (var barrier in _barrierPOIs)
-        {
-            if (barrier == null) continue;
-            if (barrier.NearbyEnemyCount > 0)
-                return true;
-        }
-        return false;
     }
 
     // Public API called by other PoT systems
