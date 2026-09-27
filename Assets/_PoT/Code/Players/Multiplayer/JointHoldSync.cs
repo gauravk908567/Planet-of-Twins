@@ -15,7 +15,7 @@
 ///     charge resets), but re-holding within `window` re-syncs (tolerates brief input blips).
 ///   • Single-device fallback (both reads = the same provider, P2→P1) → p1==p2 → engages on one
 ///     press, so joint abilities degrade to solo when only one device is paired.
-/// Pure/deterministic → covered by JointAbilityGateSelfTest (Planet of Twins Tools ▸ Couch).
+/// Pure/deterministic → covered by JointHoldSyncTests (Test Runner, PoT.Tests.EditMode).
 /// </summary>
 public sealed class JointHoldSync
 {
