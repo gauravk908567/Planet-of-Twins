@@ -6,6 +6,8 @@ public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable
     private float _speed;
     private EnemyAttackController _controller;
     private bool _hasHit;
+    private int _hitMask;          // this shot's layers: the prefab's hitLayers (twins), or the enemy layers for a shot at an enemy
+    private bool _possessedShot;   // fired by a possessed enemy (BUG-145)
 
     [SerializeField] private float lifetime = 5f;
     [SerializeField] private LayerMask hitLayers;
@@ -26,6 +28,8 @@ public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable
         // the arrow entered the free queue with _hasHit=true and its NEXT use spawned frozen at the
         // muzzle (Update early-outs on _hasHit).
         _hasHit = false;
+        _hitMask = hitLayers.value;
+        _possessedShot = false;
 
         var book = VfxLibraryProvider.Instance?.Enemy?.Arrow;
         var fx = FxManager.Instance;
@@ -41,18 +45,24 @@ public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable
         // (a half-run OnDespawned left _hasHit=true on a live instance — BUG-056).
         _hasHit = false;
         _controller = null;
+        _hitMask = hitLayers.value;
+        _possessedShot = false;
         _dir = Vector3.zero;
         var fx = FxManager.Instance;
         fx?.Stop(_trailHandle);  _trailHandle = CueHandle.None;
         fx?.Stop(_headHandle);   _headHandle = CueHandle.None;
     }
 
-    // Called by EnemyAttackController.FireProjectile() � canonical path
-    public void Initialise(Vector3 direction, float speed, EnemyAttackController controller)
+    // Called by EnemyAttackController.FireProjectile() � canonical path. A shot at another enemy (possession, clan
+    // war; BUG-145) passes the enemy layers as hitOverride, so it hits enemies instead of the prefab's twin layers.
+    public void Initialise(Vector3 direction, float speed, EnemyAttackController controller,
+                           LayerMask? hitOverride = null, bool possessedShot = false)
     {
         _dir = direction;
         _speed = speed;
         _controller = controller;
+        _hitMask = hitOverride.HasValue ? hitOverride.Value.value : hitLayers.value;
+        _possessedShot = possessedShot;
         // Industry-standard projectile orientation: root +Z looks along the velocity; the visual
         // mesh is authored head-forward under the root (never rotate the root in the prefab —
         // GameplayPool.Spawn stamps it, which is why prefab-root rotation edits "did nothing").
@@ -87,7 +97,9 @@ public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable
         // already returned this arrow to the pool — the event on the now-inactive instance must be
         // inert, or it re-arms _hasHit inside the free queue AND deals double damage (BUG-056).
         if (!gameObject.activeInHierarchy) return;
-        if (((1 << other.gameObject.layer) & hitLayers.value) == 0) return;
+        if (((1 << other.gameObject.layer) & _hitMask) == 0) return;
+        // A shot at an enemy scans the enemy layer, so it can touch its own shooter at the muzzle: fly on.
+        if (_controller != null && other.GetComponentInParent<EnemyAttackController>() == _controller) return;
 
         _hasHit = true;
 
@@ -99,7 +111,7 @@ public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable
         try
         {
             // Controller owns all damage logic — arrow is pure movement + collision reporter
-            _controller?.OnProjectileHit(other);
+            _controller?.OnProjectileHit(other, _possessedShot);
 
             // Impact cue at the hit point (World — must not vanish with the pooled arrow).
             var book = VfxLibraryProvider.Instance?.Enemy?.Arrow;

@@ -34,8 +34,9 @@ public class EnemyData : ScriptableObject
 
     [Header("Attack — Projectile (optional, any enemy)")]
     [Tooltip("True + prefab assigned = this enemy's basic attack fires the projectile at its current target " +
-             "instead of the melee overlap. Possession and clan-war attacks stay melee. The prefab needs an " +
-             "Arrow component and a trigger collider; it spawns through GameplayPool. Leave off for pure melee.")]
+             "instead of the melee overlap: at twins, and at enemies when possessed or in a clan war (it then keeps " +
+             "its minEngageRange..attackRange band, as against a twin). The prefab needs an Arrow component and a " +
+             "trigger collider; it spawns through GameplayPool. Leave off for pure melee.")]
     public bool useProjectile = false;
     public GameObject projectilePrefab;
     public float projectileSpeed = 14f;

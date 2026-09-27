@@ -45,6 +45,10 @@ public class EnemyAttackController : MonoBehaviour
     private Transform _firePoint;
     private float _projectileSpeed = 14f;
 
+    /// <summary>True when this enemy's basic attack is a projectile (its EnemyData carries one). Such an enemy has no
+    /// melee attack: it shoots twins AND enemies, and keeps its distance while doing so (BUG-145).</summary>
+    public bool FiresProjectiles => _useProjectile && _projectilePrefab != null;
+
     private readonly Collider[] _hitBuffer = new Collider[10];
 
     public void SetDamageMultiplier(float m) => _damageMultiplier = m;
@@ -100,12 +104,12 @@ public class EnemyAttackController : MonoBehaviour
     public void TryAttack(bool isPossessed = false, bool targetEnemyLayer = false)
     {
         // Data-driven projectile override — an enemy whose EnemyData carries a projectile fires it at its
-        // current target instead of the melee overlap. Possession and clan-war attacks stay melee (the
-        // arrow's hit layers only cover the twins); no target = fall through to melee.
-        if (_useProjectile && _projectilePrefab != null && !isPossessed && !targetEnemyLayer
-            && _enemy != null && _enemy.Target != null)
+        // current target instead of the melee overlap: at a twin, and at an enemy too (possession, clan war).
+        // BUG-145: fighting an enemy it used to fall back to the melee overlap at its 7–8 m SHOOTING range, which
+        // hit every enemy around it; a projectile enemy has no melee attack. No target = fall through to melee.
+        if (FiresProjectiles && _enemy != null && _enemy.Target != null)
         {
-            TryRangedAttack(_enemy.Target);
+            TryRangedAttack(_enemy.Target, isPossessed || targetEnemyLayer, isPossessed);
             return;
         }
 
@@ -123,7 +127,11 @@ public class EnemyAttackController : MonoBehaviour
     }
 
     // ── Ranged path ────────────────────────────────────────────
-    public void TryRangedAttack(Transform target)
+    /// <param name="atEnemy">The target is another enemy (possession, clan war): a projectile then hits the enemy
+    ///   layer instead of the twins, never the shooter itself. The raycast mode only ever aims at twins.</param>
+    /// <param name="possessedShot">Fired by a possessed enemy: full damage (no clan-war cut), and the enemy it hits
+    ///   turns on the shooter, as a possessed melee hit does.</param>
+    public void TryRangedAttack(Transform target, bool atEnemy = false, bool possessedShot = false)
     {
         if (_isAttacking) return;
         if (Time.time < _lastAttackTime + _attackCooldown * _attackSlowdownMultiplier) return;
@@ -136,7 +144,7 @@ public class EnemyAttackController : MonoBehaviour
         _enemy?.PlayRangedAttackCue(_firePoint);   // archetype basic-attack VFX (EnemyVfxLibrary, R4)
 
         if (_useProjectile)
-            FireProjectile(target);
+            FireProjectile(target, atEnemy, possessedShot);
         else
             ExecuteRaycast(target);
     }
@@ -171,8 +179,14 @@ public class EnemyAttackController : MonoBehaviour
         int hitCount = Physics.OverlapSphereNonAlloc(
             transform.position, attackRange, _hitBuffer, targetLayer);
 
+        int landed = 0;
         for (int i = 0; i < hitCount; i++)
         {
+            // Scanning the enemy layer finds this enemy's own colliders too: never hit yourself (BUG-145). Only
+            // hits on OTHERS count, so the possessed-miss rule below fires on a real miss.
+            if (_hitBuffer[i].GetComponentInParent<EnemyAttackController>() == this) continue;
+            landed++;
+
             if (_isPossessedAttack)
             {
                 var possessable = _hitBuffer[i].GetComponent<IPossessable>();
@@ -186,7 +200,7 @@ public class EnemyAttackController : MonoBehaviour
             if (damageable == null) continue;
 
             damageable.TakeDamage(new DamageData(
-                attackDamage * GetOutgoingDamageMultiplier(_hitBuffer[i]),
+                attackDamage * GetOutgoingDamageMultiplier(_hitBuffer[i], _isPossessedAttack),
                 DamageType.Combat,
                 gameObject,
                 _hitBuffer[i].transform.position));
@@ -207,7 +221,7 @@ public class EnemyAttackController : MonoBehaviour
         }
 
         // Possessed miss — self damage
-        if (_isPossessedAttack && hitCount == 0)
+        if (_isPossessedAttack && landed == 0)
         {
             GetComponent<IDamageable>()?.TakeDamage(new DamageData(
                 attackDamage * _damageMultiplier,
@@ -219,14 +233,16 @@ public class EnemyAttackController : MonoBehaviour
     }
 
     // ── Called by Arrow when it collides ─────────────────────
-    public void OnProjectileHit(Collider hit)
+    public void OnProjectileHit(Collider hit, bool possessedShot = false)
     {
-        ApplyDamageToTarget(hit);
+        // A possessed enemy's arrow makes the enemy it hits turn on the shooter, as a possessed melee hit does.
+        if (possessedShot) hit.GetComponentInParent<IPossessable>()?.OnHitByPossessed(_enemy);
+        ApplyDamageToTarget(hit, possessedShot);
         FactionEnergySystem.Instance?.OnTwinTookDamage();
     }
 
     // ── Shared damage pipeline ────────────────────────────────
-    private void ApplyDamageToTarget(Collider col)
+    private void ApplyDamageToTarget(Collider col, bool possessedAttack = false)
     {
         var playerHealth = col.GetComponentInParent<PlayerHealthComponent>();
         if (playerHealth != null && playerHealth.IsDead) return;
@@ -235,7 +251,7 @@ public class EnemyAttackController : MonoBehaviour
         if (damageable == null) return;
 
         damageable.TakeDamage(new DamageData(
-            attackDamage * GetOutgoingDamageMultiplier(col),
+            attackDamage * GetOutgoingDamageMultiplier(col, possessedAttack),
             DamageType.Combat,
             gameObject,
             col.transform.position));
@@ -256,11 +272,12 @@ public class EnemyAttackController : MonoBehaviour
     ///   - This is NOT a possession attack (possessed enemies fight at full damage)
     /// Future multipliers (buff auras, elemental resist) drop in here.
     /// </summary>
-    private float GetOutgoingDamageMultiplier(Collider target)
+    // possessedAttack is passed in, not read from _isPossessedAttack: an arrow lands after the attack that fired it.
+    private float GetOutgoingDamageMultiplier(Collider target, bool possessedAttack)
     {
         float m = _damageMultiplier * _poiBuffMultiplier;
 
-        if (!_isPossessedAttack && target.GetComponentInParent<Enemy>() != null)
+        if (!possessedAttack && target.GetComponentInParent<Enemy>() != null)
         {
             var shared = BlackboardManager.GetSharedBlackboard(PoTNames.SharedBlackboardID);
             if (shared != null &&
@@ -274,7 +291,7 @@ public class EnemyAttackController : MonoBehaviour
     }
 
     // ── Ranged internals ──────────────────────────────────────
-    private void FireProjectile(Transform target)
+    private void FireProjectile(Transform target, bool atEnemy, bool possessedShot)
     {
         if (_projectilePrefab == null)
         {
@@ -301,7 +318,7 @@ public class EnemyAttackController : MonoBehaviour
             return;
         }
 
-        arrow.Initialise(dir, _projectileSpeed, this);
+        arrow.Initialise(dir, _projectileSpeed, this, atEnemy ? enemyLayer : (LayerMask?)null, possessedShot);
         _isAttacking = false;
     }
 

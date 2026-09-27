@@ -25,6 +25,11 @@ public class BTActionAttackEnemy : PoTBTActionBase
 
     private float _attackRange;
     private Enemy _target;
+
+    // A projectile enemy (ranged, summoner, siphon) has no melee: it shoots from its band, like BTActionRangedAttack
+    // against a twin, and backs off when the target is closer than minEngageRange (BUG-145).
+    private bool _shoots;
+    private float _minEngageRange;
     private float _scanTimer;
     private const float ScanInterval = 0.5f;
     private const float DetectionMult = 6f;
@@ -44,6 +49,8 @@ public class BTActionAttackEnemy : PoTBTActionBase
     {
         base.OnEnter();
         _attackRange = _enemy?.Data?.attackRange ?? 2f;
+        _shoots = _enemy != null && _enemy.AttackController != null && _enemy.AttackController.FiresProjectiles;
+        _minEngageRange = (_enemy?.Data as RangedEnemyData)?.minEngageRange ?? 0f;   // same source as BTActionRangedAttack
         _scanTimer = ScanInterval;
         _staleTimer = 0f;
         _forceApproach = false;
@@ -71,8 +78,15 @@ public class BTActionAttackEnemy : PoTBTActionBase
 
         float dist = Vector3.Distance(_enemy.transform.position, _target.transform.position);
 
+        if (_shoots && dist < _minEngageRange)
+        {
+            BackOffFromTarget();
+            return SetStatusAndCalculateReturnValue(EBTNodeResult.InProgress);
+        }
+
         if (dist <= _attackRange)
         {
+            if (_shoots) _enemy.Movement.Stop();   // hold the band; walking on would close to point-blank
             FaceTarget();
             // Clan war:  isPossessed=false, targetEnemyLayer=true  → 0.3x reduction applies
             // Possession: isPossessed=true, targetEnemyLayer=false → reduction bypassed
@@ -160,6 +174,15 @@ public class BTActionAttackEnemy : PoTBTActionBase
         }
 
         return best;
+    }
+
+    // The same flee step BTActionKite takes from a twin: 5 m straight away from the target.
+    private void BackOffFromTarget()
+    {
+        Vector3 away = _enemy.transform.position - _target.transform.position;
+        away.y = 0f;
+        if (away.sqrMagnitude < 0.0001f) away = -_enemy.transform.forward;
+        _enemy.Movement.MoveTowards(_enemy.transform.position + away.normalized * 5f);
     }
 
     private void FaceTarget()
