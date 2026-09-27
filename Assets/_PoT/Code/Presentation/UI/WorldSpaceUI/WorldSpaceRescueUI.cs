@@ -69,6 +69,8 @@ public class WorldSpaceRescueUI : MonoBehaviour
     // (they mash Struggle). Providers come from the controller so the glyph matches exactly what the mash reads.
     private const string RescueMashTemplate = "{Interact}";
     private const string StruggleTemplate = "{Struggle}";
+    // The chain prompt reflects the CAUGHT twin's melee button: that's what mashes the chain (BUG-144).
+    private const string ChainMashTemplate = "{Attack}";
 
     // ── Runtime ────────────────────────────────────────────────
     private RescueState _state;
@@ -190,6 +192,7 @@ public class WorldSpaceRescueUI : MonoBehaviour
     {
         if (grabbed != ownerPlayer) return;
         chainPromptPanel?.SetActive(true);
+        InputGlyphText.Apply(chainPromptText, ChainMashTemplate, PlayerInputRouter.For(grabbed));
     }
 
     private void HandleChainReleased()

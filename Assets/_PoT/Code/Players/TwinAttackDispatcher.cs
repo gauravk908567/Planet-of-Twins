@@ -68,7 +68,19 @@ public class TwinAttackDispatcher : MonoBehaviour
     private void AttackTwin(Player twin)
     {
         if (twin == null) return;
-        if (!(PlayerInputRouter.For(twin)?.GetAttackDown() ?? false)) return;
+        var input = PlayerInputRouter.For(twin);
+
+        // Held by something the twin mashes free of (the Tether-Breaker chain, BUG-144): its melee button mashes and
+        // never swings. GetAttackDown carries a rebound melee button; GetStruggleMash (the default melee buttons, never
+        // tutorial-locked) keeps the escape open while a tutorial locks Attack. One press counts once.
+        var hold = twin.StruggleHold;
+        if (hold != null)
+        {
+            if ((input?.GetAttackDown() ?? false) || (input?.GetStruggleMash() ?? false)) hold.OnStruggle();
+            return;
+        }
+
+        if (!(input?.GetAttackDown() ?? false)) return;
 
         Player grabbed = rescueEventController?.ActiveGrabbedPlayer;
         IRescueTarget target = rescueEventController?.ActiveTarget;

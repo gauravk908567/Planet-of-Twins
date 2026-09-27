@@ -21,6 +21,25 @@ public class Player : MonoBehaviour, ITimeAffected
     private bool _isGrabbed;
     public bool IsGrabbed => _isGrabbed;
     public void SetGrabbed(bool grabbed) => _isGrabbed = grabbed;
+
+    // What holds this twin that it mashes free of with its melee button (BUG-144), or null. The holder sets it on
+    // catch and clears it on every release path; TwinAttackDispatcher reads it.
+    private IStruggleHold _struggleHold;
+    public IStruggleHold StruggleHold
+    {
+        get
+        {
+            // A holder destroyed without releasing (scene unload) must never leave the twin unable to melee.
+            if (_struggleHold is UnityEngine.Object holder && holder == null) _struggleHold = null;
+            return _struggleHold;
+        }
+    }
+    public void SetStruggleHold(IStruggleHold hold) => _struggleHold = hold;
+    /// <summary>Clears the hold only if <paramref name="hold"/> is still the one holding (a newer holder stays).</summary>
+    public void ClearStruggleHold(IStruggleHold hold)
+    {
+        if (_struggleHold == hold) _struggleHold = null;
+    }
     public PlayerMovementController Movement => movement;
 
     // Expose abstraction so consumers (TwinManager, UI) don't need concrete type

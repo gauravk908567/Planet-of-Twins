@@ -4,8 +4,10 @@ using UnityEngine;
 /// <summary>
 /// Tether-Breaker — throws chain to drag twins apart.
 /// GOAP+BT drives all decisions. Chain coroutine handles physics.
+/// The caught twin mashes free with its own melee button: this enemy is that twin's <see cref="IStruggleHold"/>
+/// while it drags (TwinAttackDispatcher routes the presses, BUG-144).
 /// </summary>
-public class TetherBreakerEnemy : Enemy
+public class TetherBreakerEnemy : Enemy, IStruggleHold
 {
     // ── VFX cue (EnemyVfxLibrary, R4) ──
     public override CueBookData VfxBook => VfxLibraryProvider.Instance?.Enemy?.TetherBreaker;
@@ -59,6 +61,7 @@ public class TetherBreakerEnemy : Enemy
 
     public void Release()
     {
+        ReleaseDraggedPlayer();   // pool return without a death (despawn) must still free the twin
         _activeChain?.ForceDisconnect();
         _activeChain = null;
         _leftPlayer = null;
@@ -83,11 +86,12 @@ public class TetherBreakerEnemy : Enemy
     public override void OnEffectStarted() { base.OnEffectStarted(); _isFrozen = true; }
     public override void OnEffectEnded() { base.OnEffectEnded(); _isFrozen = false; }
 
-    private void Update()
+    // IStruggleHold: one melee press from the caught twin's own player (BUG-144; was a raw keyboard-E read that pads
+    // couldn't use and any keyboard could trigger). No mashing while this enemy is frozen, as before.
+    public void OnStruggle()
     {
         if (_isFrozen) return;
-        if (_activeChain != null && Input.GetKeyDown(KeyCode.E))
-            _activeChain.NotifyMash();
+        _activeChain?.NotifyMash();
     }
 
     // ── Called by BTActionChainAttack ──────────────────────────
@@ -158,6 +162,7 @@ public class TetherBreakerEnemy : Enemy
         _draggedPlayer = player;
         (player.Movement as IMovementFreezable)?.SetFrozen(true);
         player.SetGrabbed(true);
+        player.SetStruggleHold(this);   // its melee button now mashes the chain
         OnChainGrabbed?.Invoke(player);
 
         _sprinting = true;
@@ -187,10 +192,7 @@ public class TetherBreakerEnemy : Enemy
             yield return null;
         }
 
-        _draggedPlayer = null;
-        (player.Movement as IMovementFreezable)?.SetFrozen(false);
-        player.SetGrabbed(false);
-        OnChainReleased?.Invoke();
+        ReleaseDraggedPlayer();
 
         Movement.SetSpeed(Data?.moveSpeed ?? 3.5f);
         _sprinting = false;
@@ -257,15 +259,20 @@ public class TetherBreakerEnemy : Enemy
             MaterialTint.SetColor(_renderer.material, active ? RageColor : _originalColor);
     }
 
+    // Every release path (chain broken / pull over, death, pool return) frees the caught twin the same way.
+    private void ReleaseDraggedPlayer()
+    {
+        if (_draggedPlayer == null) return;
+        (_draggedPlayer.Movement as IMovementFreezable)?.SetFrozen(false);
+        _draggedPlayer.SetGrabbed(false);
+        _draggedPlayer.ClearStruggleHold(this);
+        _draggedPlayer = null;
+        OnChainReleased?.Invoke();
+    }
+
     protected override void HandleDeath()
     {
-        if (_draggedPlayer != null)
-        {
-            (_draggedPlayer.Movement as IMovementFreezable)?.SetFrozen(false);
-            _draggedPlayer.SetGrabbed(false);
-            _draggedPlayer = null;
-            OnChainReleased?.Invoke();
-        }
+        ReleaseDraggedPlayer();
         _activeChain?.ForceDisconnect();
         _activeChain = null;
         base.HandleDeath();
