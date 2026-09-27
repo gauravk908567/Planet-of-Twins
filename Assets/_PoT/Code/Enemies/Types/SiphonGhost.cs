@@ -241,7 +241,12 @@ public class SiphonGhost : MonoBehaviour, ISpawnPoolable
         soulMovement?.SetFrozen(true);
         _soul?.GetComponent<SoulFrozenVFX>()?.SetFrozen(true);
 
+        // The soul caster's own provider (per player, through the tutorial gate). BUG-127: no raw keyboard fallback. A
+        // missing provider is a broken rescue wiring: say so; the soul can't mash free and the bind times out.
         var input = _rescueController?.InputProvider;
+        if (input == null)
+            Debug.LogError("[SiphonGhost] No rescue InputProvider (RescueEventController unwired?): the soul can't " +
+                           "mash free of this bind; it will time out.", this);
         int mashCount = 0;
         int mashNeeded = _data?.ghostMashThreshold ?? 8;
         float bindDuration = _data?.ghostBindDuration ?? 2f;
@@ -249,9 +254,7 @@ public class SiphonGhost : MonoBehaviour, ISpawnPoolable
 
         while (elapsed < bindDuration && !IsResolved)
         {
-            bool mashed = input != null
-                ? input.GetStruggleMash()
-                : Input.GetKeyDown(KeyCode.E);
+            bool mashed = input != null && input.GetStruggleMash();
 
             if (mashed)
             {
