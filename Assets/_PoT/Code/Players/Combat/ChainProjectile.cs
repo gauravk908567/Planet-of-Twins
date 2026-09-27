@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using PoT.Fx;
 using UnityEngine;
 
 public class ChainProjectile : MonoBehaviour, ISpawnPoolable

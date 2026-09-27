@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using PoT.Fx;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "AbilityUpgradeData",

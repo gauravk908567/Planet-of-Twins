@@ -1,5 +1,6 @@
 ﻿using CommonCore;
 using System.Collections;
+using PoT.Fx;
 using UnityEngine;
 
 public class EnemyAttackController : MonoBehaviour

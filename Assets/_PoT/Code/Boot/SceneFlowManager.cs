@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using PoT.Diagnostics;
+using PoT.Fx;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.SceneManagement;

@@ -1,3 +1,4 @@
+using PoT.Fx;
 using UnityEngine;
 
 public class Arrow : MonoBehaviour, IProjectileData, ISpawnPoolable

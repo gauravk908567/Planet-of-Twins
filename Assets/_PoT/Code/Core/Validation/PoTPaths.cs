@@ -1,3 +1,5 @@
+using PoT.Fx;
+
 /// <summary>
 /// The ONE home for every path, key and asset name the project still resolves by STRING (folder restructure Stage 0,
 /// game.md §20.5). Everything else finds assets by type, or by type + exact name (<see cref="PoTAssetLookup"/>), so

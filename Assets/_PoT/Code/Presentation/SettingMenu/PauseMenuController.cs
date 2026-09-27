@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using PoT.Diagnostics;
+using PoT.Fx;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 

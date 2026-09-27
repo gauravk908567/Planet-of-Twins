@@ -1,3 +1,4 @@
+using PoT.Fx;
 using UnityEngine;
 
 public class BasicMeleeEnemy : Enemy

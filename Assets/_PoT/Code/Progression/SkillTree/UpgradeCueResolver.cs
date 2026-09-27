@@ -1,3 +1,5 @@
+using PoT.Fx;
+
 /// <summary>
 /// Upgrade-tier cue resolution (P15 —, tier-SUFFIX model, user call 2026-07-04).
 /// An ability's cues upgrade visually with its skill tier WITHOUT multiple books:

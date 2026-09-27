@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using PoT.Fx;
+using UnityEngine;
 
 /// <summary>
 /// Ritual Site POI — locations where Witness can perform rituals.

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using PoT.Fx;
+using UnityEngine;
 
 public class TwinAbilitySetup : MonoBehaviour
 {

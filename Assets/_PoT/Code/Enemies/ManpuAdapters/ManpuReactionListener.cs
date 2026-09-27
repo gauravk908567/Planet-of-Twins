@@ -1,3 +1,5 @@
+using PoT.Fx;
+using PoT.Manpu;
 using UnityEngine;
 
 /// <summary>

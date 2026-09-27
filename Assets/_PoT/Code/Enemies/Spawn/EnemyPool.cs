@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using PoT.Fx;
+using PoT.Manpu;
 using UnityEngine;
 
 public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
