@@ -115,12 +115,12 @@ public class SkillPreviewModal : MonoBehaviour
     private void Update()
     {
         if (!_root.activeSelf) return;
-        if (Input.GetMouseButtonDown(1)) { Close(); return; }   // legacy mouse right-click closes (unchanged)
 
         // Item 4 — controller controls while the modal owns the screen. SkillTreeUI defers to us while open.
         var input = _input ??= PlayerInputRouter.SharedInput;
         if (input == null) return;
 
+        if (input.GetUIPointerBackDown()) { Close(); return; }   // mouse right-click = back (was a raw Input read)
         if (input.GetUICancelDown())    { Close();  return; }   // B/East = back
         if (input.GetUIPreviewDown())   { OnBuyClicked(); return; } // button 1 / North = buy (the 2nd press). Button 3 / South also buys, via the focused Buy button (Submit) — not polled here, to avoid a double-buy.
         if (input.GetUITabLeftDown())   { OnPrev();  return; }  // LB = previous ability

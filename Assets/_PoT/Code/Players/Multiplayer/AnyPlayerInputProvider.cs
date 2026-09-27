@@ -86,6 +86,7 @@ public sealed class AnyPlayerInputProvider : IInputProvider
     public bool GetInstantBuyDown()    => Any(p => p.GetInstantBuyDown());
     public bool GetUICancelDown()      => Any(p => p.GetUICancelDown());
     public bool GetUIPreviewDown()     => Any(p => p.GetUIPreviewDown());
+    public bool GetUIPointerBackDown() => Any(p => p.GetUIPointerBackDown());
     public bool GetUIDeleteDown()      => Any(p => p.GetUIDeleteDown());
 
     // ── Device-identity reads — must name ONE device → delegate to P1 ──

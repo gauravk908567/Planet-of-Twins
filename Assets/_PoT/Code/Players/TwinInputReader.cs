@@ -60,6 +60,8 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     private InputAction _uiNavigate, _uiSubmit;
     // UI map — save-slot screen: X/West (keyboard Delete) = delete the focused slot (menu confirms first)
     private InputAction _uiDelete;
+    // UI map — mouse right-click "back" for a modal (skill preview); was a raw Input.GetMouseButtonDown(1)
+    private InputAction _uiPointerBack;
     // F6 Phase 3 — the single interactive-rebind op in flight on THIS reader's asset (one at a time). Disposed on
     // complete/cancel and when the reader disables, so a captured op never dangles listening for input.
     private UnityEngine.InputSystem.InputActionRebindingExtensions.RebindingOperation _activeRebind;
@@ -122,6 +124,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
         _uiCancel    = Find("UI/UICancel");
         _uiPreview   = Find("UI/UIPreview");
         _uiDelete    = Find("UI/UIDelete");
+        _uiPointerBack = Find("UI/UIPointerBack");
         _uiNavigate  = Find("UI/Navigate");
         _uiSubmit    = Find("UI/Submit");
     }
@@ -332,6 +335,7 @@ public class TwinInputReader : MonoBehaviour, IInputProvider, ISingletonInstance
     public bool GetInstantBuyDown() => Down(_instantBuy);
     public bool GetUICancelDown() => DownAlways(_uiCancel);   // reads while typing: pad B ends it
     public bool GetUIPreviewDown() => Down(_uiPreview);
+    public bool GetUIPointerBackDown() => Down(_uiPointerBack);
     public bool GetUIDeleteDown() => Down(_uiDelete);
 
     // ── F5 (Button HUDs) — live binding display ────────────────────────

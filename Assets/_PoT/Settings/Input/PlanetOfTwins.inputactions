@@ -667,6 +667,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "UIPointerBack",
+                    "type": "Button",
+                    "id": "b1b1b1b1-0000-4000-8000-000000000110",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1118,6 +1127,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "UIDelete",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c2c2c2c2-0000-4000-8000-000000000121",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIPointerBack",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
