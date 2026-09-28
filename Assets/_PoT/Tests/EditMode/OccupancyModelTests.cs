@@ -60,6 +60,35 @@ public class OccupancyModelTests
     }
 
     [Test]
+    public void SingleActorWalkthrough_NeverUnloadsTheGroundUnderIt()
+    {
+        // One actor walks A → B → C and back; at every step its own area and its neighbours stay, the rest may go.
+        foreach (var here in new[] { _a, _b, _c, _b, _a })
+        {
+            var actors = Actors(here);
+            var desired = OccupancyModel.BuildDesiredSet(actors);
+            Assert.IsFalse(OccupancyModel.MayUnload(here, desired, actors), $"standing in {here.name}");
+            foreach (var adj in here.adjacentLocations)
+                Assert.IsFalse(OccupancyModel.MayUnload(adj, desired, actors), $"{adj.name} next to {here.name}");
+            Assert.IsTrue(OccupancyModel.MayUnload(_d, desired, actors), "unlinked D is never needed");
+        }
+    }
+
+    [Test]
+    public void Teleport_ToAnUnlinkedArea_LoadsItAndFreesTheOldOnes()
+    {
+        // A scripted teleport (NotifyTeleported) moves both twins from A straight to D: A and B are no longer needed.
+        var before = OccupancyModel.BuildDesiredSet(Actors(_a, _a));
+        CollectionAssert.AreEquivalent(new[] { _a, _b }, before);
+
+        var actors = Actors(_d, _d);
+        var after = OccupancyModel.BuildDesiredSet(actors);
+        CollectionAssert.AreEquivalent(new[] { _d }, after);
+        Assert.IsTrue(OccupancyModel.MayUnload(_a, after, actors));
+        Assert.IsTrue(OccupancyModel.MayUnload(_b, after, actors));
+    }
+
+    [Test]
     public void OccupiedGround_NeverUnloads_EvenIfMissingFromTheDesiredSet()
     {
         // The safety rule on its own: a stale or partial desired set must still never drop occupied ground.

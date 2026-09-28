@@ -51,6 +51,44 @@ public class TimeScaleServiceTests
     }
 
     [Test]
+    public void MinWins_InEveryRequestAndReleaseOrder()
+    {
+        // instruction.md P8.1: every order of the game's real values (pause 0, Setsuna 0.15, 0.25, 0.85), requested one
+        // by one and then released one by one: the scale is always the lowest value still held, 1 when none is.
+        float[] values = { 0f, 0.15f, 0.25f, 0.85f };
+        foreach (var order in Permutations(new[] { 0, 1, 2, 3 }))
+        {
+            var owners = new object[4];
+            float held = 1f;
+            foreach (int i in order)
+            {
+                owners[i] = new object();
+                _service.Request(owners[i], values[i]);
+                held = Mathf.Min(held, values[i]);
+                Assert.AreEqual(held, Time.timeScale, 1e-6f, $"after requesting {values[i]} (order {string.Join(",", order)})");
+            }
+            for (int k = 0; k < order.Length; k++)
+            {
+                _service.Release(owners[order[k]]);
+                float expected = 1f;
+                for (int r = k + 1; r < order.Length; r++) expected = Mathf.Min(expected, values[order[r]]);
+                Assert.AreEqual(expected, Time.timeScale, 1e-6f, $"after releasing {values[order[k]]} (order {string.Join(",", order)})");
+            }
+        }
+    }
+
+    private static System.Collections.Generic.IEnumerable<int[]> Permutations(int[] items, int start = 0)
+    {
+        if (start == items.Length - 1) { yield return (int[])items.Clone(); yield break; }
+        for (int i = start; i < items.Length; i++)
+        {
+            (items[start], items[i]) = (items[i], items[start]);
+            foreach (var p in Permutations(items, start + 1)) yield return p;
+            (items[start], items[i]) = (items[i], items[start]);
+        }
+    }
+
+    [Test]
     public void ReRequest_UpdatesTheSameOwner()
     {
         _service.Request(_setsuna, 0.15f);
