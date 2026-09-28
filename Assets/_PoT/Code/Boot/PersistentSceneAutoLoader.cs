@@ -15,6 +15,7 @@ public static class PersistentSceneAutoLoader
         if (SceneManager.GetSceneByName(PersistentScene).isLoaded) return;
         var active = SceneManager.GetActiveScene().name;
         if (active == "Bootstrap" || active == PersistentScene) return; // boot path handles it
+        if (active.StartsWith("InitTestScene")) return;   // the Test Runner's scene: PlayMode tests boot from Bootstrap
         SceneManager.LoadScene(PersistentScene, LoadSceneMode.Additive);
         PoTLog.Streaming?.Info("Loaded Persistent additively for editor play.");
     }
