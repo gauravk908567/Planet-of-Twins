@@ -85,6 +85,9 @@ public class EnemySocialBond : MonoBehaviour, IEnemyReuseReset
     // ── Death bond ─────────────────────────────────────────
     private void OnPartnerDied()
     {
+        // One reaction per partner death (BUG-147): the partner's OnDeath AND its own OnSelfDied both call this, and
+        // the OnDeath snapshot still runs the subscription removed below.
+        if (_partnerDead) return;
         if (_enemy == null || _enemy.Health.IsDead) return;
         _partnerDead = true;
         // Stop listening to the dead partner: its pooled instance will be reused as an unrelated enemy, and that
