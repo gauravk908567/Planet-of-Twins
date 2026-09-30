@@ -43,6 +43,8 @@ public static class PoTPaths
         public const string UnifiedSettingsPrefab   = "UnifiedSettings";         // UnifiedSettingsScreenBuilder ▸ Add Missing Rows
         public const string ReportScreenPrefab      = "ReportProblemScreen";     // ReportProblemScreenBuilder (created if absent)
         public const string DiagnosticsConfig       = "DiagnosticsConfig";       // DiagnosticsRelayTools (created if absent)
+        public const string SymbolFontSource        = "InterRegular";            // SymbolFallbackFontBuilder: the Font file (not the TMP asset)
+        public const string SymbolFallbackFont      = "PoTSymbols SDF";          // SymbolFallbackFontBuilder (created if absent)
     }
 
     /// <summary>Where editor tools CREATE new assets. Path Health requires each folder to exist, so a stale entry
@@ -58,6 +60,7 @@ public static class PoTPaths
         public const string BakedResources    = "Assets/_PoT/Resources";                   // must be a Resources folder (see below)
         public const string UIPrefabs         = "Assets/_PoT/Prefabs/UI";                  // ReportProblemScreenBuilder: <root>/ReportProblemScreen.prefab
         public const string DiagnosticsData   = "Assets/_PoT/Data/Diagnostics";            // DiagnosticsRelayTools: <root>/DiagnosticsConfig.asset
+        public const string Fonts             = "Assets/_PoT/Art/UI/Fonts";                // SymbolFallbackFontBuilder: <root>/PoTSymbols SDF.asset
 
         /// <summary>Where a baker creates a Resources asset that does not exist yet: <c>&lt;BakedResources&gt;/&lt;key&gt;.asset</c>,
         /// so the runtime key resolves by construction. Bakers overwrite the EXISTING asset (wherever it lives) first.</summary>

@@ -6,7 +6,8 @@
         "UnityEditor.TestRunner",
         "PoT.Gameplay",
         "PoT.Framework",
-        "PoT.Fx"
+        "PoT.Fx",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

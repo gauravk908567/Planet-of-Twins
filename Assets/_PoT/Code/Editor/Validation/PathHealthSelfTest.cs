@@ -51,6 +51,8 @@ public static class PathHealthSelfTest
         (PoTPaths.Named.UnifiedSettingsPrefab,   typeof(GameObject)),
         (PoTPaths.Named.ReportScreenPrefab,      typeof(GameObject)),
         (PoTPaths.Named.DiagnosticsConfig,       typeof(PoT.Diagnostics.DiagnosticsConfig)),
+        (PoTPaths.Named.SymbolFontSource,        typeof(Font)),
+        (PoTPaths.Named.SymbolFallbackFont,      typeof(TMP_FontAsset)),
     };
 
     [MenuItem("Planet of Twins Tools/Validation/Path Health")]
