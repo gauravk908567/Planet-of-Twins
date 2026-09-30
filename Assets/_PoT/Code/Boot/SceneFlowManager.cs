@@ -23,7 +23,7 @@ using UnityEngine.SceneManagement;
 ///
 /// CALL SITES for NotifyTeleported (triggers never see teleports):
 ///   Boot seeding (GameBootstrapper dev mode, IntroController), SoftResetController,
-///   Weaver's Gate soul travel, IntroTimelinePositioner, debug warps.
+///   Weaver's Gate soul travel, IntroTimelinePositioner, debug warps, Setsuna's rewind (BUG-149).
 /// </summary>
 public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
 {
@@ -157,6 +157,14 @@ public class SceneFlowManager : MonoBehaviour, IFxSceneEvents
         _currentLocation[actor] = destination;
         RecalculateLoadedSet();
     }
+
+    /// <summary>
+    /// The location this actor was last placed in (a trigger or a teleport), or null if it has none yet (TestLab sits
+    /// outside the streaming graph). A scripted move that returns an actor to an earlier spot (Setsuna's rewind)
+    /// snapshots this first, then hands it back to <see cref="NotifyTeleported"/>.
+    /// </summary>
+    public WorldLocationSO LocationOf(Player actor) =>
+        actor != null && _currentLocation.TryGetValue(actor, out var location) ? location : null;
 
     /// <summary>Phase 3 hook: soft-reset in place (implementation pending).</summary>
     public void RequestSoftReset(WorldLocationSO[] locationsToReset)

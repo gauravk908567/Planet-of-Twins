@@ -90,6 +90,8 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
     // ── Snapshot ──────────────────────────────────────────────
     private Vector3 _leftCastPos;
     private Vector3 _rightCastPos;
+    private WorldLocationSO _leftCastLocation;    // streaming area at cast; null outside the streaming graph (TestLab)
+    private WorldLocationSO _rightCastLocation;
     private float _castHealth;
 
     // Path recording — positions sampled every _recordInterval
@@ -288,6 +290,8 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
         // Snapshot positions and health
         _leftCastPos = _leftTwin.transform.position;
         _rightCastPos = _rightTwin.transform.position;
+        _leftCastLocation = SceneFlowManager.Instance?.LocationOf(_leftTwin);
+        _rightCastLocation = SceneFlowManager.Instance?.LocationOf(_rightTwin);
         _castHealth = _healthPool != null ? _healthPool.CurrentHealth : 0f;
 
         // Clear path lists from any previous activation
@@ -340,6 +344,8 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
         var rightCC = _rightTwin.GetComponent<CharacterController>();
         if (leftCC != null) leftCC.enabled = false;
         if (rightCC != null) rightCC.enabled = false;
+
+        NotifyStreamingOfReturn();
 
         // Replay path in reverse — step through recorded positions backward
         // Time per step = total rewind duration / number of recorded points
@@ -394,6 +400,17 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
     }
 
     // ── Helpers ───────────────────────────────────────────────
+    // BUG-149: the rewind is a scripted teleport (CharacterControllers off, no trigger sees it), so tell streaming
+    // where each twin lands. Done as the rewind STARTS, not when it ends: the cast area begins loading during the
+    // flight, while the twins have no collision to fall through unloaded ground.
+    private void NotifyStreamingOfReturn()
+    {
+        var flow = SceneFlowManager.Instance;
+        if (flow == null) return;
+        if (flow.LocationOf(_leftTwin) != _leftCastLocation) flow.NotifyTeleported(_leftTwin, _leftCastLocation);
+        if (flow.LocationOf(_rightTwin) != _rightCastLocation) flow.NotifyTeleported(_rightTwin, _rightCastLocation);
+    }
+
     private void CancelCharge()
     {
         StopChargeVFX();
