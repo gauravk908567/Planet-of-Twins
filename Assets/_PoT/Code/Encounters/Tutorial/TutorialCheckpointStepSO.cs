@@ -25,16 +25,18 @@ public class TutorialCheckpointStepSO : TutorialStepBase
     [Tooltip("Single — one checkpoint. Dual — two checkpoints simultaneously.")]
     public CheckpointMode mode = CheckpointMode.Single;
 
+    // Checkpoints are stored as the entry's hidden stable id (TutorialCheckpointEntry.id), picked by name from a
+    // dropdown while L1_Park is open. Never a list position: a reorder used to silently re-point steps.
     [Header("Checkpoint A (used in both modes)")]
-    [TutorialCheckpointIndex]
-    public int checkpointIndexA = 0;
+    [TutorialCheckpointId]
+    public string checkpointA = "";
     [Tooltip("If true, wrong twin triggers failure notice and reset.")]
     public bool requireCorrectTwinA = false;
     public LocalizedString failureMessageA;
 
     [Header("Checkpoint B (Dual mode only)")]
-    [TutorialCheckpointIndex]
-    public int checkpointIndexB = 1;
+    [TutorialCheckpointId]
+    public string checkpointB = "";
 
     public override IEnumerator Execute(TutorialStepContext ctx, MonoBehaviour executor)
     {
@@ -49,12 +51,12 @@ public class TutorialCheckpointStepSO : TutorialStepBase
     // ── Single ────────────────────────────────────────────────────────────
     private IEnumerator RunSingle(TutorialStepContext ctx)
     {
-        var cp = ctx.GetCheckpoint(checkpointIndexA);
+        var cp = ctx.GetCheckpoint(checkpointA);
         if (cp == null)
         {
-            Debug.LogError($"[TutorialCheckpointStep] Checkpoint index {checkpointIndexA} is null — Activate() " +
-                           $"skipped. Wire it in TutorialStepContext.checkpoints (a 'None'/'Scene mismatch' ref = " +
- $"the multi-scene R2 break, ). The checkpoint will never appear until fixed.");
+            Debug.LogError($"[TutorialCheckpointStep] '{name}': checkpoint A is null — Activate() skipped. Pick it " +
+                           $"on this step, and wire it in TutorialStepContext.checkpoints (a 'None'/'Scene mismatch' " +
+                           $"ref = the multi-scene R2 break). The checkpoint will never appear until fixed.", this);
             yield break;
         }
 
@@ -90,12 +92,13 @@ public class TutorialCheckpointStepSO : TutorialStepBase
     // ── Dual ──────────────────────────────────────────────────────────────
     private IEnumerator RunDual(TutorialStepContext ctx)
     {
-        var cpA = ctx.GetCheckpoint(checkpointIndexA);
-        var cpB = ctx.GetCheckpoint(checkpointIndexB);
+        var cpA = ctx.GetCheckpoint(checkpointA);
+        var cpB = ctx.GetCheckpoint(checkpointB);
 
         if (cpA == null || cpB == null)
         {
-            Debug.LogWarning("[TutorialCheckpointStep] Dual mode — one or both checkpoints missing.");
+            Debug.LogError($"[TutorialCheckpointStep] '{name}': Dual mode — checkpoint A or B is missing; step " +
+                           "skipped.", this);
             yield break;
         }
 

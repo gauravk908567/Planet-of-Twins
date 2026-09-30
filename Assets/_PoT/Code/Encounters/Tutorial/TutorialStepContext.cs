@@ -91,11 +91,52 @@ public class TutorialStepContext
             Debug.LogWarning("[TutorialStepContext] No CameraRotationGuard — camera-flip restore skipped at cutscene end.");
     }
 
-    /// <summary>Get checkpoint by index. Returns null if out of range.</summary>
-    public TutorialCheckpoint GetCheckpoint(int index)
+    /// <summary>
+    /// The checkpoint whose entry carries <paramref name="id"/> (the hidden stable id step SOs store). Null + LogError
+    /// when no entry has it (the entry was removed) or several do.
+    /// </summary>
+    public TutorialCheckpoint GetCheckpoint(string id)
     {
-        if (checkpoints == null || index < 0 || index >= checkpoints.Length)
-            return null;
-        return checkpoints[index].checkpoint;
+        TutorialCheckpoint found = null;
+        int matches = 0;
+        if (checkpoints != null && !string.IsNullOrEmpty(id))
+        {
+            foreach (var entry in checkpoints)
+            {
+                if (entry == null || entry.id != id) continue;
+                if (matches++ == 0) found = entry.checkpoint;
+            }
+        }
+
+        if (matches == 1) return found;
+        Debug.LogError(matches == 0
+            ? $"[TutorialStepContext] No checkpoint entry has id '{id}' — the entry was removed, or the step was " +
+              "never picked. Re-pick it on the step SO (open L1_Park)."
+            : $"[TutorialStepContext] {matches} checkpoint entries share id '{id}' — save L1_Park once so " +
+              "TutorialDirector re-issues the copies' ids.");
+        return null;
+    }
+
+    /// <summary>
+    /// Gives every checkpoint entry a unique stable id. A new entry, or one duplicated in the Inspector (Unity copies
+    /// the id with it), gets a fresh one; the first holder of an id keeps it. True when an id was assigned.
+    /// Editor authoring only (TutorialDirector.OnValidate).
+    /// </summary>
+    public bool EnsureCheckpointIds()
+    {
+        if (checkpoints == null) return false;
+        bool changed = false;
+        var seen = new System.Collections.Generic.HashSet<string>();
+        foreach (var entry in checkpoints)
+        {
+            if (entry == null) continue;
+            if (string.IsNullOrEmpty(entry.id) || !seen.Add(entry.id))
+            {
+                entry.id = System.Guid.NewGuid().ToString("N");
+                seen.Add(entry.id);
+                changed = true;
+            }
+        }
+        return changed;
     }
 }

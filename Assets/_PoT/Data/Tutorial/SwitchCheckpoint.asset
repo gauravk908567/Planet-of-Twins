@@ -19,7 +19,7 @@ MonoBehaviour:
   unlockRescue: 0
   hintMessage: Press LShift to switch
   mode: 1
-  checkpointIndexA: 2
+  checkpointA: ddef0faba6b949268347972614faadff
   requireCorrectTwinA: 0
   failureMessageA:
     m_TableReference:
@@ -30,7 +30,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  checkpointIndexB: 3
+  checkpointB: 80fcf87e55d04941a30b8044657973e2
   failureMessageB:
     m_TableReference:
       m_TableCollectionName: GUID:fe8cfc397746c05408fecdc72ab6ed88

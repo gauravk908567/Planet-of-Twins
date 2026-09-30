@@ -19,7 +19,7 @@ MonoBehaviour:
   unlockRescue: 0
   hintMessage: Kai to right checkpoint Lyra to left checkpoint
   mode: 1
-  checkpointIndexA: 6
+  checkpointA: 94d71f576b314a02a3457cb6cfe1466c
   requireCorrectTwinA: 1
   failureMessageA:
     m_TableReference:
@@ -30,7 +30,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  checkpointIndexB: 7
+  checkpointB: b839fd2b75a946489210b0406c9542c4
   failureMessageB:
     m_TableReference:
       m_TableCollectionName: GUID:fe8cfc397746c05408fecdc72ab6ed88

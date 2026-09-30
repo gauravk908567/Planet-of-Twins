@@ -7,10 +7,10 @@ using System.Collections.Generic;
 // ── Marker attributes (RUNTIME — used on serialized fields of runtime SOs,
 //    so they must compile into the player build; only the drawers are editor-only) ──
 /// <summary>
-/// Mark an int field on a TutorialStepBase SO to show a dropdown
-/// of checkpoint names from TutorialSceneContext.checkpoints[].
+/// Mark a string field on a TutorialStepBase SO to show a dropdown of checkpoint names from
+/// TutorialStepContext.checkpoints[]. The field stores the picked entry's hidden stable id, never its name or position.
 /// </summary>
-public class TutorialCheckpointIndexAttribute : PropertyAttribute { }
+public class TutorialCheckpointIdAttribute : PropertyAttribute { }
 
 /// <summary>
 /// Mark an int field on a TutorialStepBase SO to show a dropdown
@@ -19,53 +19,57 @@ public class TutorialCheckpointIndexAttribute : PropertyAttribute { }
 public class TutorialActivatableIndexAttribute : PropertyAttribute { }
 
 #if UNITY_EDITOR
-// ── Checkpoint index drawer ────────────────────────────────────────
-[CustomPropertyDrawer(typeof(TutorialCheckpointIndexAttribute))]
-public class TutorialCheckpointIndexDrawer : PropertyDrawer
+// ── Checkpoint id drawer ───────────────────────────────────────────
+// Same dropdown as before ("[i] name" from the open scene's TutorialDirector), but the pick is stored as the entry's
+// hidden stable id. Without a TutorialDirector in the open scenes (L1_Park closed) it shows the stored id read-only.
+[CustomPropertyDrawer(typeof(TutorialCheckpointIdAttribute))]
+public class TutorialCheckpointIdDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect pos, SerializedProperty prop, GUIContent label)
     {
-        var names = GetCheckpointNames();
-
-        if (names.Length == 0)
+        if (!TryGetCheckpoints(out var labels, out var ids))
         {
-            EditorGUI.BeginChangeCheck();
-            EditorGUI.PropertyField(pos, prop, label);
-            if (EditorGUI.EndChangeCheck()) prop.serializedObject.ApplyModifiedProperties();
+            using (new EditorGUI.DisabledScope(true))
+                EditorGUI.TextField(pos, label.text + " (open L1_Park to pick)", prop.stringValue);
             return;
         }
 
-        int current = Mathf.Clamp(prop.intValue, 0, names.Length - 1);
-        int selected = EditorGUI.Popup(pos, label.text, current, names);
+        // A stored id no entry carries (entry removed, or never picked) stays visible as the first option.
+        int current = System.Array.IndexOf(ids, prop.stringValue);
+        bool missing = current < 0;
+        var options = new List<string>(labels.Length + 1);
+        if (missing) options.Add(string.IsNullOrEmpty(prop.stringValue) ? "(none)" : "(missing checkpoint)");
+        options.AddRange(labels);
+        if (missing) current = 0;
 
-        if (selected != current)
-        {
-            prop.intValue = selected;
-            prop.serializedObject.ApplyModifiedProperties();
-        }
+        int selected = EditorGUI.Popup(pos, label.text, current, options.ToArray());
+        if (selected == current) return;
+
+        int index = missing ? selected - 1 : selected;
+        if (index < 0 || string.IsNullOrEmpty(ids[index])) return;   // entry has no id yet: save L1_Park first
+        prop.stringValue = ids[index];
+        prop.serializedObject.ApplyModifiedProperties();
     }
 
-    private static string[] GetCheckpointNames()
+    private static bool TryGetCheckpoints(out string[] labels, out string[] ids)
     {
-        // Find TutorialDirector in scene — read context.checkpoints for names
+        labels = ids = null;
         var director = Object.FindAnyObjectByType<TutorialDirector>();
-        if (director == null) return new[] { "(no TutorialDirector in scene)" };
+        if (director == null) return false;
 
         var so = new SerializedObject(director);
-        var ctx = so.FindProperty("context");
-        if (ctx == null) return new[] { "(context not found)" };
+        var cps = so.FindProperty("context")?.FindPropertyRelative("checkpoints");
+        if (cps == null) return false;
 
-        var cps = ctx.FindPropertyRelative("checkpoints");
-        if (cps == null || cps.arraySize == 0) return new[] { "(no checkpoints)" };
-
-        var names = new List<string>();
+        labels = new string[cps.arraySize];
+        ids = new string[cps.arraySize];
         for (int i = 0; i < cps.arraySize; i++)
         {
             var entry = cps.GetArrayElementAtIndex(i);
-            var name = entry.FindPropertyRelative("name");
-            names.Add($"[{i}] {(name != null ? name.stringValue : "Unnamed")}");
+            labels[i] = $"[{i}] {entry.FindPropertyRelative("name")?.stringValue ?? "Unnamed"}";
+            ids[i] = entry.FindPropertyRelative("id")?.stringValue ?? "";
         }
-        return names.ToArray();
+        return true;
     }
 }
 

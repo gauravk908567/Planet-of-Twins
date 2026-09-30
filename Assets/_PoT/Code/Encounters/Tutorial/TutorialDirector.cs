@@ -57,6 +57,13 @@ public class TutorialDirector : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // Every checkpoint entry keeps a unique stable id: step SOs reference checkpoints by it (TutorialCheckpointEntry).
+    private void OnValidate()
+    {
+        if (context != null && context.EnsureCheckpointIds())
+            UnityEditor.EditorUtility.SetDirty(this);
+    }
+
     private void Update()
     {
         // Editor-only panic skip — jump straight to gameplay mid-tutorial without redoing it. ownsLevelGos =

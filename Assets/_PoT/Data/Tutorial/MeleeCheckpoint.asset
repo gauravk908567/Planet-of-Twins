@@ -19,7 +19,7 @@ MonoBehaviour:
   unlockRescue: 1
   hintMessage: 
   mode: 1
-  checkpointIndexA: 0
+  checkpointA: 16a341b244514b5393eff0862982f45d
   requireCorrectTwinA: 0
   failureMessageA:
     m_TableReference:
@@ -30,7 +30,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  checkpointIndexB: 1
+  checkpointB: 0143e906e2834a70a23c23d0f2223cde
   failureMessageB:
     m_TableReference:
       m_TableCollectionName: 

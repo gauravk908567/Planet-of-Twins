@@ -19,7 +19,7 @@ MonoBehaviour:
   unlockRescue: 0
   hintMessage: Reach the trigger zone
   mode: 1
-  checkpointIndexA: 4
+  checkpointA: a90e60dd9cae467cab97a8d14e485083
   requireCorrectTwinA: 0
   failureMessageA:
     m_TableReference:
@@ -30,7 +30,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  checkpointIndexB: 5
+  checkpointB: b8bb593daa4046f38bcf59d5ad8c64e3
   failureMessageB:
     m_TableReference:
       m_TableCollectionName: GUID:fe8cfc397746c05408fecdc72ab6ed88
