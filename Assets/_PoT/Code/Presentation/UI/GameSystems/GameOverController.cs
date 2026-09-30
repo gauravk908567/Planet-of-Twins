@@ -17,9 +17,13 @@ public class GameOverController : MonoBehaviour
     [Header("Scenes")]
     [SerializeField] private SceneReference bootstrapScene;
 
+    // The HUD panels sharing the canvas sit in front of GameOverPanel and would eat its clicks (UIModalPanel).
+    private UIModalPanel _modal;
+
     private void Awake()
     {
         gameOverPanel?.SetActive(false);
+        _modal = new UIModalPanel(gameOverPanel);
 
         // Button listeners are pure UI -- safe in Awake
         if (restartButton != null)
@@ -71,10 +75,10 @@ public class GameOverController : MonoBehaviour
     private void TriggerGameOver()
     {
         PoTLog.Crumb(PoTCrumb.Flow, "game over");
-        PoTLog.Twins?.Info($"TriggerGameOver � timeScale={Time.timeScale}");
+        PoTLog.Twins?.Info($"TriggerGameOver — timeScale={Time.timeScale}");
 
         RefreshCheckpointButton();
-        gameOverPanel?.SetActive(true);
+        _modal.Open();
 
         // Controller focus (BUG-116): any device can pick. Land on Load Checkpoint when one exists (the respawn
         // path), else Restart. Wrap wired after interactability is settled so a disabled button is skipped.
@@ -82,32 +86,7 @@ public class GameOverController : MonoBehaviour
         bool canLoad = loadCheckpointButton != null && loadCheckpointButton.interactable;
         UINavFocus.Focus(canLoad ? loadCheckpointButton : restartButton);
 
-        // FIX: disable raycast blocking on all sibling panels in the same canvas.
-        // Other HUD panels (RescuePanel, SoulTimerPanel, AbilitiesHUD etc.) sit in
-        // front of GameOverPanel and eat pointer events even when game over is on top.
-        // This programmatically removes their blocking so buttons are always clickable.
-        DisableSiblingRaycasts();
-
         TimeScaleService.Instance?.Request(this, 0f);
-    }
-
-    private void DisableSiblingRaycasts()
-    {
-        if (gameOverPanel == null) return;
-        Transform parent = gameOverPanel.transform.parent;
-        if (parent == null) return;
-
-        foreach (Transform sibling in parent)
-        {
-            if (sibling.gameObject == gameOverPanel) continue;
-            var cg = sibling.GetComponent<CanvasGroup>();
-            if (cg == null)
-            {
-                // Add one if missing so we can control it
-                cg = sibling.gameObject.AddComponent<CanvasGroup>();
-            }
-            cg.blocksRaycasts = false;
-        }
     }
 
     private void RestartScene()
@@ -130,22 +109,7 @@ public class GameOverController : MonoBehaviour
         if (success)
         {
             TimeScaleService.Instance?.Release(this);
-            EnableSiblingRaycasts();
-            gameOverPanel?.SetActive(false);
-        }
-    }
-
-    private void EnableSiblingRaycasts()
-    {
-        if (gameOverPanel == null) return;
-        Transform parent = gameOverPanel.transform.parent;
-        if (parent == null) return;
-
-        foreach (Transform sibling in parent)
-        {
-            if (sibling.gameObject == gameOverPanel) continue;
-            var cg = sibling.GetComponent<CanvasGroup>();
-            if (cg != null) cg.blocksRaycasts = true;
+            _modal.Close();
         }
     }
 
