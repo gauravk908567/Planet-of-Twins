@@ -48,6 +48,10 @@ MonoBehaviour:
   _maxAngle: 8
   _frequency: 1.1
   _gustResponse: 0.8
+  _mode: 1
+  _swayAxis: {x: 1, y: 0, z: 0}
+  _oneSided: 0
+  _gizmoArm: 0.5
 --- !u!1 &3768645065305572423
 GameObject:
   m_ObjectHideFlags: 0
@@ -96,6 +100,10 @@ MonoBehaviour:
   _maxAngle: 8
   _frequency: 1.1
   _gustResponse: 0.8
+  _mode: 1
+  _swayAxis: {x: 1, y: 0, z: 0}
+  _oneSided: 0
+  _gizmoArm: 0.5
 --- !u!1 &7960303322876223287
 GameObject:
   m_ObjectHideFlags: 0
