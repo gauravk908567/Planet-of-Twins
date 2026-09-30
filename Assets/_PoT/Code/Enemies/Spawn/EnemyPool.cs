@@ -212,9 +212,27 @@ public class EnemyPool : MonoBehaviour, IEnemyPoolProvider
         _pools[prefab].Enqueue(instance);
     }
 
+    // Inactive holder every new instance is created under, so its NavMeshAgent is switched off BEFORE its first
+    // Awake/OnEnable. The boot pre-warm runs in Persistent before any area NavMesh exists, and an enabled agent logged
+    // "Failed to create agent because there is no valid NavMesh" once per enemy (~180 per boot). Awake/OnEnable still
+    // run inside CreateInstance, in the same order as before (perception sensors register at the same point, CLAUDE.md
+    // E2). Get() already disables the agent; SpawnReady / EnemySpawner enable it after placing the enemy.
+    private Transform _staging;
+
     private GameObject CreateInstance(GameObject prefab)
     {
-        var instance = Instantiate(prefab, poolParent);
+        if (_staging == null)
+        {
+            var holder = new GameObject("EnemyPool_Staging");
+            holder.SetActive(false);
+            holder.transform.SetParent(transform, false);
+            _staging = holder.transform;
+        }
+
+        var instance = Instantiate(prefab, _staging);            // inactive parent: no Awake yet
+        var agent = instance.GetComponent<UnityEngine.AI.NavMeshAgent>();
+        if (agent != null) agent.enabled = false;
+        instance.transform.SetParent(poolParent, false);          // active parent: Awake + OnEnable run now, agent off
         instance.SetActive(false);
         return instance;
     }
