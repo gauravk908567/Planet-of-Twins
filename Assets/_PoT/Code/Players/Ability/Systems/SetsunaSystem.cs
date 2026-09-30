@@ -19,7 +19,8 @@ using TMPro;
 ///   5. After 7s (unscaled): timeScale restored, SC deactivated
 ///   6. Both twins set invulnerable
 ///   7. CharacterControllers disabled
-///   8. Twins lerp back to cast positions over 1.5s (unscaled)
+///   8. Twins travel back to the cast positions over 1.5s (unscaled) along a smoothed path (RewindPath: stills
+///      dropped, wiggles simplified, corners rounded, teleport gaps blinked), at an even speed shaped by _rewindEase
 ///   9. Health restored to snapshot value
 ///  10. Invulnerability removed, CharacterControllers re-enabled
 ///
@@ -63,6 +64,24 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
     [Tooltip("Record twin positions every N seconds during active window.")]
     [SerializeField] private float _recordInterval = 0.05f;
 
+    [Header("Rewind feel (Tracer's Recall)")]
+    [Tooltip("Speed profile of the return. X = time through the rewind (0→1 of Rewind Duration), Y = share of the path " +
+             "covered (0→1). The path is measured by distance, so a straight line = an even speed.")]
+    [SerializeField] private AnimationCurve _rewindEase = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Tooltip("Metres. Samples closer than this to the last kept one count as standing still and are dropped, so a " +
+             "pause never replays as a stop.")]
+    [SerializeField] private float _rewindMinStep = 0.05f;
+    [Tooltip("Metres the smoothed path may stray from the one actually run. Higher = broader, smoother curves that " +
+             "cut more corners (and can clip walls); 0 = replay every wiggle.")]
+    [SerializeField] private float _rewindSmoothing = 0.3f;
+    [Tooltip("Metres. A jump longer than this between two samples was a teleport: the rewind blinks across it " +
+             "instead of flying through whatever lay between. Normal Setsuna running is ~1 m per sample.")]
+    [SerializeField] private float _rewindBlinkDistance = 8f;
+    [Tooltip("Hide the twins' bodies while they travel back (Tracer's phase), so only the streak cue " +
+             "(setsuna_rewindKai/Lyra) shows the motion. Leave off until the streak has its own art, or the twins " +
+             "just vanish for the rewind.")]
+    [SerializeField] private bool _phaseDuringRewind = false;
+
     [Header("HUD UI — optional")]
     [SerializeField] private GameObject _setsunaPanel;
     [SerializeField] private Slider _chargeBar;
@@ -99,11 +118,15 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
     private readonly System.Collections.Generic.List<Vector3> _rightPath = new();
     private float _recordTimer = 0f;
 
-    // Per-twin held cues: charge (during Charging) + trail (during Active slow-mo). Kai=right/Vethara, Lyra=left/Luminari.
-    // Book resolved lazily from PlayerVfxLibrary (R4). NOTE: author the trail element unscaled so it animates at
-    // full speed while the world is at timeScale 0.15.
+    // Per-twin held cues: charge (during Charging) + trail (during Active slow-mo) + streak (during Rewinding).
+    // Kai=right/Vethara, Lyra=left/Luminari. Book resolved lazily from PlayerVfxLibrary (R4). NOTE: author the trail
+    // element unscaled so it animates at full speed while the world is at timeScale 0.15.
     private CueBookData _cueBook;
     private CueHandle _chargeKaiHandle, _chargeLyraHandle, _trailKaiHandle, _trailLyraHandle;
+    private CueHandle _rewindKaiHandle, _rewindLyraHandle;
+
+    // Body renderers this system hid for the rewind phase; only these are shown again.
+    private readonly System.Collections.Generic.List<Renderer> _phasedRenderers = new();
 
     // ── IAbilityHUDSource (Track D border-as-timer) + IAbilityActiveState ──────
     // Setsuna is the SC slot's ACCORD form (hold-charge family). While Accord is up, the SAME owner-frame card
@@ -347,36 +370,33 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
 
         NotifyStreamingOfReturn();
 
-        // Replay path in reverse — step through recorded positions backward
-        // Time per step = total rewind duration / number of recorded points
-        int pointCount = Mathf.Max(_leftPath.Count, 1);
-        float stepTime = _rewindDuration / pointCount;
+        // One smooth return path per twin, travelled by distance (not one fixed slice of time per sample, which
+        // turned every pause into a stop and every fast run into a zip). Both twins share the clock, so they
+        // arrive together.
+        var leftReturn = RewindPath.FromRecording(_leftPath, _leftTwin.transform.position,
+                                                  _rewindMinStep, _rewindSmoothing, _rewindBlinkDistance);
+        var rightReturn = RewindPath.FromRecording(_rightPath, _rightTwin.transform.position,
+                                                   _rewindMinStep, _rewindSmoothing, _rewindBlinkDistance);
 
-        for (int i = _leftPath.Count - 1; i >= 0; i--)
+        SetPhased(true);        // before the streak starts, so its renderers are never collected
+        StartRewindVFX();
+
+        float elapsed = 0f;     // unscaled: the rewind runs in real time
+        while (elapsed < _rewindDuration)
         {
-            Vector3 leftTarget = _leftPath[i];
-            Vector3 rightTarget = i < _rightPath.Count ? _rightPath[i] : _rightCastPos;
-
-            Vector3 leftStart = _leftTwin.transform.position;
-            Vector3 rightStart = _rightTwin.transform.position;
-
-            float elapsed = 0f;
-            while (elapsed < stepTime)
-            {
-                float t = elapsed / stepTime;
-                _leftTwin.transform.position = Vector3.Lerp(leftStart, leftTarget, t);
-                _rightTwin.transform.position = Vector3.Lerp(rightStart, rightTarget, t);
-                elapsed += Time.unscaledDeltaTime;
-                yield return null;
-            }
-
-            _leftTwin.transform.position = leftTarget;
-            _rightTwin.transform.position = rightTarget;
+            float share = RewindShare(elapsed / _rewindDuration);
+            _leftTwin.transform.position = leftReturn.Evaluate(share);
+            _rightTwin.transform.position = rightReturn.Evaluate(share);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
         }
 
         // Final snap to exact cast positions
         _leftTwin.transform.position = _leftCastPos;
         _rightTwin.transform.position = _rightCastPos;
+
+        StopRewindVFX();
+        SetPhased(false);
 
         // Restore CharacterControllers
         if (leftCC != null) leftCC.enabled = true;
@@ -409,6 +429,40 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
         if (flow == null) return;
         if (flow.LocationOf(_leftTwin) != _leftCastLocation) flow.NotifyTeleported(_leftTwin, _leftCastLocation);
         if (flow.LocationOf(_rightTwin) != _rightCastLocation) flow.NotifyTeleported(_rightTwin, _rightCastLocation);
+    }
+
+    // _rewindEase mapped to a path share, clamped so an overshooting curve can't carry the twins past either end.
+    private float RewindShare(float timeShare)
+    {
+        timeShare = Mathf.Clamp01(timeShare);
+        return Mathf.Clamp01(_rewindEase != null && _rewindEase.length > 0 ? _rewindEase.Evaluate(timeShare) : timeShare);
+    }
+
+    // Tracer's phase: hide the twins' bodies (mesh + skinned mesh renderers only; particles, lines and trails keep
+    // drawing, so the streak and any aura stay). forceRenderingOff leaves each renderer's own enabled state alone,
+    // and un-phasing shows only the renderers this call hid.
+    private void SetPhased(bool phased)
+    {
+        if (!phased)
+        {
+            foreach (var r in _phasedRenderers) if (r != null) r.forceRenderingOff = false;
+            _phasedRenderers.Clear();
+            return;
+        }
+        if (!_phaseDuringRewind) return;
+        HideBody(_leftTwin);
+        HideBody(_rightTwin);
+    }
+
+    private void HideBody(Player twin)
+    {
+        if (twin == null) return;
+        foreach (var r in twin.GetComponentsInChildren<Renderer>())
+        {
+            if (!(r is MeshRenderer || r is SkinnedMeshRenderer) || r.forceRenderingOff) continue;
+            r.forceRenderingOff = true;
+            _phasedRenderers.Add(r);
+        }
     }
 
     private void CancelCharge()
@@ -456,13 +510,32 @@ public class SetsunaSystem : MonoBehaviour, IAbilityHUDSource, IAbilityActiveSta
         _trailKaiHandle = _trailLyraHandle = CueHandle.None;
     }
 
+    // The return streak (clan colour per twin). An empty book slot plays nothing, silently.
+    private void StartRewindVFX()
+    {
+        _cueBook ??= VfxLibraryProvider.Instance?.Player?.Setsuna;   // R4
+        var fx = FxManager.Instance;
+        if (_cueBook == null || fx == null) return;
+        if (_rightTwin != null) _rewindKaiHandle  = fx.PlayBook(_cueBook, FxIds.Player.Setsuna.setsuna_rewindKai,  CueContext.Follow(_rightTwin.transform));
+        if (_leftTwin  != null) _rewindLyraHandle = fx.PlayBook(_cueBook, FxIds.Player.Setsuna.setsuna_rewindLyra, CueContext.Follow(_leftTwin.transform));
+    }
+
+    private void StopRewindVFX()
+    {
+        FxManager.Instance?.Stop(_rewindKaiHandle);
+        FxManager.Instance?.Stop(_rewindLyraHandle);
+        _rewindKaiHandle = _rewindLyraHandle = CueHandle.None;
+    }
+
     public void ForceEnd()
     {
         StopAllCoroutines();
         TimeScaleService.Instance?.Release(this);
         OnActiveChanged?.Invoke(false);   // E1 — back to pulse-mode
-        StopChargeVFX();                  // safety — force-end may interrupt either phase
+        StopChargeVFX();                  // safety — force-end may interrupt any phase
         StopTrailVFX();
+        StopRewindVFX();
+        SetPhased(false);                 // a rewind cut short must never leave a twin invisible
 
         _leftTwin.Movement.SetUseUnscaledTime(false);
         _rightTwin.Movement.SetUseUnscaledTime(false);

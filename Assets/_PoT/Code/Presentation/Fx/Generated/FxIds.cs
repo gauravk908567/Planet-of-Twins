@@ -169,6 +169,8 @@ namespace PoT.Fx
                 public const string setsuna_chargeLyra = "setsuna_chargeLyra";
                 public const string setsuna_trailKai = "setsuna_trailKai";
                 public const string setsuna_trailLyra = "setsuna_trailLyra";
+                public const string setsuna_rewindKai = "setsuna_rewindKai";
+                public const string setsuna_rewindLyra = "setsuna_rewindLyra";
             }
             public static class Empower
             {
